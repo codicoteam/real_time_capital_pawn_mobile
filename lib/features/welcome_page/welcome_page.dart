@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
+import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/home_management/screens/main_screen.dart';
 
 import '../../config/routers/router.dart';
@@ -188,7 +189,7 @@ class WelcomeScreen extends StatelessWidget {
 
   void _onIntroEnd(BuildContext context) async {
     await CacheUtils.updateOnboardingStatus(true).then((_) {
-    Get.to(() => const MainHomePage());
+    Get.to(() => const Login());
     });
   }
 }

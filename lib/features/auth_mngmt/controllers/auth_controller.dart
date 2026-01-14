@@ -136,6 +136,68 @@ class AuthController extends GetxController {
     }
   }
 
+  /// VERIFY EMAIL
+  Future<bool> verifyEmailRequest({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      isLoading(true);
+      successMessage.value = '';
+      errorMessage.value = '';
+
+      final response = await AuthServices.verifyEmail(email: email, otp: otp);
+
+      if (response.success) {
+        successMessage.value =
+            response.message ?? 'Email verified successfully';
+        DevLogs.logSuccess(successMessage.value);
+        return true;
+      } else {
+        errorMessage.value = response.message ?? 'Email verification failed';
+        DevLogs.logError(errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      DevLogs.logError('Error verifying email: ${e.toString()}');
+      errorMessage.value =
+          'An error occurred while verifying email: ${e.toString()}';
+      return false;
+    } finally {
+      isLoading(false);
+    }
+  }
+
+  /// RESEND VERIFICATION EMAIL
+  Future<bool> resendVerificationEmailRequest({required String email}) async {
+    try {
+      isLoading(true);
+      successMessage.value = '';
+      errorMessage.value = '';
+
+      final response = await AuthServices.resendVerificationEmail(email: email);
+
+      if (response.success) {
+        successMessage.value =
+            response.message ?? 'Verification email sent successfully';
+        DevLogs.logSuccess(successMessage.value);
+        return true;
+      } else {
+        errorMessage.value =
+            response.message ?? 'Failed to resend verification email';
+        DevLogs.logError(errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      DevLogs.logError('Error resending verification email: ${e.toString()}');
+      errorMessage.value =
+          'An error occurred while resending verification email: ${e.toString()}';
+      return false;
+    } finally {
+      isLoading(false);
+    }
+  }
+
   /// RESET PASSWORD
   Future<bool> resetPasswordRequest({
     required String email,

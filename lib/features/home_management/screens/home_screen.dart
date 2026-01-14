@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,383 +13,322 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final String userName = "John";
+  int _carouselIndex = 0;
+
+  final List<Map<String, dynamic>> _carouselItems = [
+    {
+      'title': 'Quick Loans',
+      'subtitle': 'Get instant loans on your valuables',
+      'icon': Icons.bolt,
+    },
+    {
+      'title': 'Live Auctions',
+      'subtitle': 'Bid on premium assets',
+      'icon': Icons.gavel,
+    },
+    {
+      'title': 'Secure & Fast',
+      'subtitle': 'Trusted pawn services',
+      'icon': Icons.shield,
+    },
+  ];
+
+  final List<Map<String, dynamic>> loanTypes = [
+    {
+      'icon': Icons.directions_car,
+      'title': 'Motor Vehicle',
+      'color': Colors.blue,
+    },
+    {'icon': Icons.devices, 'title': 'Electronics', 'color': Colors.purple},
+    {'icon': Icons.diamond, 'title': 'Jewelry', 'color': Colors.amber},
+  ];
+
+  final List<Map<String, dynamic>> quickActions = [
+    {'icon': Icons.add_chart, 'title': 'New Loan', 'route': '/new-loan'},
+    {'icon': Icons.gavel, 'title': 'Auctions', 'route': '/auctions'},
+    {'icon': Icons.description, 'title': 'Reports', 'route': '/reports'},
+    {'icon': Icons.history, 'title': 'Applications', 'route': '/applications'},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Colors.white),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+        title: Text(
+          'PawnLoan',
+          style: GoogleFonts.nunito(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Section with Menu Icon
-              _buildHeader(context),
-
-              const SizedBox(height: 24),
-
-              // Quick Actions Card
-              _buildQuickActions(),
-
-              const SizedBox(height: 24),
-
-              // Active Loans Section
-              _buildActiveLoansSection(),
-
-              const SizedBox(height: 24),
-
-              // Services Section
-              _buildServicesSection(),
-
-              const SizedBox(height: 24),
-
-              // Recent Activity
-              _buildRecentActivity(),
-
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Header with Menu Icon
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryColor,
-            AppColors.primaryColor.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Menu Icon for Drawer
-              IconButton(
-                icon: Icon(Icons.menu_rounded, color: Colors.white, size: 28),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              ),
-
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Welcome back,',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    userName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.white.withOpacity(0.2),
-                child: Icon(
-                  Icons.person_outline,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ],
-          ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2),
-        ],
-      ),
-    );
-  }
-
-  // Quick Actions
-  Widget _buildQuickActions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildActionCard(
-                  icon: Icons.add_circle_outline,
-                  title: 'New Loan',
-                  subtitle: 'Apply now',
+          slivers: [
+            // Welcome Section with Green Background
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
                   color: AppColors.primaryColor,
-                  onTap: () {
-                    // Navigate to new loan application
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionCard(
-                  icon: Icons.payment_outlined,
-                  title: 'Make Payment',
-                  subtitle: 'Pay now',
-                  color: Colors.green,
-                  onTap: () {
-                    // Navigate to payment page
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.2),
-    );
-  }
-
-  Widget _buildActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderColor, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textColor,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: AppColors.subtextColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Active Loans Section
-  Widget _buildActiveLoansSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Active Loans',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Navigate to all loans
-                },
-                child: Text(
-                  'View All',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildLoanCard(
-            loanId: 'ML-2024-001',
-            amount: '\$5,000',
-            dueDate: 'Jan 25, 2026',
-            status: 'Active',
-            progress: 0.6,
-          ),
-          const SizedBox(height: 12),
-          _buildLoanCard(
-            loanId: 'ML-2024-002',
-            amount: '\$2,500',
-            dueDate: 'Feb 10, 2026',
-            status: 'Active',
-            progress: 0.3,
-          ),
-        ],
-      ).animate().fadeIn(duration: 600.ms, delay: 400.ms).slideY(begin: 0.2),
-    );
-  }
-
-  Widget _buildLoanCard({
-    required String loanId,
-    required String amount,
-    required String dueDate,
-    required String status,
-    required double progress,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to loan details
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderColor, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      loanId,
-                      style: GoogleFonts.poppins(
+                      'Welcome back,',
+                      style: GoogleFonts.nunito(
                         fontSize: 14,
-                        color: AppColors.subtextColor,
-                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withOpacity(0.9),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      amount,
-                      style: GoogleFonts.poppins(
+                      userName,
+                      style: GoogleFonts.nunito(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textColor,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    status,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green,
+              ).animate().fadeIn(duration: 500.ms),
+            ),
+
+            // Main Content
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+
+                  // Promotional Carousel
+                  _buildCarousel(),
+
+                  const SizedBox(height: 32),
+
+                  // Quick Stats Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            title: 'Active Loans',
+                            value: '3',
+                            icon: Icons.credit_card,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatCard(
+                            title: 'Due Soon',
+                            value: '\$1,200',
+                            icon: Icons.access_time,
+                            color: AppColors.warningColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(duration: 600.ms, delay: 200.ms),
+
+                  const SizedBox(height: 32),
+
+                  // Loan Types Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Apply for Loan',
+                          style: GoogleFonts.nunito(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Choose your collateral type',
+                          style: GoogleFonts.nunito(
+                            fontSize: 14,
+                            color: AppColors.subtextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(duration: 600.ms, delay: 400.ms),
+
+                  const SizedBox(height: 16),
+
+                  // Loan Type Grid
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.9,
+                          ),
+                      itemCount: loanTypes.length,
+                      itemBuilder: (context, index) {
+                        return _buildLoanTypeCard(
+                          icon: loanTypes[index]['icon'],
+                          title: loanTypes[index]['title'],
+                          color: loanTypes[index]['color'],
+                        );
+                      },
+                    ),
+                  ).animate().fadeIn(duration: 600.ms, delay: 600.ms),
+
+                  const SizedBox(height: 32),
+
+                  // Quick Actions Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Quick Actions',
+                          style: GoogleFonts.nunito(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                  color: AppColors.subtextColor,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Due: $dueDate',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: AppColors.subtextColor,
+
+                  const SizedBox(height: 16),
+
+                  // Quick Actions Grid
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.5,
+                          ),
+                      itemCount: quickActions.length,
+                      itemBuilder: (context, index) {
+                        return _buildQuickActionCard(
+                          icon: quickActions[index]['icon'],
+                          title: quickActions[index]['title'],
+                          route: quickActions[index]['route'],
+                        );
+                      },
+                    ),
+                  ).animate().fadeIn(duration: 600.ms, delay: 800.ms),
+
+                  const SizedBox(height: 32),
+
+                  // Active Loans Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Active Loans',
+                              style: GoogleFonts.nunito(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                // Navigate to all loans
+                              },
+                              child: Text(
+                                'View All',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: AppColors.borderColor.withOpacity(0.3),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryColor,
-                ),
-                minHeight: 8,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${(progress * 100).toInt()}% Repaid',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: AppColors.subtextColor,
-                fontWeight: FontWeight.w500,
+
+                  // Active Loans List
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ListView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildLoanItem(
+                          title: 'Toyota Camry 2020',
+                          type: 'Motor Vehicle',
+                          amount: '\$15,000',
+                          progress: 0.65,
+                          dueDate: '2024-02-15',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLoanItem(
+                          title: 'MacBook Pro M2',
+                          type: 'Electronics',
+                          amount: '\$2,500',
+                          progress: 0.30,
+                          dueDate: '2024-01-30',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLoanItem(
+                          title: 'Gold Necklace',
+                          type: 'Jewelry',
+                          amount: '\$3,200',
+                          progress: 0.80,
+                          dueDate: '2024-02-10',
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(duration: 600.ms, delay: 1000.ms),
+
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
           ],
@@ -397,89 +337,226 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Services Section
-  Widget _buildServicesSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+  Widget _buildCarousel() {
+    return Column(
+      children: [
+        CarouselSlider(
+          options: CarouselOptions(
+            height: 170,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 4),
+            enlargeCenterPage: true,
+            viewportFraction: 0.9,
+            onPageChanged: (index, reason) {
+              setState(() => _carouselIndex = index);
+            },
+          ),
+          items: _carouselItems.map((item) {
+            return Builder(
+              builder: (BuildContext context) {
+                return Container(
+                  width: MediaQuery.of(context).size.width,
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryColor,
+                        AppColors.primaryColor.withOpacity(0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      // Gradient overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.black.withOpacity(0.1),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  item['icon'],
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  item['title'],
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 35),
+                              child: Text(
+                                item['subtitle'],
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 27),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Learn More',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: _carouselItems.asMap().entries.map((entry) {
+            return Container(
+              width: _carouselIndex == entry.key ? 24 : 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: _carouselIndex == entry.key
+                    ? AppColors.primaryColor
+                    : AppColors.borderColor,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    ).animate().fadeIn(duration: 600.ms, delay: 200.ms);
+  }
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 12),
           Text(
-            'Our Services',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+            value,
+            style: GoogleFonts.nunito(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
               color: AppColors.textColor,
             ),
           ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            children: [
-              _buildServiceItem(
-                icon: Icons.account_balance_wallet_outlined,
-                label: 'Pawn',
-                onTap: () {},
-              ),
-              _buildServiceItem(
-                icon: Icons.history,
-                label: 'History',
-                onTap: () {},
-              ),
-              _buildServiceItem(
-                icon: Icons.support_agent_outlined,
-                label: 'Support',
-                onTap: () {},
-              ),
-              _buildServiceItem(
-                icon: Icons.receipt_long_outlined,
-                label: 'Receipts',
-                onTap: () {},
-              ),
-              _buildServiceItem(
-                icon: Icons.settings_outlined,
-                label: 'Settings',
-                onTap: () {},
-              ),
-              _buildServiceItem(
-                icon: Icons.more_horiz,
-                label: 'More',
-                onTap: () {},
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: GoogleFonts.nunito(
+              fontSize: 12,
+              color: AppColors.subtextColor,
+            ),
           ),
         ],
-      ).animate().fadeIn(duration: 600.ms, delay: 600.ms).slideY(begin: 0.2),
+      ),
     );
   }
 
-  Widget _buildServiceItem({
+  Widget _buildLoanTypeCard({
     required IconData icon,
-    required String label,
-    required VoidCallback onTap,
+    required String title,
+    required Color color,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        // Navigate to specific loan type application
+      },
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderColor, width: 1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: AppColors.primaryColor),
-            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 28, color: color),
+            ),
+            const SizedBox(height: 12),
             Text(
-              label,
-              style: GoogleFonts.poppins(
+              title,
+              style: GoogleFonts.nunito(
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textColor,
               ),
               textAlign: TextAlign.center,
@@ -490,94 +567,180 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Recent Activity
-  Widget _buildRecentActivity() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+  Widget _buildQuickActionCard({
+    required IconData icon,
+    required String title,
+    required String route,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to route
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 24, color: AppColors.primaryColor),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: GoogleFonts.nunito(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoanItem({
+    required String title,
+    required String type,
+    required String amount,
+    required double progress,
+    required String dueDate,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textColor,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  type,
+                  style: GoogleFonts.nunito(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Text(
-            'Recent Activity',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+            amount,
+            style: GoogleFonts.nunito(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
               color: AppColors.textColor,
             ),
           ),
           const SizedBox(height: 16),
-          _buildActivityItem(
-            icon: Icons.check_circle_outline,
-            title: 'Payment Received',
-            subtitle: '\$500 - Jan 5, 2026',
-            iconColor: Colors.green,
-          ),
-          _buildActivityItem(
-            icon: Icons.info_outline,
-            title: 'Payment Due Soon',
-            subtitle: 'ML-2024-001 - Jan 25, 2026',
-            iconColor: Colors.orange,
-          ),
-          _buildActivityItem(
-            icon: Icons.done_all_outlined,
-            title: 'Loan Approved',
-            subtitle: 'ML-2024-002 - Jan 2, 2026',
-            iconColor: Colors.blue,
-          ),
-        ],
-      ).animate().fadeIn(duration: 600.ms, delay: 800.ms).slideY(begin: 0.2),
-    );
-  }
-
-  Widget _buildActivityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color iconColor,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor, width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textColor,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Progress',
+                    style: GoogleFonts.nunito(
+                      fontSize: 12,
+                      color: AppColors.subtextColor,
+                    ),
                   ),
+                  Text(
+                    '${(progress * 100).toStringAsFixed(0)}%',
+                    style: GoogleFonts.nunito(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: AppColors.borderColor,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryColor,
+                  ),
+                  minHeight: 6,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.poppins(
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 14,
+                color: AppColors.subtextColor,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Due: $dueDate',
+                style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  color: AppColors.subtextColor,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Pay Now',
+                  style: GoogleFonts.nunito(
                     fontSize: 12,
-                    color: AppColors.subtextColor,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryColor,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Icon(Icons.chevron_right, color: AppColors.subtextColor),
         ],
       ),
     );

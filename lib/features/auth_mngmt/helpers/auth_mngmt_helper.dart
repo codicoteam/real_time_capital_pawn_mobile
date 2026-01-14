@@ -78,10 +78,8 @@ class AuthHelper {
       if (success) {
         // ✅ Success animation
         _showSuccessAnimation();
+        Get.offNamed(RoutesHelper.main_home_page);
 
-        // Navigate to home page
-        await Future.delayed(300.milliseconds); // Small delay for animation
-        // Get.offNamed(RoutesHelper.main_home_page);
         return true;
       } else {
         // ❌ Show error from controller
@@ -720,6 +718,300 @@ class AuthHelper {
       colorText: Colors.white,
       borderRadius: 12,
       margin: const EdgeInsets.all(16),
+    );
+  }
+
+  /// VERIFY EMAIL HELPER
+  static Future<bool> validateAndVerifyEmail({
+    required String email,
+    required String otp,
+  }) async {
+    // Clear any existing errors
+    _clearErrors();
+
+    // Validation
+    bool isValid = true;
+
+    // Email Validation
+    if (email.isEmpty) {
+      _showValidationError('Email is required', 'email');
+      isValid = false;
+    } else {
+      final emailRegExp = RegExp(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+      );
+      if (!emailRegExp.hasMatch(email.trim())) {
+        _showValidationError('Please enter a valid email address', 'email');
+        isValid = false;
+      }
+    }
+
+    // OTP Validation
+    if (otp.isEmpty) {
+      _showValidationError('OTP is required', 'otp');
+      isValid = false;
+    } else if (otp.length != 6) {
+      // Assuming 6-digit OTP
+      _showValidationError('OTP must be 6 digits', 'otp');
+      isValid = false;
+    } else if (!RegExp(r'^[0-9]{6}$').hasMatch(otp)) {
+      _showValidationError('OTP must contain only numbers', 'otp');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      _showShakeAnimation();
+      return false;
+    }
+
+    // Call the email verification service
+    try {
+      Get.dialog(
+        const CustomLoader(message: 'Verifying email...'),
+        barrierDismissible: false,
+      );
+
+      final success = await _authController.verifyEmailRequest(
+        email: email.trim(),
+        otp: otp,
+      );
+
+      // Close loader
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      if (success) {
+        // ✅ Success animation
+        _showEmailVerificationSuccessAnimation();
+
+        // Show success message from controller
+        if (_authController.successMessage.value.isNotEmpty) {
+          Get.snackbar(
+            'Success!',
+            _authController.successMessage.value,
+            backgroundColor: Colors.green[50],
+            colorText: Colors.green[700],
+            icon: Icon(Icons.check_circle, color: Colors.green[700]),
+            snackPosition: SnackPosition.TOP,
+            duration: 3.seconds,
+          );
+        }
+
+        // Navigate to appropriate page after successful verification
+        await Future.delayed(1500.milliseconds);
+
+        // Option 1: Navigate to home page
+        Get.offNamed(RoutesHelper.main_home_page);
+
+        // Option 2: Navigate to complete profile if needed
+        // Get.offNamed(RoutesHelper.complete_profile_page);
+
+        // Option 3: Navigate to dashboard
+        // Get.offNamed(RoutesHelper.dashboard);
+
+        return true;
+      } else {
+        // ❌ Show error from controller
+        _showEmailVerificationErrorDialog(_authController.errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      _showEmailVerificationErrorDialog(
+        'An error occurred during email verification: ${e.toString()}',
+      );
+      return false;
+    }
+  }
+
+  /// RESEND VERIFICATION EMAIL HELPER
+  static Future<bool> validateAndResendVerification({
+    required String email,
+  }) async {
+    // Clear any existing errors
+    _clearErrors();
+
+    // Validation
+    bool isValid = true;
+
+    // Email Validation
+    if (email.isEmpty) {
+      _showValidationError('Email is required', 'email');
+      isValid = false;
+    } else {
+      final emailRegExp = RegExp(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+      );
+      if (!emailRegExp.hasMatch(email.trim())) {
+        _showValidationError('Please enter a valid email address', 'email');
+        isValid = false;
+      }
+    }
+
+    if (!isValid) {
+      _showShakeAnimation();
+      return false;
+    }
+
+    // Call the resend verification service
+    try {
+      Get.dialog(
+        const CustomLoader(message: 'Sending verification email...'),
+        barrierDismissible: false,
+      );
+
+      final success = await _authController.resendVerificationEmailRequest(
+        email: email.trim(),
+      );
+
+      // Close loader
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      if (success) {
+        // ✅ Success animation
+        _showResendVerificationSuccessAnimation();
+
+        // Show success message from controller
+        if (_authController.successMessage.value.isNotEmpty) {
+          Get.snackbar(
+            'Email Sent!',
+            _authController.successMessage.value,
+            backgroundColor: Colors.green[50],
+            colorText: Colors.green[700],
+            icon: Icon(Icons.mark_email_read, color: Colors.green[700]),
+            snackPosition: SnackPosition.TOP,
+            duration: 4.seconds, // Longer duration for this message
+            margin: const EdgeInsets.all(16),
+            borderRadius: 12,
+            isDismissible: true,
+            forwardAnimationCurve: Curves.easeOutBack,
+          );
+        }
+
+        // Show additional guidance to user
+        await Future.delayed(500.milliseconds);
+        Get.snackbar(
+          'Check Your Email',
+          'Please check your inbox (and spam folder) for the verification email.',
+          backgroundColor: Colors.blue[50],
+          colorText: Colors.blue[700],
+          icon: Icon(Icons.info_outline, color: Colors.blue[700]),
+          snackPosition: SnackPosition.TOP,
+          duration: 5.seconds,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
+        );
+
+        return true;
+      } else {
+        // ❌ Show error from controller
+        _showResendVerificationErrorDialog(_authController.errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      _showResendVerificationErrorDialog(
+        'An error occurred while resending verification email: ${e.toString()}',
+      );
+      return false;
+    }
+  }
+
+  // Email Verification Success Animation
+  static void _showEmailVerificationSuccessAnimation() {
+    Get.snackbar(
+      'Email Verified!',
+      'Your email has been successfully verified.',
+      backgroundColor: Colors.green[50],
+      colorText: Colors.green[700],
+      icon: Icon(Icons.verified, color: Colors.green[700]),
+      snackPosition: SnackPosition.TOP,
+      duration: 2.seconds,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      isDismissible: true,
+      forwardAnimationCurve: Curves.easeOutBack,
+    );
+  }
+
+  // Email Verification Error Dialog
+  static void _showEmailVerificationErrorDialog(String message) {
+    Get.defaultDialog(
+      title: 'Verification Failed',
+      titleStyle: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.red[700],
+        fontSize: 18,
+      ),
+      middleText: message,
+      middleTextStyle: const TextStyle(
+        color: Colors.black87,
+        fontSize: 14,
+        height: 1.4,
+      ),
+      textConfirm: 'Try Again',
+      textCancel: 'Resend OTP',
+      confirmTextColor: Colors.white,
+      cancelTextColor: Colors.blue[700],
+      onConfirm: () => Get.back(),
+      onCancel: () {
+        Get.back();
+        // Optionally trigger resend OTP action
+        // Get.find<EmailVerificationController>().resendOtp();
+      },
+      buttonColor: Colors.red[700],
+      radius: 12,
+      contentPadding: const EdgeInsets.all(20),
+    );
+  }
+
+  // Resend Verification Success Animation
+  static void _showResendVerificationSuccessAnimation() {
+    Get.snackbar(
+      'Email Sent!',
+      'A new verification email has been sent to your inbox.',
+      backgroundColor: Colors.green[50],
+      colorText: Colors.green[700],
+      icon: Icon(Icons.send, color: Colors.green[700]),
+      snackPosition: SnackPosition.TOP,
+      duration: 3.seconds,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      isDismissible: true,
+      forwardAnimationCurve: Curves.easeOutBack,
+    );
+  }
+
+  // Resend Verification Error Dialog
+  static void _showResendVerificationErrorDialog(String message) {
+    Get.defaultDialog(
+      title: 'Failed to Resend',
+      titleStyle: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.orange[700],
+        fontSize: 18,
+      ),
+      middleText: message,
+      middleTextStyle: const TextStyle(
+        color: Colors.black87,
+        fontSize: 14,
+        height: 1.4,
+      ),
+      textConfirm: 'Try Again',
+      textCancel: 'Cancel',
+      confirmTextColor: Colors.white,
+      cancelTextColor: Colors.grey[600],
+      onConfirm: () => Get.back(),
+      buttonColor: Colors.orange[700],
+      radius: 12,
+      contentPadding: const EdgeInsets.all(20),
     );
   }
 }

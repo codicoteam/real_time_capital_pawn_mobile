@@ -17,55 +17,57 @@ class AuthServices {
 
     var request = http.Request(
       'POST',
-      Uri.parse('${ApiKeys.baseUrl}/user_route/login'),
+      Uri.parse('${ApiKeys.baseUrl}/users/login'),
     );
 
     request.body = json.encode({"email": emailAddress, "password": password});
     request.headers.addAll(headers);
 
     try {
-      http.StreamedResponse response = await request.send();
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
       DevLogs.logInfo('Response status: ${response.statusCode}');
-      DevLogs.logInfo('Response message: ${response.reasonPhrase}');
+      DevLogs.logInfo('Response body: $responseBody');
+
+      final responseData = json.decode(responseBody);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final responseData = json.decode(await response.stream.bytesToString());
+        final data = responseData['data'];
+        final token = data['token'];
+        final user = data['user'];
 
-        final token = responseData['token'];
-        final user = responseData['user'];
-
-        // Cache the token
-        await CacheUtils.storeToken(token: "$token");
+        // Cache token
+        await CacheUtils.storeToken(token: token);
 
         DevLogs.logSuccess(
-          'Login successful. Token: $token, User: ${user['email']}',
+          'Login successful. Token saved. User: ${user['email']}',
         );
 
+        // Optional: decode user from token or use API user object
         final decodedUser = await _getUserFromToken();
         if (decodedUser != null) {
-          DevLogs.logInfo(
-            "User loaded from token: ${decodedUser} (${decodedUser})",
-          );
+          DevLogs.logInfo('User loaded from token: $decodedUser');
           // Get.find<UserController>().setUser(decodedUser);
         }
 
         return APIResponse(
           success: true,
-          message: 'Login successful',
+          message: responseData['message'] ?? 'Login successful',
           data: token,
         );
       } else {
-        final errorData = json.decode(await response.stream.bytesToString());
-        final errorMessage = errorData['message'] ?? 'Login failed';
+        final errorMessage = responseData['message'] ?? 'Login failed';
+
         DevLogs.logError('Login failed: $errorMessage');
 
         return APIResponse(success: false, message: errorMessage, data: null);
       }
     } catch (e) {
-      DevLogs.logError('An error occurred: $e');
+      DevLogs.logError('Login error: $e');
       return APIResponse(
         success: false,
-        message: 'An error occurred: $e',
+        message: 'An error occurred',
         data: null,
       );
     }
