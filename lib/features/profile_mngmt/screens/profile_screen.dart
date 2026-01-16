@@ -1,130 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:photo_view/photo_view.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/widgets/custom_button/general_button.dart';
 import 'package:real_time_pawn/widgets/dialogs/conformation_dialog.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 
-/// =======================
-/// MODELS - Updated with all fields
-/// =======================
-
-enum DocumentType { national_id, passport, proof_of_address, other }
-
-enum UserRole {
-  super_admin_vendor,
-  admin_pawn_limited,
-  call_centre_support,
-  loan_officer_processor,
-  loan_officer_approval,
-  management,
-  customer,
-}
-
-enum UserStatus { pending, active, suspended, deleted }
-
-class Document {
-  final String id;
-  final DocumentType type;
-  final String url;
-  final String fileName;
-  final String mimeType;
-  final DateTime uploadedAt;
-  final String? notes;
-
-  Document({
-    required this.id,
-    required this.type,
-    required this.url,
-    required this.fileName,
-    required this.mimeType,
-    required this.uploadedAt,
-    this.notes,
-  });
-
-  String get typeString {
-    switch (type) {
-      case DocumentType.national_id:
-        return 'National ID';
-      case DocumentType.passport:
-        return 'Passport';
-      case DocumentType.proof_of_address:
-        return 'Proof of Address';
-      case DocumentType.other:
-        return 'Other';
-    }
-  }
-}
-
-class UserProfile {
-  String id;
-  String email;
-  String? phone;
-  List<UserRole> roles;
-
-  // Name fields
-  String firstName;
-  String lastName;
-  String? fullName;
-
-  UserStatus status;
-
-  // KYC fields (all optional)
-  String? nationalIdNumber;
-  DateTime? dateOfBirth;
-  String? address;
-  String? location;
-  DateTime? termsAcceptedAt;
-
-  // Image URLs (optional)
-  String? nationalIdImageUrl;
-  String? profilePicUrl;
-
-  // Documents
-  List<Document> documents;
-
-  // Additional fields from your boss
-  bool isEmailVerified;
-  DateTime createdAt;
-
-  UserProfile({
-    required this.id,
-    required this.email,
-    this.phone,
-    required this.roles,
-    required this.firstName,
-    required this.lastName,
-    this.fullName,
-    this.status = UserStatus.pending,
-    this.nationalIdNumber,
-    this.dateOfBirth,
-    this.address,
-    this.location,
-    this.termsAcceptedAt,
-    this.nationalIdImageUrl,
-    this.profilePicUrl,
-    this.documents = const [],
-    required this.isEmailVerified,
-    required this.createdAt,
-  });
-
-  String get fullNameDisplay => '$firstName $lastName';
-  String get primaryRole => roles.contains(UserRole.customer)
-      ? 'Customer'
-      : roles.first.toString().split('.').last.replaceAll('_', ' ');
-
-  bool get hasCompletedBasicKyc =>
-      nationalIdNumber != null &&
-      nationalIdNumber!.isNotEmpty &&
-      dateOfBirth != null;
-}
-
-/// =======================
-/// SCREEN
-/// =======================
+import '../../../models/profile_models.dart';
+import '../../../widgets/profile_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -134,7 +23,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  /// MOCK USER with all fields from your boss
+  /// MOCK USER
   UserProfile user = UserProfile(
     id: '1',
     email: 'ipahchirume@gmail.com',
@@ -176,8 +65,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoading = false;
   bool isEditing = false;
   final _formKey = GlobalKey<FormState>();
+  final ImagePicker _imagePicker = ImagePicker(); // Moved here
 
-  // Controllers for all editable fields
+  // Controllers
   late TextEditingController firstNameCtrl;
   late TextEditingController lastNameCtrl;
   late TextEditingController phoneCtrl;
@@ -216,6 +106,163 @@ class _ProfileScreenState extends State<ProfileScreen> {
     addressCtrl.dispose();
     locationCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickProfileImage() async {
+    // Show options: Camera or Gallery
+    final result = await Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Get.back(result: 'camera');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Get.back(result: 'gallery');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel, color: Colors.red),
+                title: const Text('Cancel'),
+                onTap: () => Get.back(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result == null) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: result == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+
+      if (pickedFile != null) {
+        // Show preview and confirm
+        final confirmed = await _showImagePreview(pickedFile);
+
+        if (confirmed == true) {
+          // Upload to server
+          await _uploadImageToServer(File(pickedFile.path));
+        }
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to pick image: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<bool?> _showImagePreview(XFile file) async {
+    return await Get.dialog<bool>(
+      Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 300,
+              child: PhotoView(
+                imageProvider: FileImage(File(file.path)),
+                minScale: PhotoViewComputedScale.contained * 0.8,
+                maxScale: PhotoViewComputedScale.covered * 2,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(result: false),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 20),
+                  ElevatedButton(
+                    onPressed: () => Get.back(result: true),
+                    child: const Text('Use This Photo'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _uploadImageToServer(File imageFile) async {
+    try {
+      // TODO: Implement actual upload to your backend
+      // Example using Supabase (you already have supabase_flutter)
+      // If you're using another backend, adjust this part
+
+      // 1. Upload to storage
+      // final storageResponse = await supabase.storage
+      //     .from('profile-pictures')
+      //     .upload('${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg', imageFile);
+
+      // 2. Get public URL
+      // final publicUrl = supabase.storage
+      //     .from('profile-pictures')
+      //     .getPublicUrl(storageResponse.path);
+
+      // 3. Update user profile with new URL
+      // await supabase
+      //     .from('users')
+      //     .update({'profile_pic_url': publicUrl})
+      //     .eq('id', user.id);
+
+      // 4. Update local state (for demo, use a mock URL)
+      setState(() {
+        user.profilePicUrl =
+            'https://example.com/profile.jpg'; // Replace with actual URL
+      });
+
+      Get.snackbar(
+        'Success',
+        'Profile picture updated',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.successColor,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Upload Failed',
+        'Error: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   /// =======================
@@ -259,14 +306,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? nationalIdCtrl.text.trim()
           : null;
 
-      // Parse date of birth
       if (dateOfBirthCtrl.text.isNotEmpty) {
         try {
           user.dateOfBirth = DateFormat(
             'dd-MM-yyyy',
           ).parse(dateOfBirthCtrl.text);
         } catch (e) {
-          // Handle parsing error
           user.dateOfBirth = null;
         }
       } else {
@@ -383,8 +428,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => isLoading = true);
       await Future.delayed(const Duration(seconds: 1));
       setState(() => isLoading = false);
-
-      // Navigate to login screen
       Get.offAllNamed('/login');
     }
   }
@@ -420,91 +463,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   /// =======================
-  /// UI COMPONENTS
+  /// UI BUILDERS
   /// =======================
-
-  Widget _buildProfileHeader() {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.borderColor, width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.primaryColor.withOpacity(0.1),
-              child: user.profilePicUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(40),
-                      child: Image.network(
-                        user.profilePicUrl!,
-                        fit: BoxFit.cover,
-                        width: 80,
-                        height: 80,
-                      ),
-                    )
-                  : Icon(Icons.person, size: 40, color: AppColors.primaryColor),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              user.fullNameDisplay,
-              style: GoogleFonts.nunito(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textColor,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                user.primaryRole,
-                style: GoogleFonts.nunito(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              user.email,
-              style: GoogleFonts.nunito(
-                fontSize: 14,
-                color: AppColors.subtextColor,
-              ),
-            ),
-            if (user.isEmailVerified) ...[
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.verified, size: 14, color: AppColors.successColor),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Verified Email',
-                    style: GoogleFonts.nunito(
-                      fontSize: 12,
-                      color: AppColors.successColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildInfoSection() {
     return Card(
@@ -531,7 +491,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
 
-              // First Name
               CustomTextField(
                 controller: firstNameCtrl,
                 labelText: 'First Name',
@@ -541,7 +500,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Last Name
               CustomTextField(
                 controller: lastNameCtrl,
                 labelText: 'Last Name',
@@ -551,7 +509,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Phone
               CustomTextField(
                 controller: phoneCtrl,
                 labelText: 'Phone Number (Optional)',
@@ -562,7 +519,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // KYC Fields (All Optional)
               Text(
                 'KYC Information (Optional)',
                 style: GoogleFonts.nunito(
@@ -573,7 +529,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // National ID Number
               CustomTextField(
                 controller: nationalIdCtrl,
                 labelText: 'National ID Number',
@@ -583,7 +538,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Date of Birth
               GestureDetector(
                 onTap: isEditing ? () => selectDateOfBirth(context) : null,
                 child: AbsorbPointer(
@@ -599,7 +553,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Address
               CustomTextField(
                 controller: addressCtrl,
                 labelText: 'Address',
@@ -609,7 +562,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Location
               CustomTextField(
                 controller: locationCtrl,
                 labelText: 'Location/City',
@@ -619,7 +571,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Edit/Save Buttons
               Row(
                 children: [
                   Expanded(
@@ -710,7 +661,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 12),
 
-            // KYC Status Indicator
             if (!user.hasCompletedBasicKyc)
               Container(
                 padding: const EdgeInsets.all(12),
@@ -792,102 +742,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             else
               Column(
                 children: user.documents.map((document) {
-                  return _buildDocumentItem(document);
+                  return DocumentItem(
+                    document: document,
+                    onDelete: () => deleteDocument(document.id),
+                  );
                 }).toList(),
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDocumentItem(Document document) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderColor, width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              Icons.description_outlined,
-              size: 24,
-              color: AppColors.primaryColor,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  document.typeString,
-                  style: GoogleFonts.nunito(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textColor,
-                  ),
-                ),
-                Text(
-                  document.fileName,
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    color: AppColors.subtextColor,
-                  ),
-                ),
-                if (document.notes != null && document.notes!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      document.notes!,
-                      style: GoogleFonts.nunito(
-                        fontSize: 11,
-                        color: AppColors.subtextColor,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time_outlined,
-                      size: 12,
-                      color: AppColors.subtextColor,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      DateFormat('dd MMM yyyy').format(document.uploadedAt),
-                      style: GoogleFonts.nunito(
-                        fontSize: 10,
-                        color: AppColors.subtextColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () => deleteDocument(document.id),
-            icon: Icon(
-              Icons.delete_outline,
-              size: 20,
-              color: AppColors.errorColor,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
       ),
     );
   }
@@ -915,7 +777,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Logout Button
             GeneralButton(
               btnColor: AppColors.surfaceColor,
               borderRadius: 8,
@@ -942,50 +803,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             const SizedBox(height: 12),
-
-            // Account Status
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppColors.primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Account Status',
-                          style: GoogleFonts.nunito(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                        Text(
-                          user.status.toString().split('.').last,
-                          style: GoogleFonts.nunito(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -1023,7 +840,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildProfileHeader().animate().fadeIn(duration: 300.ms),
+                ProfileHeader(
+                  user: user,
+                  onTap: _pickProfileImage, // Added onTap callback
+                ).animate().fadeIn(duration: 300.ms),
                 _buildInfoSection().animate().fadeIn(
                   duration: 400.ms,
                   delay: 100.ms,
