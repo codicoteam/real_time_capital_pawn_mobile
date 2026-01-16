@@ -7,6 +7,7 @@ import 'package:real_time_pawn/widgets/drawers/customer_drawer.dart'
     show CustomDrawer;
 
 import '../../../core/utils/pallete.dart';
+import '../../profile_mngmt/screens/profile_screen.dart' as MyProfile;
 import 'home_screen.dart';
 
 class MainHomePage extends StatefulWidget {
@@ -51,12 +52,7 @@ class _MainHomePageState extends State<MainHomePage> {
       ),
     ),
 
-    Container(
-      color: AppColors.backgroundColor,
-      child: const Center(
-        child: Text('Profile Page', style: TextStyle(fontSize: 24)),
-      ),
-    ),
+    MyProfile.ProfileScreen(),
   ];
 
   void _openDrawer() {
