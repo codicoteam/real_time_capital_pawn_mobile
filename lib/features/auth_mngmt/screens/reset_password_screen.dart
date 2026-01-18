@@ -30,7 +30,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
   final FocusNode newPasswordFocus = FocusNode();
   final FocusNode confirmPasswordFocus = FocusNode();
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
   bool _hasMinLength = false;

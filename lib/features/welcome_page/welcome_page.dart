@@ -4,9 +4,6 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
-import 'package:real_time_pawn/features/home_management/screens/main_screen.dart';
-
-import '../../config/routers/router.dart';
 
 /// Welcome screen with introduction_screen package using AppColors class
 class WelcomeScreen extends StatelessWidget {
@@ -49,50 +46,50 @@ class WelcomeScreen extends StatelessWidget {
       // Global styling
       globalBackgroundColor: AppColors.backgroundColor,
       skipStyle: ButtonStyle(
-        foregroundColor: MaterialStateProperty.all(AppColors.primaryColor),
-        padding: MaterialStateProperty.all(
+        foregroundColor: WidgetStateProperty.all(AppColors.primaryColor),
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
-        minimumSize: MaterialStateProperty.all(
+        minimumSize: WidgetStateProperty.all(
           const Size(60, 40),
         ), // Reduced minimum width
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        overlayColor: MaterialStateProperty.all(
+        overlayColor: WidgetStateProperty.all(
           AppColors.primaryColor.withOpacity(0.1),
         ),
       ),
       doneStyle: ButtonStyle(
-        foregroundColor: MaterialStateProperty.all(AppColors.primaryColor),
-        backgroundColor: MaterialStateProperty.all(
+        foregroundColor: WidgetStateProperty.all(AppColors.primaryColor),
+        backgroundColor: WidgetStateProperty.all(
           AppColors.primaryColor.withOpacity(0.1),
         ),
-        shape: MaterialStateProperty.all(
+        shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ), // Slightly smaller border radius
         ),
-        padding: MaterialStateProperty.all(
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         ),
-        minimumSize: MaterialStateProperty.all(
+        minimumSize: WidgetStateProperty.all(
           const Size(80, 40),
         ), // Reduced minimum width
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       nextStyle: ButtonStyle(
-        foregroundColor: MaterialStateProperty.all(AppColors.primaryColor),
-        backgroundColor: MaterialStateProperty.all(
+        foregroundColor: WidgetStateProperty.all(AppColors.primaryColor),
+        backgroundColor: WidgetStateProperty.all(
           AppColors.primaryColor.withOpacity(0.1),
         ),
-        shape: MaterialStateProperty.all(
+        shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ), // Slightly smaller border radius
         ),
-        padding: MaterialStateProperty.all(
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
-        minimumSize: MaterialStateProperty.all(
+        minimumSize: WidgetStateProperty.all(
           const Size(60, 40),
         ), // Reduced minimum width
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -189,7 +186,7 @@ class WelcomeScreen extends StatelessWidget {
 
   void _onIntroEnd(BuildContext context) async {
     await CacheUtils.updateOnboardingStatus(true).then((_) {
-    Get.to(() => const Login());
+      Get.to(() => const Login());
     });
   }
 }

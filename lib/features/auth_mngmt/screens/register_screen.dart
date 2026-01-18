@@ -71,7 +71,9 @@ class _SignUpState extends State<SignUp> {
               surface: AppColors.surfaceColor,
               onSurface: AppColors.textColor,
             ),
-            dialogBackgroundColor: AppColors.surfaceColor,
+            dialogTheme: DialogThemeData(
+              backgroundColor: AppColors.surfaceColor,
+            ),
           ),
           child: child!,
         );

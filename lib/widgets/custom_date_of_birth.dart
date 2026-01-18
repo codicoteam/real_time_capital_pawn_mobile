@@ -11,7 +11,7 @@ class CustomDateOfBirthField extends StatefulWidget {
   final Icon? prefixIcon;
   final bool? enabled;
 
-  CustomDateOfBirthField({
+  const CustomDateOfBirthField({
     super.key,
     this.controller,
     required this.labelText,
@@ -44,8 +44,9 @@ class _CustomDateOfBirthFieldState extends State<CustomDateOfBirthField> {
               onPrimary: Colors.white, // Text color on the primary color
               onSurface: AppColors.primaryColor, // Text color on the surface
             ),
-            dialogBackgroundColor:
-                Colors.white, // Background color of the dialog
+            dialogTheme: DialogThemeData(
+              backgroundColor: Colors.white,
+            ), // Background color of the dialog
           ),
           child: child!,
         );

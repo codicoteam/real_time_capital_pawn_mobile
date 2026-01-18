@@ -5,7 +5,6 @@ import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/widgets/custom_typography/typography.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String? profileImageUrl;
@@ -128,8 +127,6 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateAndClose(context, '/about'),
                   ).animate().fadeIn(delay: 300.ms),
 
-    
-
                   // Loans
                   _buildDrawerItem(
                     icon: Icons.account_balance_wallet_outlined,
@@ -145,8 +142,6 @@ class CustomDrawer extends StatelessWidget {
                     color: RealTimeColors.success,
                     onTap: () => _navigateAndClose(context, '/bid_payment'),
                   ).animate().fadeIn(delay: 360.ms),
-
-
 
                   // Notifications
                   _buildDrawerItem(
@@ -183,10 +178,12 @@ class CustomDrawer extends StatelessWidget {
                   // Loan Application
                   _buildDrawerItem(
                     icon: Icons.article_outlined,
-                    title: 'Loan Application',
+                    title: 'Loans Status',
                     color: RealTimeColors.darkGreen,
-                    onTap: () =>
-                        _navigateAndClose(context, '/loan_application'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.loanApplicationsScreen,
+                    ),
                   ).animate().fadeIn(delay: 520.ms),
 
                   // Payments
@@ -209,7 +206,6 @@ class CustomDrawer extends StatelessWidget {
 
                   // Extra space at bottom to prevent button overlap
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
-
                 ],
               ),
             ),
@@ -256,8 +252,6 @@ class CustomDrawer extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
-
-
 
   Widget _buildLogoutButton(BuildContext context) {
     return Padding(

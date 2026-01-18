@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
 class BounceFromLeftAnimation extends StatefulWidget {
-  const BounceFromLeftAnimation({Key? key, required this.child, required this.delay});
+  const BounceFromLeftAnimation({
+    key,
+    required this.child,
+    required this.delay,
+  });
 
   final Widget child;
   final double delay;
 
   @override
-  _BounceFromLeftAnimationState createState() => _BounceFromLeftAnimationState();
+  _BounceFromLeftAnimationState createState() =>
+      _BounceFromLeftAnimationState();
 }
 
 class _BounceFromLeftAnimationState extends State<BounceFromLeftAnimation>
@@ -23,8 +28,10 @@ class _BounceFromLeftAnimationState extends State<BounceFromLeftAnimation>
       vsync: this,
     );
 
-    final Animation<double> curve = 
-        CurvedAnimation(parent: controller, curve: Curves.easeOutCubic);
+    final Animation<double> curve = CurvedAnimation(
+      parent: controller,
+      curve: Curves.easeOutCubic,
+    );
 
     animation = Tween<double>(begin: -100.0, end: 0.0).animate(curve)
       ..addListener(() {

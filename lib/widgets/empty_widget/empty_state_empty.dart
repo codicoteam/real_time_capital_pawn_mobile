@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
 
 class EmptyStateWidget extends StatelessWidget {
   final String icon;
@@ -20,27 +18,17 @@ class EmptyStateWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            icon,
-            height: 200,
-            width: 200,
-          ),
+          Image.asset(icon, height: 200, width: 200),
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),

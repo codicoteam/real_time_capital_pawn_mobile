@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/widgets/custom_button/general_button.dart';
-import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 import '../models/profile_models.dart';
 
 class ProfileHeader extends StatelessWidget {

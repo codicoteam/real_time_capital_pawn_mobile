@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:real_time_pawn/widgets/custom_typography/typography.dart';
 
 /// =======================================
@@ -67,12 +66,10 @@ class Pallete {
       secondary: AppColors.secondaryColor,
       tertiary: AppColors.accentColor,
       surface: AppColors.surfaceColor,
-      background: AppColors.backgroundColor,
       error: AppColors.errorColor,
       onPrimary: RealTimeColors.logoWhite,
       onSecondary: RealTimeColors.logoWhite,
       onSurface: AppColors.textColor,
-      onBackground: AppColors.textColor,
       onError: RealTimeColors.logoWhite,
     ),
 

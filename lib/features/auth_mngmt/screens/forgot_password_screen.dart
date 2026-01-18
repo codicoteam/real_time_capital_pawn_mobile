@@ -17,7 +17,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController emailController = TextEditingController();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void dispose() {
@@ -37,8 +37,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: AppColors.textColor),
-          onPressed: (){
-              Get.offNamed(RoutesHelper.loginScreen);
+          onPressed: () {
+            Get.offNamed(RoutesHelper.loginScreen);
           },
         ),
       ),

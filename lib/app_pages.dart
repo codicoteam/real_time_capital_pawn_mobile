@@ -4,8 +4,12 @@ import 'package:real_time_pawn/features/auth_mngmt/screens/forgot_password_scree
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/verify_otp_screen.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart'
+    show LoanApplicationDetailsScreen;
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
+import 'package:real_time_pawn/models/loan_application_model.dart';
 
 import 'features/auth_mngmt/screens/account_verification_screen.dart';
 import 'features/auth_mngmt/screens/confirm_email_screen.dart';
@@ -169,6 +173,26 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
+
+    GetPage(
+      name: RoutesHelper.loanApplicationsScreen,
+      page: () => const LoanApplicationsListScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.loanApplicationDetailsScreen,
+      page: () {
+        final application = Get.arguments as LoanApplication;
+        return LoanApplicationDetailsScreen(application: application);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
     // GetPage(
     //   name: RoutesHelper.all_races_page,
     //   page: () => const AllRacesScreen(),

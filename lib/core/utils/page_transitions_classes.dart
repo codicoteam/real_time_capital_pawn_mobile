@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:page_transition/page_transition.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 // Enhanced Custom Page Transition
@@ -19,19 +18,18 @@ class CustomPageTransition extends CustomTransition {
         // Outgoing page with fade and scale
         if (secondaryAnimation.value > 0)
           FadeTransition(
-            opacity: Tween<double>(
-              begin: 1.0,
-              end: 0.0,
-            ).animate(CurvedAnimation(
-              parent: secondaryAnimation,
-              curve: Curves.easeInCubic,
-            )),
+            opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
+              CurvedAnimation(
+                parent: secondaryAnimation,
+                curve: Curves.easeInCubic,
+              ),
+            ),
             child: Transform.scale(
               scale: 1.0 - (secondaryAnimation.value * 0.1),
               child: Container(), // Previous page content
             ),
           ),
-        
+
         // Incoming page with fade and slide
         FadeTransition(
           opacity: CurvedAnimation(
@@ -39,13 +37,16 @@ class CustomPageTransition extends CustomTransition {
             curve: Curves.easeOutCubic,
           ),
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.05, 0.0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0.05, 0.0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: child,
           ),
         ),
@@ -85,12 +86,12 @@ class BlurFadeTransition extends CustomTransition {
 class AnimatedPageWrapper extends StatelessWidget {
   final Widget child;
   final String title;
-  
+
   const AnimatedPageWrapper({
-    Key? key,
+    super.key,
     required this.child,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -103,18 +104,20 @@ class AnimatedPageWrapper extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-                .animate()
-                .fadeIn(delay: const Duration(milliseconds: 200))
-                .slideX(begin: -0.2, duration: const Duration(milliseconds: 400)),
+                      title,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    )
+                    .animate()
+                    .fadeIn(delay: const Duration(milliseconds: 200))
+                    .slideX(
+                      begin: -0.2,
+                      duration: const Duration(milliseconds: 400),
+                    ),
               ],
             ),
           ),
-          
+
           // Content with staggered animation
           Expanded(
             child: child

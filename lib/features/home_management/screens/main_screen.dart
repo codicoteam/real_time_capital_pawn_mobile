@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:get/get.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:real_time_pawn/widgets/drawers/customer_drawer.dart';
 import 'package:real_time_pawn/widgets/drawers/customer_drawer.dart'
@@ -9,6 +7,7 @@ import 'package:real_time_pawn/widgets/drawers/customer_drawer.dart'
 import '../../../core/utils/pallete.dart';
 import '../../profile_mngmt/screens/profile_screen.dart' as MyProfile;
 import 'home_screen.dart';
+import '../../loan_application_mngmt/screens/loan_application_step1.dart'; // ADD THIS
 
 class MainHomePage extends StatefulWidget {
   const MainHomePage({super.key});
@@ -34,16 +33,8 @@ class _MainHomePageState extends State<MainHomePage> {
       ),
     ),
 
-    // 👇 APPLY LOAN SCREEN (REQUIRED)
-    Container(
-      color: AppColors.backgroundColor,
-      child: const Center(
-        child: Text(
-          'Apply Loan',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-        ),
-      ),
-    ),
+    // 👇 EMPTY CONTAINER - We'll navigate instead
+    Container(color: AppColors.backgroundColor),
 
     Container(
       color: AppColors.backgroundColor,
@@ -92,13 +83,23 @@ class _MainHomePageState extends State<MainHomePage> {
             ),
           ],
         ),
-
         handleAndroidBackButtonPress: true,
         resizeToAvoidBottomInset: true,
         stateManagement: true,
-
         onItemSelected: (index) {
-          // Handle tab selection if needed
+          if (index == 2) {
+            // Center "Apply" button
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LoanApplicationStep1(),
+              ),
+            );
+            // Reset to home tab
+            Future.delayed(Duration.zero, () {
+              _tabController.index = 0;
+            });
+          }
         },
       ),
     );
@@ -113,7 +114,6 @@ class _MainHomePageState extends State<MainHomePage> {
         inactiveColorPrimary: AppColors.subtextColor,
         activeColorSecondary: AppColors.primaryColor,
       ),
-
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.account_balance_wallet_rounded, size: 24),
         title: "Loans",
@@ -121,19 +121,14 @@ class _MainHomePageState extends State<MainHomePage> {
         inactiveColorPrimary: AppColors.subtextColor,
         activeColorSecondary: AppColors.primaryColor,
       ),
-
       // 👇 APPLY LOAN (CENTER BUTTON)
       PersistentBottomNavBarItem(
-        icon: const Icon(
-          Icons.add_circle,
-          size: 40, // 👈 Bigger center button
-        ),
+        icon: const Icon(Icons.add_circle, size: 40),
         title: "Apply",
         activeColorPrimary: AppColors.primaryColor,
         inactiveColorPrimary: AppColors.primaryColor,
         activeColorSecondary: AppColors.backgroundColor,
       ),
-
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.notifications_rounded, size: 24),
         title: "Alerts",
@@ -141,7 +136,6 @@ class _MainHomePageState extends State<MainHomePage> {
         inactiveColorPrimary: AppColors.subtextColor,
         activeColorSecondary: AppColors.primaryColor,
       ),
-
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.person_rounded, size: 24),
         title: "Profile",

@@ -579,6 +579,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? Colors.grey
                           : AppColors.primaryColor,
                       borderRadius: 8,
+                      onTap: toggleEdit,
                       child: Text(
                         isEditing ? 'Cancel' : 'Edit Profile',
                         style: GoogleFonts.nunito(
@@ -586,7 +587,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      onTap: toggleEdit,
                     ),
                   ),
                   if (isEditing) ...[
@@ -595,6 +595,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: GeneralButton(
                         btnColor: AppColors.primaryColor,
                         borderRadius: 8,
+                        onTap: saveProfile,
                         child: Text(
                           'Save Changes',
                           style: GoogleFonts.nunito(
@@ -602,7 +603,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        onTap: saveProfile,
                       ),
                     ),
                   ],
@@ -698,6 +698,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               btnColor: AppColors.surfaceColor,
               borderRadius: 8,
               boxBorder: Border.all(color: AppColors.primaryColor, width: 1.5),
+              onTap: uploadDocument,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -716,7 +717,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              onTap: uploadDocument,
             ),
 
             const SizedBox(height: 20),
@@ -781,6 +781,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               btnColor: AppColors.surfaceColor,
               borderRadius: 8,
               boxBorder: Border.all(color: AppColors.borderColor, width: 1.5),
+              onTap: logout,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -799,7 +800,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              onTap: logout,
             ),
 
             const SizedBox(height: 12),

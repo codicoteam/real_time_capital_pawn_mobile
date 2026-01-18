@@ -6,7 +6,7 @@ import 'package:lottie/lottie.dart'; // Add this to pubspec.yaml: lottie: ^2.7.0
 import '../../../core/utils/pallete.dart' show AppColors;
 
 class FaqScreen extends StatefulWidget {
-  const FaqScreen({Key? key}) : super(key: key);
+  const FaqScreen({super.key});
 
   @override
   State<FaqScreen> createState() => _FaqScreenState();
@@ -231,35 +231,38 @@ class _FaqScreenState extends State<FaqScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(color: Colors.white30, width: 2),
-                      ),
-                      child: Icon(
-                        Icons.quiz_rounded,
-                        size: 60,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    )
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(color: Colors.white30, width: 2),
+                          ),
+                          child: Icon(
+                            Icons.quiz_rounded,
+                            size: 60,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        )
                         .animate()
                         .scale(duration: 600.ms, curve: Curves.elasticOut)
                         .fadeIn(duration: 400.ms),
                     const SizedBox(height: 16),
                     Text(
-                      'Instant Collateral Loans & Auctions',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                    )
+                          'Instant Collateral Loans & Auctions',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
                         .animate(delay: 200.ms)
                         .slideY(
-                            begin: 0.5, duration: 500.ms, curve: Curves.easeOut)
+                          begin: 0.5,
+                          duration: 500.ms,
+                          curve: Curves.easeOut,
+                        )
                         .fadeIn(duration: 400.ms),
                     const SizedBox(height: 8),
                     Text(
@@ -268,9 +271,7 @@ class _FaqScreenState extends State<FaqScreen>
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 14,
                       ),
-                    )
-                        .animate(delay: 300.ms)
-                        .fadeIn(duration: 400.ms),
+                    ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
                   ],
                 ),
               ),
@@ -317,14 +318,18 @@ class _FaqScreenState extends State<FaqScreen>
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   style: TextStyle(
-                      color: Colors.grey.shade800,
-                      fontWeight: FontWeight.w500),
+                    color: Colors.grey.shade800,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               if (searchQuery.isNotEmpty)
                 IconButton(
-                  icon: Icon(Icons.clear,
-                      color: Colors.blue.shade600, size: 22),
+                  icon: Icon(
+                    Icons.clear,
+                    color: Colors.blue.shade600,
+                    size: 22,
+                  ),
                   onPressed: () {
                     _searchController.clear();
                     setState(() {
@@ -434,8 +439,10 @@ class _FaqScreenState extends State<FaqScreen>
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: _getCategoryColor(category).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -458,7 +465,7 @@ class _FaqScreenState extends State<FaqScreen>
                 final globalIndex = _faqItems.indexOf(item);
 
                 return _buildFaqItem(item, globalIndex, itemIndex * 100);
-              }).toList(),
+              }),
             ],
           ),
         )
@@ -564,8 +571,11 @@ class _FaqScreenState extends State<FaqScreen>
                 Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
-                      margin:
-                          const EdgeInsets.only(top: 8, left: 16, right: 16),
+                      margin: const EdgeInsets.only(
+                        top: 8,
+                        left: 16,
+                        right: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: item.iconColor.withOpacity(0.03),
                         borderRadius: BorderRadius.circular(12),
@@ -579,8 +589,11 @@ class _FaqScreenState extends State<FaqScreen>
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.info_outline_rounded,
-                                  size: 18, color: item.iconColor),
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: 18,
+                                color: item.iconColor,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'Detailed Answer',
@@ -632,8 +645,10 @@ class _FaqScreenState extends State<FaqScreen>
         Expanded(
           child: OutlinedButton.icon(
             icon: Icon(Icons.chat, size: 18, color: Colors.blue),
-            label: Text('Live Chat',
-                style: TextStyle(fontSize: 13, color: Colors.blue)),
+            label: Text(
+              'Live Chat',
+              style: TextStyle(fontSize: 13, color: Colors.blue),
+            ),
             onPressed: () {},
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -669,19 +684,19 @@ class _FaqScreenState extends State<FaqScreen>
       child: Column(
         children: [
           Container(
-            width: 150,
-            height: 150,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(75),
-              border: Border.all(color: Colors.blue.shade100, width: 2),
-            ),
-            child: Icon(
-              Icons.search_off_rounded,
-              size: 80,
-              color: Colors.blue.shade300,
-            ),
-          )
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(75),
+                  border: Border.all(color: Colors.blue.shade100, width: 2),
+                ),
+                child: Icon(
+                  Icons.search_off_rounded,
+                  size: 80,
+                  color: Colors.blue.shade300,
+                ),
+              )
               .animate()
               .scale(duration: 600.ms, curve: Curves.elasticOut)
               .fadeIn(duration: 400.ms),
@@ -701,32 +716,32 @@ class _FaqScreenState extends State<FaqScreen>
           Text(
                 'Try searching for "loan application", "auction", "payment", or "collateral"',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 15,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
               )
               .animate(delay: 400.ms)
               .slideY(begin: 0.3, duration: 400.ms, curve: Curves.easeOut)
               .fadeIn(duration: 300.ms),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            icon: Icon(Icons.explore, size: 18),
-            label: Text('Browse All Categories'),
-            onPressed: () {
-              _searchController.clear();
-              setState(() {
-                searchQuery = '';
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade600,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          )
+                icon: Icon(Icons.explore, size: 18),
+                label: Text('Browse All Categories'),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() {
+                    searchQuery = '';
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade600,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )
               .animate(delay: 600.ms)
               .scale(duration: 400.ms, curve: Curves.easeOutBack)
               .fadeIn(duration: 300.ms),

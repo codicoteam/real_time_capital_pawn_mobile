@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auth_mngmt/helpers/auth_mngmt_helper.dart';
+
 class VerifyOtpScreen extends StatefulWidget {
   final String email;
   final String? phoneNumber;
@@ -27,7 +27,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   final TextEditingController otpController = TextEditingController();
   final FocusNode focusNode = FocusNode();
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isResending = false;
   int _resendCountdown = 60;
   late AnimationController _countdownController;

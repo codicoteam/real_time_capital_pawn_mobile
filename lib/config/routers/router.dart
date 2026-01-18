@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 class RoutesHelper {
   static String initialScreen = "/";
   static String unknownScreen = "/";
@@ -8,7 +7,8 @@ class RoutesHelper {
   static String resetPasswordScreen = "/reset_password";
   static String otpVerificationScreen = "/otp_verification";
   static String EmailVerificationScreen = "/email_verificatin";
-  static String AccountVerificationSuccessful = "/account_verification_successful";
+  static String AccountVerificationSuccessful =
+      "/account_verification_successful";
   static String HomePage = "/home_page";
   static String main_home_page = "/main_home_page";
   static String all_races_page = "/all_races_page";
@@ -30,7 +30,8 @@ class RoutesHelper {
   static String profileScreen = "/profile_screen";
   static String viewCoachingCourseDetails = "/view_coaching_course_details";
   static String allCoachingCourseScreen = "/all_coaching_course_screen";
-  static String coachingCourseBookingSuccess = "/coaching_course_booking_success";
+  static String coachingCourseBookingSuccess =
+      "/coaching_course_booking_success";
   static String viewCourseBookingDetails = "/view_course_booking_details";
   static String allCourseBookingsScreen = "/all_course_bookings_screen";
   static String trainingPackagesScreen = "/training_packages_screen";
@@ -39,10 +40,15 @@ class RoutesHelper {
   static String injuryDetailsScreen = "/injury_details_screen";
   static String membershipScreen = "/membership_screen";
   static String allTrainingProgram = "/all_training_program";
-  static String trainingProgramDetailsScreen= "/training_program_details_screen";
+  static String trainingProgramDetailsScreen =
+      "/training_program_details_screen";
   static String allRaceExperienceScreen = "/all_race_experience_screen";
   static String faqScreen = "/faq_screen";
   static String aboutScreen = "/about_screen";
   static String helpAndSupportScreen = "/help_and_support_screen";
+
+  static String loanApplicationsScreen = '/loan-applications';
+  static String loanApplicationDetailsScreen = '/loan-application-details';
+
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

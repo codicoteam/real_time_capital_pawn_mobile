@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -53,7 +51,8 @@ class CustomDatePicker extends StatefulWidget {
     this.fillColor,
     this.borderColor,
     this.inputFormatter,
-    this.textAlign = TextAlign.start, required this.lastDate,
+    this.textAlign = TextAlign.start,
+    required this.lastDate,
   });
 
   @override
@@ -75,28 +74,27 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     return TextField(
       readOnly: true,
       onTap: () async {
-        DateTime pickedDate = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(
-                2000), //DateTime.now() - not to allow to choose before today.
-            lastDate: DateTime(widget.lastDate)) as DateTime;
+        DateTime pickedDate =
+            await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(
+                    2000,
+                  ), //DateTime.now() - not to allow to choose before today.
+                  lastDate: DateTime(widget.lastDate),
+                )
+                as DateTime;
 
-        if (pickedDate != null) {
-          print(
-              pickedDate); //pickedDate output format => 2021-03-10 00:00:00.000
-          String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
-          print(
-              formattedDate); //formatted date output using intl package =>  2021-03-16
-          //you can implement different kind of Date Format here according to your requirement
+        print(pickedDate); //pickedDate output format => 2021-03-10 00:00:00.000
+        String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+        print(
+          formattedDate,
+        ); //formatted date output using intl package =>  2021-03-16
+        //you can implement different kind of Date Format here according to your requirement
 
-          setState(() {
-            dateinput.text =
-                formattedDate; //set output date to TextField value.
-          });
-        } else {
-          print("Date is not selected");
-        }
+        setState(() {
+          dateinput.text = formattedDate; //set output date to TextField value.
+        });
       },
       textAlign: widget.textAlign,
       maxLines: widget.maxLines,
@@ -111,24 +109,26 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
       autofillHints: widget.inputType == TextInputType.name
           ? [AutofillHints.name]
           : widget.inputType == TextInputType.emailAddress
-              ? [AutofillHints.email]
-              : widget.inputType == TextInputType.phone
-                  ? [AutofillHints.telephoneNumber]
-                  : widget.inputType == TextInputType.streetAddress
-                      ? [AutofillHints.fullStreetAddress]
-                      : widget.inputType == TextInputType.url
-                          ? [AutofillHints.url]
-                          : widget.inputType == TextInputType.visiblePassword
-                              ? [AutofillHints.password]
-                              : null,
+          ? [AutofillHints.email]
+          : widget.inputType == TextInputType.phone
+          ? [AutofillHints.telephoneNumber]
+          : widget.inputType == TextInputType.streetAddress
+          ? [AutofillHints.fullStreetAddress]
+          : widget.inputType == TextInputType.url
+          ? [AutofillHints.url]
+          : widget.inputType == TextInputType.visiblePassword
+          ? [AutofillHints.password]
+          : null,
       obscureText: widget.isPassword ? _obscureText : false,
-      inputFormatters: widget.inputFormatter ??
+      inputFormatters:
+          widget.inputFormatter ??
           (widget.inputType == TextInputType.phone
               ? <TextInputFormatter>[
-                  FilteringTextInputFormatter.allow(RegExp('[0-9+]'))
+                  FilteringTextInputFormatter.allow(RegExp('[0-9+]')),
                 ]
               : null),
-      decoration: widget.inputDecoration ??
+      decoration:
+          widget.inputDecoration ??
           InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -141,18 +141,20 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
             filled: true,
             prefixIcon: widget.prefixIcon != null
                 ? Padding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 8
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Image.asset(
+                      widget.prefixIcon!,
+                      height: 20,
+                      width: 20,
                     ),
-                    child:
-                        Image.asset(widget.prefixIcon!, height: 20, width: 20),
                   )
                 : null,
             suffixIcon: widget.isPassword
                 ? IconButton(
                     icon: Icon(
-                        _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: Theme.of(context).hintColor.withOpacity(0.3)),
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Theme.of(context).hintColor.withOpacity(0.3),
+                    ),
                     onPressed: _toggle,
                   )
                 : null,
@@ -161,25 +163,28 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
             focusedBorder: widget.borderColor == null
                 ? null
                 : OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(widget.borderRadius ?? 0),
+                    borderRadius: BorderRadius.circular(
+                      widget.borderRadius ?? 0,
+                    ),
                     borderSide: BorderSide(color: widget.borderColor!),
                   ),
             enabledBorder: widget.borderColor == null
                 ? null
                 : OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(widget.borderRadius ?? 0),
+                    borderRadius: BorderRadius.circular(
+                      widget.borderRadius ?? 0,
+                    ),
                     borderSide: BorderSide(color: widget.borderColor!),
                   ),
           ),
       onSubmitted: (text) => widget.nextFocus != null
           ? FocusScope.of(context).requestFocus(widget.nextFocus)
           : widget.onSubmit != null
-              ? widget.onSubmit!(text)
-              : null,
-      onChanged:
-          widget.onChanged != null ? (value) => widget.onChanged!(value) : null,
+          ? widget.onSubmit!(text)
+          : null,
+      onChanged: widget.onChanged != null
+          ? (value) => widget.onChanged!(value)
+          : null,
     );
   }
 

@@ -7,7 +7,7 @@ import 'package:real_time_pawn/core/utils/pallete.dart'
 import 'package:lottie/lottie.dart';
 
 class TermsOfServiceScreen extends StatefulWidget {
-  const TermsOfServiceScreen({Key? key}) : super(key: key);
+  const TermsOfServiceScreen({super.key});
 
   @override
   State<TermsOfServiceScreen> createState() => _TermsOfServiceScreenState();

@@ -1,5 +1,4 @@
 // lib/features/profile_mngmt/models/profile_models.dart
-import 'package:intl/intl.dart';
 
 enum DocumentType { national_id, passport, proof_of_address, other }
 
