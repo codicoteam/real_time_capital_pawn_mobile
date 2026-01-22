@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
+import 'package:real_time_pawn/features/test/curved_edges.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
 
 class LoanApplicationsListScreen extends StatefulWidget {
@@ -96,324 +97,372 @@ class _LoanApplicationsListScreenState
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            children: [
-              // Header with Gradient
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF007AFF), Color(0xFF0056CC)],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // AppBar content
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person_outline,
-                            color: AppColors.primaryColor,
-                            size: 24,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Hi, Ipanoshi Chirume',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Welcome Back!',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      '\$18,750.00',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Total Requested Loans',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
+        child: Stack(
+          children: [
+            // SingleChildScrollView for the entire content
+            SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  // Add space for the header (height: 300 - 70 for the curve overlap)
+                  const SizedBox(height: 230),
 
-              // Search & Filters Section
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 20,
-                ),
-                child: Column(
-                  children: [
-                    // Search Bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderColor),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.search,
-                            color: AppColors.subtextColor,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Search applications...',
-                                hintStyle: GoogleFonts.poppins(
-                                  color: AppColors.subtextColor,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              style: GoogleFonts.poppins(
-                                color: AppColors.textColor,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
+                  // Search & Filters Section - now inside the white body
+                  Container(
+                    padding: const EdgeInsets.only(top: 24),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Filter Chips
-                    Row(
+                    child: Column(
                       children: [
-                        // Newest Dropdown
+                        // Search Bar
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: AppColors.borderColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedFilter,
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                color: AppColors.subtextColor,
                                 size: 20,
                               ),
-                              style: GoogleFonts.poppins(
-                                color: AppColors.textColor,
-                                fontSize: 14,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: 'Search applications...',
+                                    hintStyle: GoogleFonts.poppins(
+                                      color: AppColors.subtextColor,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  style: GoogleFonts.poppins(
+                                    color: AppColors.textColor,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ),
-                              items: _filterOptions.map((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _selectedFilter = newValue!;
-                                });
-                              },
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Filter Chips
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            children: [
+                              // Newest Dropdown
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.borderColor,
+                                  ),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedFilter,
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      size: 20,
+                                    ),
+                                    style: GoogleFonts.poppins(
+                                      color: AppColors.textColor,
+                                      fontSize: 14,
+                                    ),
+                                    items: _filterOptions.map((String value) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    }).toList(),
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        _selectedFilter = newValue!;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // Filter Icon Button
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.borderColor,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.filter_alt_outlined,
+                                  color: AppColors.textColor,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // Another Filter Icon Button
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.borderColor,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.tune,
+                                  color: AppColors.textColor,
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Loan Applications List
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            children: [
+                              ..._loanApplications
+                                  .map(
+                                    (application) =>
+                                        _buildLoanCard(application),
+                                  )
+                                  .toList(),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
+
+                        // Pagination
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, -5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                onPressed: () {},
+                                icon: Icon(
+                                  Icons.arrow_back_ios,
+                                  color: AppColors.textColor,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Text(
+                                'Page 1 of 5',
+                                style: GoogleFonts.poppins(
+                                  color: AppColors.textColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              IconButton(
+                                onPressed: () {},
+                                icon: Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: AppColors.textColor,
+                                  size: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Bottom Navigation Bar
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border(
+                              top: BorderSide(color: AppColors.borderColor),
                             ),
                           ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildBottomNavItem(
+                                Icons.home_outlined,
+                                'Home',
+                                false,
+                              ),
+                              _buildBottomNavItem(
+                                Icons.request_quote_outlined,
+                                'Loans',
+                                true,
+                              ),
+                              // FAB-style center button
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryColor,
+                                  borderRadius: BorderRadius.circular(28),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primaryColor.withOpacity(
+                                        0.3,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                              _buildBottomNavItem(
+                                Icons.history_outlined,
+                                'History',
+                                false,
+                              ),
+                              _buildBottomNavItem(
+                                Icons.person_outline,
+                                'Profile',
+                                false,
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 12),
-
-                        // Filter Icon Button
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.borderColor),
-                          ),
-                          child: Icon(
-                            Icons.filter_alt_outlined,
-                            color: AppColors.textColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Another Filter Icon Button
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.borderColor),
-                          ),
-                          child: Icon(
-                            Icons.tune,
-                            color: AppColors.textColor,
-                            size: 20,
-                          ),
-                        ),
+                        const SizedBox(height: 12), // Extra padding at bottom
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
 
-              // Loan Applications List
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    ..._loanApplications
-                        .map((application) => _buildLoanCard(application))
-                        .toList(),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-
-              // Pagination
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
+            // Header with Smooth Concave Curve - positioned above
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: ClipPath(
+                clipper: TCustomCurvedEdges(),
+                child: Container(
+                  height: 300,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF007AFF), Color(0xFF0056CC)],
                     ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.arrow_back_ios,
-                        color: AppColors.textColor,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      'Page 1 of 5',
-                      style: GoogleFonts.poppins(
-                        color: AppColors.textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.arrow_forward_ios,
-                        color: AppColors.textColor,
-                        size: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Bottom Navigation Bar
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(top: BorderSide(color: AppColors.borderColor)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildBottomNavItem(Icons.home_outlined, 'Home', false),
-                    _buildBottomNavItem(
-                      Icons.request_quote_outlined,
-                      'Loans',
-                      true,
-                    ),
-                    // FAB-style center button
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryColor.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // AppBar content
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.person_outline,
+                              color: AppColors.primaryColor,
+                              size: 24,
+                            ),
                           ),
                         ],
                       ),
-                      child: Icon(Icons.add, color: Colors.white, size: 24),
-                    ),
-                    _buildBottomNavItem(
-                      Icons.history_outlined,
-                      'History',
-                      false,
-                    ),
-                    _buildBottomNavItem(Icons.person_outline, 'Profile', false),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'Hi, Ipanoshi Chirume',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Welcome Back!',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        '\$18,750.00',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Total Requested Loans',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -571,4 +620,50 @@ class _LoanApplicationsListScreenState
       ],
     );
   }
+}
+
+/// Smooth bottom concave curve
+/// Smooth bottom convex curve (matching your screenshot)
+/// Alternative convex curve
+/// Test different curves to match your screenshot
+/// Convex curve with straight middle and rounded edges
+class SmoothConcaveHeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // Start from top-left corner
+    path.lineTo(0, 0);
+
+    // Move to start of curve (leave some space for rounded edge)
+    path.lineTo(0, size.height - 50);
+
+    // Left rounded edge (quadratic curve)
+    path.quadraticBezierTo(
+      size.width * 0.15, // Control point X (15% of width)
+      size.height - 30, // Control point Y (start curving up)
+      size.width * 0.3, // End point X (30% of width)
+      size.height - 80, // End point Y (peak height)
+    );
+
+    // Straight middle part (flat top)
+    path.lineTo(size.width * 0.7, size.height - 80);
+
+    // Right rounded edge (quadratic curve)
+    path.quadraticBezierTo(
+      size.width * 0.85, // Control point X (85% of width)
+      size.height - 30, // Control point Y (start curving down)
+      size.width, // End point X (right edge)
+      size.height - 50, // End point Y (back to baseline)
+    );
+
+    // Complete the rectangle
+    path.lineTo(size.width, 0);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

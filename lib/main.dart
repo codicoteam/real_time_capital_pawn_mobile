@@ -3,47 +3,49 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
+import 'package:real_time_pawn/features/test/homescreen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 
 import 'app_pages.dart';
 import 'features/auth_mngmt/controllers/auth_controller.dart';
 
 void main() {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    // // 1) Firebase (explicit options = more reliable)
-    // await Firebase.initializeApp(
-    //   options: DefaultFirebaseOptions.currentPlatform,
-    // );
-    // debugPrint('✅ Firebase initialized');
+      // // 1) Firebase (explicit options = more reliable)
+      // await Firebase.initializeApp(
+      //   options: DefaultFirebaseOptions.currentPlatform,
+      // );
+      // debugPrint('✅ Firebase initialized');
 
-    // // 2) Notifications / FCM
-    // final messagingService = FirebaseMessagingService();
-    // await messagingService.initialize(); // your service handles permission + channels as needed
-    // debugPrint('✅ Firebase Messaging initialized');
+      // // 2) Notifications / FCM
+      // final messagingService = FirebaseMessagingService();
+      // await messagingService.initialize(); // your service handles permission + channels as needed
+      // debugPrint('✅ Firebase Messaging initialized');
 
-    // // 3) Supabase
-    // await Supabase.initialize(
-    //   url: ApiKeys.supabaseUrl,
-    //   anonKey: ApiKeys.supabaseKey,
-    // );
-    // debugPrint('✅ Supabase initialized');
+      // // 3) Supabase
+      // await Supabase.initialize(
+      //   url: ApiKeys.supabaseUrl,
+      //   anonKey: ApiKeys.supabaseKey,
+      // );
+      // debugPrint('✅ Supabase initialized');
 
-    // // 4) Inject controllers
+      // // 4) Inject controllers
 
-    Get.put(AuthController());
- 
+      Get.put(AuthController());
 
-    runApp(const MyApp());
-  }, (error, stack) {
-    // Minimal crash logging so startup failures aren’t silent
-    debugPrint('❌ Uncaught error in main(): $error');
-    debugPrint('$stack');
-  });
+      runApp(const MyApp());
+    },
+    (error, stack) {
+      // Minimal crash logging so startup failures aren’t silent
+      debugPrint('❌ Uncaught error in main(): $error');
+      debugPrint('$stack');
+    },
+  );
 }
-
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -56,14 +58,13 @@ class MyApp extends StatelessWidget {
       theme: Pallete.appTheme,
       initialRoute: '/',
       getPages: AppPages.pages,
-      home: const SplashScreen(),
+      home: const HomeScreen(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
 
   final String title;
 
@@ -76,7 +77,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _incrementCounter() {
     setState(() {
-
       _counter++;
     });
   }
