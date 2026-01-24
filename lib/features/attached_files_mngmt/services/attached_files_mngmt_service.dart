@@ -1,18 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:http/http.dart' as http;
 import 'package:real_time_pawn/config/api_config/api_keys.dart';
-
 import '../../../core/utils/api_response.dart';
 import '../../../core/utils/logs.dart';
 import '../../../core/utils/shared_pref_methods.dart';
 import '../../../models/attachment_model.dart';
 
-
 class AttachmentService {
   /// 🔹 Fetch attachments by userId and entityType
-  static Future<APIResponse<List<AttachmentModel>>> getAttachmentsByUserAndEntity({
+  static Future<APIResponse<List<AttachmentModel>>>
+  getAttachmentsByUserAndEntity({
     required String userId,
     required String entityType,
   }) async {
@@ -50,8 +48,7 @@ class AttachmentService {
       } else {
         return APIResponse<List<AttachmentModel>>(
           success: false,
-          message:
-              'Failed to fetch attachments. HTTP ${response.statusCode}',
+          message: 'Failed to fetch attachments. HTTP ${response.statusCode}',
         );
       }
     } catch (e) {
@@ -78,8 +75,7 @@ class AttachmentService {
   }) async {
     final token = await CacheUtils.checkToken();
 
-    final uri =
-        Uri.parse('${ApiKeys.baseUrl}/attachments/upload');
+    final uri = Uri.parse('${ApiKeys.baseUrl}/attachments/upload');
 
     try {
       final request = http.MultipartRequest('POST', uri);
@@ -102,17 +98,11 @@ class AttachmentService {
 
       /// Optional file
       if (file != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'file',
-            file.path,
-          ),
-        );
+        request.files.add(await http.MultipartFile.fromPath('file', file.path));
       }
 
       final streamedResponse = await request.send();
-      final responseBody =
-          await streamedResponse.stream.bytesToString();
+      final responseBody = await streamedResponse.stream.bytesToString();
 
       DevLogs.logInfo('Upload attachment response: $responseBody');
 
@@ -120,20 +110,17 @@ class AttachmentService {
           streamedResponse.statusCode == 201) {
         final decoded = json.decode(responseBody);
 
-        final attachment =
-            AttachmentModel.fromMap(decoded['data']);
+        final attachment = AttachmentModel.fromMap(decoded['data']);
 
         return APIResponse<AttachmentModel>(
           success: true,
           data: attachment,
-          message: decoded['message'] ??
-              'Attachment uploaded successfully',
+          message: decoded['message'] ?? 'Attachment uploaded successfully',
         );
       } else {
         return APIResponse<AttachmentModel>(
           success: false,
-          message:
-              'Upload failed. HTTP ${streamedResponse.statusCode}',
+          message: 'Upload failed. HTTP ${streamedResponse.statusCode}',
         );
       }
     } catch (e) {
