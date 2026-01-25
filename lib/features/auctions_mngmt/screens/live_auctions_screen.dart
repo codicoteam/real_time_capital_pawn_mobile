@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
@@ -100,10 +101,15 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
                       }),
                     ],
                   ),
+                  // Add a search button here if you want
+                  // Add history icon here too
                   IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () {
+                      Get.toNamed(RoutesHelper.userBiddingHistoryScreen);
+                    },
+                    icon: const Icon(Icons.history_outlined),
                     color: AppColors.textColor,
+                    tooltip: 'View My Bidding History',
                   ),
                 ],
               ),

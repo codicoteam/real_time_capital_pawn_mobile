@@ -55,5 +55,12 @@ class RoutesHelper {
   static String liveAuctionsScreen = "/auctions/live";
   static String auctionDetailsScreen = "/auction-details/:id";
 
+  // Add to routes.dart
+  static String searchAuctionsScreen = "/auctions/search";
+  static String auctionBidsScreen = "/auctions/:id/bids";
+
+  // Add these to your existing RoutesHelper class
+  static String userBiddingHistoryScreen = "/user_bidding_history";
+
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

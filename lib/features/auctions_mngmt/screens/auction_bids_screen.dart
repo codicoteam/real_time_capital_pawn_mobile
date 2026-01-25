@@ -1,11 +1,9 @@
-// auction_bids_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
-import 'package:real_time_pawn/models/auction_models.dart';
 
 class AuctionBidsScreen extends StatefulWidget {
   final String auctionId;
@@ -23,6 +21,7 @@ class AuctionBidsScreen extends StatefulWidget {
 
 class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
   final AuctionsController _auctionsController = Get.find<AuctionsController>();
+  static const bool IS_DEVELOPMENT = true; // Change to false for production
 
   @override
   void initState() {
@@ -69,6 +68,138 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
     } else {
       return 'Just now';
     }
+  }
+
+  // Mock Preview Widgets
+  Widget _buildMockBid({
+    required String name,
+    required double amount,
+    required String timeAgo,
+    required bool isWinning,
+  }) {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                name,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+              if (isWinning)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: RealTimeColors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: RealTimeColors.success.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.emoji_events_outlined,
+                        size: 12,
+                        color: RealTimeColors.success,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'WINNING',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: RealTimeColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '\$${amount.toStringAsFixed(0)}',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            timeAgo,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: AppColors.subtextColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockBidsPreview() {
+    final mockBids = [
+      _buildMockBid(
+        name: 'John Doe',
+        amount: 15000,
+        timeAgo: '2 hours ago',
+        isWinning: true,
+      ),
+      _buildMockBid(
+        name: 'Jane Smith',
+        amount: 14500,
+        timeAgo: '3 hours ago',
+        isWinning: false,
+      ),
+      _buildMockBid(
+        name: 'Bob Wilson',
+        amount: 14000,
+        timeAgo: '1 day ago',
+        isWinning: false,
+      ),
+    ];
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: RealTimeColors.warning.withOpacity(0.1),
+          child: Text(
+            'PREVIEW MODE - Mock bid data for testing UI',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              color: RealTimeColors.warning,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: mockBids,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -122,6 +253,9 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                   ),
                   Obx(() {
                     final bidCount = _auctionsController.auctionBids.length;
+                    final displayCount = bidCount > 0
+                        ? bidCount
+                        : 3; // Show 3 for mock preview
                     return Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -132,7 +266,7 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '$bidCount bids',
+                        '$displayCount bids',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -153,6 +287,11 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                 }
 
                 final bids = _auctionsController.auctionBids;
+
+                // SHOW MOCK PREVIEW IF NO BIDS AND IN DEVELOPMENT MODE
+                if (bids.isEmpty && IS_DEVELOPMENT) {
+                  return _buildMockBidsPreview();
+                }
 
                 if (bids.isEmpty) {
                   return RefreshIndicator(
@@ -212,7 +351,6 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                     itemBuilder: (context, index) {
                       final bid = bids[index];
                       final isWinning = bid.isWinning;
-                      final isFirst = index == 0;
                       final isLast = index == bids.length - 1;
 
                       return Container(
@@ -407,10 +545,11 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
               }),
             ),
 
-            // Summary Section
+            // Summary Section (Only show if we have real bids, not mock preview)
             Obx(() {
               final bids = _auctionsController.auctionBids;
-              if (bids.isEmpty) return const SizedBox.shrink();
+              if (bids.isEmpty || IS_DEVELOPMENT)
+                return const SizedBox.shrink();
 
               final highestBid = bids.isNotEmpty ? bids.first : null;
               final totalBids = bids.length;

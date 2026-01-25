@@ -1,11 +1,11 @@
-// auctions_mngmt_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
-import '../../../config/api_config/api_keys.dart';
-import '../../../core/utils/api_response.dart';
-import '../../../core/utils/shared_pref_methods.dart';
+import 'package:real_time_pawn/models/user_bid_models.dart';
+import '../../../../config/api_config/api_keys.dart';
+import '../../../../core/utils/api_response.dart';
+import '../../../../core/utils/shared_pref_methods.dart';
 
 class AuctionsServices {
   /// GET AUCTIONS LIST with pagination and filters
@@ -286,138 +286,143 @@ class AuctionsServices {
       );
     }
   }
-}
 
-// Add to auctions_mngmt_service.dart
+  /// SEARCH AUCTIONS
+  static Future<APIResponse<List<Auction>>> searchAuctions({
+    required String query,
+    String? status,
+  }) async {
+    final token = await CacheUtils.checkToken();
+    var headers = {
+      'accept': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
 
-/// SEARCH AUCTIONS
-static Future<APIResponse<List<Auction>>> searchAuctions({
-  required String query,
-  String? status,
-}) async {
-  final token = await CacheUtils.checkToken();
-  var headers = {
-    'accept': 'application/json',
-    if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-  };
-
-  // Validate query length (minimum 2 characters)
-  if (query.length < 2) {
-    return APIResponse<List<Auction>>(
-      success: false,
-      message: 'Search term must be at least 2 characters',
-      data: null,
-    );
-  }
-
-  final params = <String, String>{
-    'q': query,
-  };
-
-  if (status != null && status.isNotEmpty && status != 'All') {
-    params['status'] = status.toLowerCase();
-  }
-
-  final uri = Uri.parse(
-    '${ApiKeys.baseUrl}/auctions/search',
-  ).replace(queryParameters: params);
-
-  DevLogs.logInfo('Searching auctions: $uri');
-
-  try {
-    final response = await http.get(uri, headers: headers);
-    final responseBody = response.body;
-    final responseData = json.decode(responseBody);
-
-    DevLogs.logInfo('Search response status: ${response.statusCode}');
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (responseData['success'] == true) {
-        final data = responseData['data'];
-        final auctions = List<Map<String, dynamic>>.from(data ?? [])
-            .map((auctionJson) => Auction.fromJson(auctionJson))
-            .toList();
-
-        DevLogs.logSuccess(
-          'Found ${auctions.length} auctions in search',
-        );
-
-        return APIResponse<List<Auction>>(
-          success: true,
-          data: auctions,
-          message: responseData['message'] ?? 'Search completed successfully',
-        );
-      } else {
-        final errorMessage =
-            responseData['message'] ?? 'Failed to search auctions';
-        DevLogs.logError('Search failed: $errorMessage');
-
-        return APIResponse<List<Auction>>(
-          success: false,
-          message: errorMessage,
-          data: null,
-        );
-      }
-    } else {
-      final errorMessage =
-          responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
-      DevLogs.logError('Search HTTP error: $errorMessage');
-
+    // Validate query length (minimum 2 characters)
+    if (query.length < 2) {
       return APIResponse<List<Auction>>(
         success: false,
-        message: errorMessage,
+        message: 'Search term must be at least 2 characters',
         data: null,
       );
     }
-  } catch (e) {
-    DevLogs.logError('Error searching auctions: $e');
-    return APIResponse<List<Auction>>(
-      success: false,
-      message: 'An error occurred while searching auctions: ${e.toString()}',
-      data: null,
-    );
-  }
-}
 
-/// GET BIDS FOR AN AUCTION
-static Future<APIResponse<List<Bid>>> getAuctionBids({
-  required String auctionId,
-}) async {
-  final token = await CacheUtils.checkToken();
-  var headers = {
-    'accept': 'application/json',
-    if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-  };
+    final params = <String, String>{'q': query};
 
-  final uri = Uri.parse('${ApiKeys.baseUrl}/auctions/$auctionId/bids');
+    if (status != null && status.isNotEmpty && status != 'All') {
+      params['status'] = status.toLowerCase();
+    }
 
-  DevLogs.logInfo('Fetching auction bids: $uri');
+    final uri = Uri.parse(
+      '${ApiKeys.baseUrl}/auctions/search',
+    ).replace(queryParameters: params);
 
-  try {
-    final response = await http.get(uri, headers: headers);
-    final responseBody = response.body;
-    final responseData = json.decode(responseBody);
+    DevLogs.logInfo('Searching auctions: $uri');
 
-    DevLogs.logInfo('Auction bids response status: ${response.statusCode}');
+    try {
+      final response = await http.get(uri, headers: headers);
+      final responseBody = response.body;
+      final responseData = json.decode(responseBody);
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (responseData['success'] == true) {
-        final bids = List<Map<String, dynamic>>.from(responseData['data'] ?? [])
-            .map((bidJson) => Bid.fromJson(bidJson))
-            .toList();
+      DevLogs.logInfo('Search response status: ${response.statusCode}');
 
-        DevLogs.logSuccess('Fetched ${bids.length} bids successfully');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (responseData['success'] == true) {
+          final data = responseData['data'];
+          final auctions = List<Map<String, dynamic>>.from(
+            data ?? [],
+          ).map((auctionJson) => Auction.fromJson(auctionJson)).toList();
 
-        return APIResponse<List<Bid>>(
-          success: true,
-          data: bids,
-          message:
-              responseData['message'] ?? 'Auction bids retrieved successfully',
-        );
+          DevLogs.logSuccess('Found ${auctions.length} auctions in search');
+
+          return APIResponse<List<Auction>>(
+            success: true,
+            data: auctions,
+            message: responseData['message'] ?? 'Search completed successfully',
+          );
+        } else {
+          final errorMessage =
+              responseData['message'] ?? 'Failed to search auctions';
+          DevLogs.logError('Search failed: $errorMessage');
+
+          return APIResponse<List<Auction>>(
+            success: false,
+            message: errorMessage,
+            data: null,
+          );
+        }
       } else {
         final errorMessage =
-            responseData['message'] ?? 'Failed to fetch auction bids';
-        DevLogs.logError('Auction bids fetch failed: $errorMessage');
+            responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
+        DevLogs.logError('Search HTTP error: $errorMessage');
+
+        return APIResponse<List<Auction>>(
+          success: false,
+          message: errorMessage,
+          data: null,
+        );
+      }
+    } catch (e) {
+      DevLogs.logError('Error searching auctions: $e');
+      return APIResponse<List<Auction>>(
+        success: false,
+        message: 'An error occurred while searching auctions: ${e.toString()}',
+        data: null,
+      );
+    }
+  }
+
+  /// GET BIDS FOR AN AUCTION
+  static Future<APIResponse<List<Bid>>> getAuctionBids({
+    required String auctionId,
+  }) async {
+    final token = await CacheUtils.checkToken();
+    var headers = {
+      'accept': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+
+    final uri = Uri.parse('${ApiKeys.baseUrl}/auctions/$auctionId/bids');
+
+    DevLogs.logInfo('Fetching auction bids: $uri');
+
+    try {
+      final response = await http.get(uri, headers: headers);
+      final responseBody = response.body;
+      final responseData = json.decode(responseBody);
+
+      DevLogs.logInfo('Auction bids response status: ${response.statusCode}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (responseData['success'] == true) {
+          final bids = List<Map<String, dynamic>>.from(
+            responseData['data'] ?? [],
+          ).map((bidJson) => Bid.fromJson(bidJson)).toList();
+
+          DevLogs.logSuccess('Fetched ${bids.length} bids successfully');
+
+          return APIResponse<List<Bid>>(
+            success: true,
+            data: bids,
+            message:
+                responseData['message'] ??
+                'Auction bids retrieved successfully',
+          );
+        } else {
+          final errorMessage =
+              responseData['message'] ?? 'Failed to fetch auction bids';
+          DevLogs.logError('Auction bids fetch failed: $errorMessage');
+
+          return APIResponse<List<Bid>>(
+            success: false,
+            message: errorMessage,
+            data: null,
+          );
+        }
+      } else {
+        final errorMessage =
+            responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
+        DevLogs.logError('Auction bids HTTP error: $errorMessage');
 
         return APIResponse<List<Bid>>(
           success: false,
@@ -425,25 +430,134 @@ static Future<APIResponse<List<Bid>>> getAuctionBids({
           data: null,
         );
       }
-    } else {
-      final errorMessage =
-          responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
-      DevLogs.logError('Auction bids HTTP error: $errorMessage');
-
+    } catch (e) {
+      DevLogs.logError('Error fetching auction bids: $e');
       return APIResponse<List<Bid>>(
         success: false,
-        message: errorMessage,
+        message:
+            'An error occurred while fetching auction bids: ${e.toString()}',
         data: null,
       );
     }
-  } catch (e) {
-    DevLogs.logError('Error fetching auction bids: $e');
-    return APIResponse<List<Bid>>(
-      success: false,
-      message:
-          'An error occurred while fetching auction bids: ${e.toString()}',
-      data: null,
-    );
+  }
+
+  /// GET USER'S BIDDING HISTORY
+  static Future<APIResponse<UserBidsResponse>> getUserBids({
+    String? userId,
+    String? status,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final token = await CacheUtils.checkToken();
+
+    if (token == null || token.isEmpty) {
+      return APIResponse<UserBidsResponse>(
+        success: false,
+        message: 'Authentication required',
+        data: null,
+      );
+    }
+
+    var headers = {
+      'accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+    // Build query parameters
+    final params = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+
+    if (status != null && status.isNotEmpty && status != 'All') {
+      params['status'] = status.toLowerCase();
+    }
+
+    // Note: The API endpoint requires userId in the path
+    // According to the API response, users can only view their own history
+    // So we should get current user ID from token or user profile
+    final uri = Uri.parse(
+      '${ApiKeys.baseUrl}/auctions/users/bids',
+    ).replace(queryParameters: params);
+
+    DevLogs.logInfo('Fetching user bids: $uri');
+
+    try {
+      final response = await http.get(uri, headers: headers);
+      final responseBody = response.body;
+      final responseData = json.decode(responseBody);
+
+      DevLogs.logInfo('User bids response status: ${response.statusCode}');
+      DevLogs.logInfo('User bids response body: $responseBody');
+
+      if (response.statusCode == 403) {
+        return APIResponse<UserBidsResponse>(
+          success: false,
+          message: 'You can only view your own bidding history',
+          data: null,
+        );
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (responseData['success'] == true) {
+          final data = responseData['data'];
+          final bids = List<Map<String, dynamic>>.from(
+            data['bids'] ?? [],
+          ).map((bidJson) => UserBid.fromJson(bidJson)).toList();
+
+          final pagination = Pagination.fromJson(data['pagination'] ?? {});
+
+          final responseObj = UserBidsResponse(
+            bids: bids,
+            pagination: pagination,
+          );
+
+          DevLogs.logSuccess('Fetched ${bids.length} user bids successfully');
+
+          return APIResponse<UserBidsResponse>(
+            success: true,
+            data: responseObj,
+            message:
+                responseData['message'] ??
+                'Bidding history retrieved successfully',
+          );
+        } else {
+          final errorMessage =
+              responseData['message'] ?? 'Failed to fetch bidding history';
+          DevLogs.logError('User bids fetch failed: $errorMessage');
+
+          return APIResponse<UserBidsResponse>(
+            success: false,
+            message: errorMessage,
+            data: null,
+          );
+        }
+      } else if (response.statusCode == 401) {
+        return APIResponse<UserBidsResponse>(
+          success: false,
+          message: 'Unauthorized - Please login again',
+          data: null,
+        );
+      } else {
+        final errorMessage =
+            responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
+        DevLogs.logError('User bids HTTP error: $errorMessage');
+
+        return APIResponse<UserBidsResponse>(
+          success: false,
+          message: errorMessage,
+          data: null,
+        );
+      }
+    } catch (e) {
+      DevLogs.logError('Error fetching user bids: $e');
+      return APIResponse<UserBidsResponse>(
+        success: false,
+        message:
+            'An error occurred while fetching bidding history: ${e.toString()}',
+        data: null,
+      );
+    }
   }
 }
 

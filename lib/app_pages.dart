@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/search_auctions_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_details_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auctions_list_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/live_auctions_screen.dart';
@@ -7,6 +9,7 @@ import 'package:real_time_pawn/features/auth_mngmt/screens/forgot_password_scree
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/verify_otp_screen.dart';
+import 'package:real_time_pawn/features/bid_mngmt/screens/bid_mngmt_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart'
     show LoanApplicationDetailsScreen;
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
@@ -224,6 +227,35 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
+    // Add to AppPages
+    GetPage(
+      name: RoutesHelper.searchAuctionsScreen,
+      page: () => const SearchAuctionsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.auctionBidsScreen,
+      page: () {
+        final id = Get.parameters['id'] ?? '';
+        final title = Get.arguments as String? ?? 'Auction Bids';
+        return AuctionBidsScreen(auctionId: id, auctionTitle: title);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+    // USER BIDDING HISTORY SCREEN ================================
+    GetPage(
+      name: RoutesHelper.userBiddingHistoryScreen,
+      page: () => const UserBiddingHistoryScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
     // END AUCTION SCREENS =====================================
 
     // GetPage(

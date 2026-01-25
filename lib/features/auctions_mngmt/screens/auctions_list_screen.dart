@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
+
 import 'package:real_time_pawn/models/auction_models.dart';
 
 class AuctionsListScreen extends StatefulWidget {
@@ -129,10 +131,14 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
                       color: AppColors.textColor,
                     ),
                   ),
+                  // Add history icon here too
                   IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () {
+                      Get.toNamed(RoutesHelper.userBiddingHistoryScreen);
+                    },
+                    icon: const Icon(Icons.history_outlined),
                     color: AppColors.textColor,
+                    tooltip: 'View My Bidding History',
                   ),
                 ],
               ),
@@ -141,7 +147,8 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
             // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Container(
+              child: // In _AuctionsListScreenState build method, update the search bar:
+              Container(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceColor,
                   borderRadius: BorderRadius.circular(12),
@@ -154,24 +161,37 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
                     ),
                   ],
                 ),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search auctions...',
-                    hintStyle: GoogleFonts.poppins(
-                      color: AppColors.subtextColor,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search auctions...',
+                          hintStyle: GoogleFonts.poppins(
+                            color: AppColors.subtextColor,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: AppColors.subtextColor,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                        ),
+                        style: GoogleFonts.poppins(color: AppColors.textColor),
+                      ),
                     ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: AppColors.subtextColor,
+                    IconButton(
+                      onPressed: () {
+                        AuctionsHelper.navigateToSearchScreen(context);
+                      },
+                      icon: const Icon(Icons.tune),
+                      color: AppColors.primaryColor,
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  style: GoogleFonts.poppins(color: AppColors.textColor),
+                  ],
                 ),
               ),
             ),

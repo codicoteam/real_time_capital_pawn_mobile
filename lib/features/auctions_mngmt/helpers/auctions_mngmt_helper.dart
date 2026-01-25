@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/search_auctions_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_details_screen.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 import 'package:real_time_pawn/widgets/loading_widgets/circular_loader.dart';
 
@@ -161,59 +163,35 @@ class AuctionsHelper {
   }
 
   /// NAVIGATE TO AUCTION DETAILS - FIXED VERSION
-  /// NAVIGATE TO AUCTION DETAILS - OPTIMIZED VERSION
-  static Future<void> navigateToAuctionDetails({
+  /// NAVIGATE TO AUCTION DETAILS - SIMPLE VERSION
+  static void navigateToAuctionDetails({
     required String auctionId,
     required BuildContext context,
-  }) async {
-    print('🔍 NAVIGATING WITH ID: "$auctionId"');
-
-    if (auctionId == ":id") {
-      print('❌❌❌ ERROR: Cannot use ":id" - this is a placeholder!');
-
-      if (_auctionsController.auctionsList.isNotEmpty) {
-        auctionId = _auctionsController.auctionsList.first.id;
-        print('🔄 Using real ID instead: $auctionId');
-      } else {
-        showError('No auctions available');
-        return;
-      }
-    }
-
-    // CHECK 1: Prevent duplicate navigation
-    if (_isNavigating) {
-      print('⚠️ Already navigating, skipping...');
-      return;
-    }
-
-    // CHECK 2: Check if we already have this auction loaded
-    final alreadyLoaded =
-        _auctionsController.selectedAuction.value?.id == auctionId;
-
-    _isNavigating = true;
-
-    try {
-      // Only load if not already loaded
-      if (!alreadyLoaded) {
-        final success = await loadAuctionDetails(auctionId: auctionId);
-        if (!success) return;
-      }
-
-      // Navigate to the details screen
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.toNamed(
-          RoutesHelper.auctionDetailsScreen.replaceFirst(':id', auctionId),
-        );
-      });
-    } finally {
-      // Reset the flag after a short delay
-      Future.delayed(const Duration(milliseconds: 500), () {
-        _isNavigating = false;
-      });
-    }
+  }) {
+    // Just navigate directly - no loading, no checks
+    Get.to(() => AuctionDetailsScreen(auctionId: auctionId));
   }
 
-  static bool _isNavigating = false;
+  /// NAVIGATE TO SEARCH SCREEN
+  static void navigateToSearchScreen(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.to(() => const SearchAuctionsScreen());
+    });
+  }
+
+  /// NAVIGATE TO BIDS SCREEN
+  static void navigateToBidsScreen({
+    required String auctionId,
+    required String auctionTitle,
+    required BuildContext context,
+  }) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.to(
+        () =>
+            AuctionBidsScreen(auctionId: auctionId, auctionTitle: auctionTitle),
+      );
+    });
+  }
 
   /// STATUS COLOR HELPER
   static Color getStatusColor(AuctionStatus status) {
@@ -343,29 +321,6 @@ class AuctionsHelper {
       return false;
     }
   }
-}
-
-// Add to auctions_mngmt_helper.dart
-
-/// NAVIGATE TO SEARCH SCREEN
-static void navigateToSearchScreen(BuildContext context) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Get.to(() => const SearchAuctionsScreen());
-  });
-}
-
-/// NAVIGATE TO BIDS SCREEN
-static void navigateToBidsScreen({
-  required String auctionId,
-  required String auctionTitle,
-  required BuildContext context,
-}) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Get.to(() => AuctionBidsScreen(
-      auctionId: auctionId,
-      auctionTitle: auctionTitle,
-    ));
-  });
 }
 
 extension StringExtension on String {
