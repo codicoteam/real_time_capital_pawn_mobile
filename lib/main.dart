@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
 import 'package:real_time_pawn/features/test/homescreen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 
@@ -58,7 +57,7 @@ class MyApp extends StatelessWidget {
       theme: Pallete.appTheme,
       initialRoute: '/',
       getPages: AppPages.pages,
-      home: const HomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }

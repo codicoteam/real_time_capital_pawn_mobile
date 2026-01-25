@@ -156,7 +156,9 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.gavel,
                     title: 'Auctions',
                     color: RealTimeColors.grey800,
-                    onTap: () => _navigateAndClose(context, '/auctions'),
+                    onTap: () => Get.toNamed(
+                      RoutesHelper.auctionsListScreen,
+                    ), // Changed this
                   ).animate().fadeIn(delay: 460.ms),
 
                   // Bids

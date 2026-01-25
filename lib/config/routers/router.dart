@@ -50,5 +50,10 @@ class RoutesHelper {
   static String loanApplicationsScreen = '/loan-applications';
   static String loanApplicationDetailsScreen = '/loan-application-details';
 
+  // Auction Routes
+  static String auctionsListScreen = "/auctions";
+  static String liveAuctionsScreen = "/auctions/live";
+  static String auctionDetailsScreen = "/auction-details/:id";
+
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

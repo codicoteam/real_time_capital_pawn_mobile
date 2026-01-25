@@ -5,10 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auth_mngmt/helpers/auth_mngmt_helper.dart';
-import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart' show CustomTextField;
+import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart'
+    show CustomTextField;
 
 import '../../../widgets/custom_password_textfield.dart';
-
 
 class Login extends StatefulWidget {
   const Login({super.key});

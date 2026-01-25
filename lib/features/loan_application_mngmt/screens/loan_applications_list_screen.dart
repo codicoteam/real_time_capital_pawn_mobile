@@ -253,12 +253,9 @@ class _LoanApplicationsListScreenState
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
                             children: [
-                              ..._loanApplications
-                                  .map(
-                                    (application) =>
-                                        _buildLoanCard(application),
-                                  )
-                                  .toList(),
+                              ..._loanApplications.map(
+                                (application) => _buildLoanCard(application),
+                              ),
                               const SizedBox(height: 24),
                             ],
                           ),

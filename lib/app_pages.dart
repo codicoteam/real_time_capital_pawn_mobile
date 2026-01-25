@@ -1,5 +1,8 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_details_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auctions_list_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/live_auctions_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/forgot_password_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
@@ -192,6 +195,36 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
+
+    // AUCTION SCREENS =========================================
+    GetPage(
+      name: RoutesHelper.auctionsListScreen,
+      page: () => const AuctionsListScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.liveAuctionsScreen,
+      page: () => const LiveAuctionsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.auctionDetailsScreen,
+      page: () {
+        // Extract auction ID from route parameters
+        final id = Get.parameters['id'] ?? '';
+        return AuctionDetailsScreen(auctionId: id);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+    // END AUCTION SCREENS =====================================
 
     // GetPage(
     //   name: RoutesHelper.all_races_page,
