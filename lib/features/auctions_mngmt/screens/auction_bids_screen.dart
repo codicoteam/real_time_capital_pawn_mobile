@@ -156,52 +156,6 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
     );
   }
 
-  Widget _buildMockBidsPreview() {
-    final mockBids = [
-      _buildMockBid(
-        name: 'John Doe',
-        amount: 15000,
-        timeAgo: '2 hours ago',
-        isWinning: true,
-      ),
-      _buildMockBid(
-        name: 'Jane Smith',
-        amount: 14500,
-        timeAgo: '3 hours ago',
-        isWinning: false,
-      ),
-      _buildMockBid(
-        name: 'Bob Wilson',
-        amount: 14000,
-        timeAgo: '1 day ago',
-        isWinning: false,
-      ),
-    ];
-
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          color: RealTimeColors.warning.withOpacity(0.1),
-          child: Text(
-            'PREVIEW MODE - Mock bid data for testing UI',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: RealTimeColors.warning,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: mockBids,
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -287,11 +241,6 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                 }
 
                 final bids = _auctionsController.auctionBids;
-
-                // SHOW MOCK PREVIEW IF NO BIDS AND IN DEVELOPMENT MODE
-                if (bids.isEmpty && IS_DEVELOPMENT) {
-                  return _buildMockBidsPreview();
-                }
 
                 if (bids.isEmpty) {
                   return RefreshIndicator(

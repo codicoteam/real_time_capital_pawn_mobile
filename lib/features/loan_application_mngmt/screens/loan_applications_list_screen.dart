@@ -15,74 +15,8 @@ class LoanApplicationsListScreen extends StatefulWidget {
 
 class _LoanApplicationsListScreenState
     extends State<LoanApplicationsListScreen> {
-  // Mock data
-  final List<LoanApplication> _loanApplications = [
-    LoanApplication(
-      id: 'LA001',
-      applicantName: 'Ipanoshi Chirume',
-      status: 'Processing',
-      amount: 1500.00,
-      collateralCategory: 'Small Loan',
-      applicationDate: 'Jan 17, 2026',
-    ),
-    LoanApplication(
-      id: 'LA002',
-      applicantName: 'John Mwansa',
-      status: 'Submitted',
-      amount: 5000.00,
-      collateralCategory: 'Vehicle Loan',
-      applicationDate: 'Jan 15, 2026',
-    ),
-    LoanApplication(
-      id: 'LA003',
-      applicantName: 'Sarah Banda',
-      status: 'Approved',
-      amount: 10000.00,
-      collateralCategory: 'Property Loan',
-      applicationDate: 'Jan 10, 2026',
-    ),
-    LoanApplication(
-      id: 'LA004',
-      applicantName: 'Peter Phiri',
-      status: 'Processing',
-      amount: 2500.00,
-      collateralCategory: 'Jewelry Loan',
-      applicationDate: 'Jan 8, 2026',
-    ),
-    LoanApplication(
-      id: 'LA005',
-      applicantName: 'Mary Tembo',
-      status: 'Submitted',
-      amount: 7500.00,
-      collateralCategory: 'Electronics Loan',
-      applicationDate: 'Jan 5, 2026',
-    ),
-    // Add more for scrolling
-    LoanApplication(
-      id: 'LA006',
-      applicantName: 'James Ngoma',
-      status: 'Approved',
-      amount: 3000.00,
-      collateralCategory: 'Small Loan',
-      applicationDate: 'Jan 3, 2026',
-    ),
-    LoanApplication(
-      id: 'LA007',
-      applicantName: 'Anna Bwalya',
-      status: 'Processing',
-      amount: 6000.00,
-      collateralCategory: 'Jewelry Loan',
-      applicationDate: 'Jan 1, 2026',
-    ),
-    LoanApplication(
-      id: 'LA008',
-      applicantName: 'David Lungu',
-      status: 'Submitted',
-      amount: 8500.00,
-      collateralCategory: 'Vehicle Loan',
-      applicationDate: 'Dec 28, 2025',
-    ),
-  ];
+  // REMOVED: Mock data list
+  final List<LoanApplication> _loanApplications = [];
 
   String _selectedFilter = 'Newest';
   final List<String> _filterOptions = [
@@ -253,9 +187,12 @@ class _LoanApplicationsListScreenState
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
                             children: [
-                              ..._loanApplications.map(
-                                (application) => _buildLoanCard(application),
-                              ),
+                              // REMOVED: Mock data mapping
+                              // You'll need to replace this with your actual data source
+                              // For example:
+                              // ..._loanApplications.map(
+                              //   (application) => _buildLoanCard(application),
+                              // ).toList(),
                               const SizedBox(height: 24),
                             ],
                           ),
@@ -617,50 +554,4 @@ class _LoanApplicationsListScreenState
       ],
     );
   }
-}
-
-/// Smooth bottom concave curve
-/// Smooth bottom convex curve (matching your screenshot)
-/// Alternative convex curve
-/// Test different curves to match your screenshot
-/// Convex curve with straight middle and rounded edges
-class SmoothConcaveHeaderClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-
-    // Start from top-left corner
-    path.lineTo(0, 0);
-
-    // Move to start of curve (leave some space for rounded edge)
-    path.lineTo(0, size.height - 50);
-
-    // Left rounded edge (quadratic curve)
-    path.quadraticBezierTo(
-      size.width * 0.15, // Control point X (15% of width)
-      size.height - 30, // Control point Y (start curving up)
-      size.width * 0.3, // End point X (30% of width)
-      size.height - 80, // End point Y (peak height)
-    );
-
-    // Straight middle part (flat top)
-    path.lineTo(size.width * 0.7, size.height - 80);
-
-    // Right rounded edge (quadratic curve)
-    path.quadraticBezierTo(
-      size.width * 0.85, // Control point X (85% of width)
-      size.height - 30, // Control point Y (start curving down)
-      size.width, // End point X (right edge)
-      size.height - 50, // End point Y (back to baseline)
-    );
-
-    // Complete the rectangle
-    path.lineTo(size.width, 0);
-    path.close();
-
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

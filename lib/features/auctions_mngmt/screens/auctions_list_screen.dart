@@ -631,9 +631,19 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
                           onTap: () {
-                            AuctionsHelper.navigateToAuctionDetails(
-                              auctionId: auction.id,
-                              context: context,
+                            // Show bid placement dialog directly
+                            Get.dialog(
+                              BidPlacementDialog(
+                                auction: auction,
+                                currentBidAmount:
+                                    auction.winningBidAmount ??
+                                    auction.startingBid,
+                                onBidPlaced: (newAmount) {
+                                  // Refresh the auctions list
+                                  _refreshAuctions();
+                                },
+                              ),
+                              barrierDismissible: true,
                             );
                           },
                           child: Padding(

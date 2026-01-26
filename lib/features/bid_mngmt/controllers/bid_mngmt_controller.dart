@@ -3,6 +3,7 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/services/bid_placement_service.dart';
 import 'package:real_time_pawn/features/bid_mngmt/services/bid_mngmt_service.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 
@@ -123,6 +124,62 @@ class UserBidsController extends GetxController {
       status: selectedStatus.value != 'All' ? selectedStatus.value : null,
       page: 1,
     );
+  }
+
+  // Add these methods to your existing AuctionsController in auctions_mngmt_controller.dart
+
+  /// PLACE BID ON AUCTION
+  Future<bool> placeBidRequest({
+    required String auctionId,
+    required double amount,
+  }) async {
+    try {
+      isLoading(true);
+      successMessage.value = '';
+      errorMessage.value = '';
+
+      // We'll create this service method
+      // For now, using direct API call through BidPlacementService
+      final response = await BidPlacementService.placeBid(
+        auctionId: auctionId,
+        amount: amount,
+      );
+
+      if (response.success && response.data != null) {
+        successMessage.value = response.message ?? 'Bid placed successfully';
+
+        // Update auction details with new bid
+        await getAuctionDetailsRequest(auctionId: auctionId);
+
+        // Also refresh live auctions if needed
+        await getLiveAuctionsRequest();
+
+        DevLogs.logSuccess(successMessage.value);
+        return true;
+      } else {
+        errorMessage.value = response.message ?? 'Failed to place bid';
+        DevLogs.logError(errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      DevLogs.logError('Error placing bid: ${e.toString()}');
+      errorMessage.value = 'An error occurred: ${e.toString()}';
+      return false;
+    } finally {
+      isLoading(false);
+    }
+  }
+
+  /// GET MY ACTIVE BIDS (for current user)
+  Future<List<Auction>> getMyActiveBidsRequest() async {
+    try {
+      // This would require a new API endpoint or filtering
+      // For now, return empty list
+      return [];
+    } catch (e) {
+      DevLogs.logError('Error getting active bids: ${e.toString()}');
+      return [];
+    }
   }
 
   /// CLEAR ALL DATA

@@ -776,45 +776,57 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                       ),
 
                       // Place Bid Button (only for live auctions)
-                      if (auction.status == AuctionStatus.live)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 0,
-                          ),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // Place Bid action - Will be implemented separately
-                                Get.snackbar(
-                                  'Coming Soon',
-                                  'Bid placement feature will be available soon',
-                                  backgroundColor: AppColors.primaryColor,
-                                  colorText: Colors.white,
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor: AppColors.primaryColor,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 2,
-                              ),
-                              child: Text(
-                                'Place Bid',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                    // In _AuctionDetailsScreenState class, update the Place Bid button:
+
+// Replace the existing Place Bid button in the bottom action bar:
+if (auction.status == AuctionStatus.live)
+  Container(
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () {
+          // Show bid placement dialog
+          _showBidPlacementDialog(auction);
+        },
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: AppColors.primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: Text(
+          'Place Bid',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ),
+  ),
+
+// Add this method to the _AuctionDetailsScreenState class:
+void _showBidPlacementDialog(Auction auction) {
+  final currentBidAmount = auction.winningBidAmount ?? auction.startingBid;
+  
+  Get.dialog(
+    BidPlacementDialog(
+      auction: auction,
+      currentBidAmount: currentBidAmount,
+      onBidPlaced: (newAmount) {
+        // Refresh auction details after bid placement
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _loadAuctionDetails();
+        });
+      },
+    ),
+    barrierDismissible: true,
+  );
+}
                     ],
                   ),
                 ),

@@ -255,12 +255,30 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
   }
 
   Widget _buildLiveAuctionCard(Auction auction) {
+    // In _buildLiveAuctionCard method of LiveAuctionsScreen, make the whole card tappable
+    // and add bid placement capability:
+
     return GestureDetector(
       onTap: () {
-        AuctionsHelper.navigateToAuctionDetails(
-          auctionId: auction.id,
-          context: context,
-        );
+        // Show bid placement dialog for live auctions
+        if (auction.status == AuctionStatus.live) {
+          Get.dialog(
+            BidPlacementDialog(
+              auction: auction,
+              currentBidAmount: auction.winningBidAmount ?? auction.startingBid,
+              onBidPlaced: (newAmount) {
+                // Refresh live auctions
+                _refreshAuctions();
+              },
+            ),
+            barrierDismissible: true,
+          );
+        } else {
+          AuctionsHelper.navigateToAuctionDetails(
+            auctionId: auction.id,
+            context: context,
+          );
+        }
       },
       child: Container(
         decoration: BoxDecoration(

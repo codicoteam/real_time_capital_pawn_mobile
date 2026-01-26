@@ -156,12 +156,16 @@ class Auction {
       status == AuctionStatus.closed ? winningBidAmount : null;
 }
 
+// In auction_models.dart - Update the Bid class
+
 class Bid {
   final String id;
   final double amount;
   final String bidderName;
   final DateTime timestamp;
   final bool isWinning;
+  final String? bidderUserId; // Add this field
+  final String? bidderEmail; // Add this field
 
   Bid({
     required this.id,
@@ -169,6 +173,8 @@ class Bid {
     required this.bidderName,
     required this.timestamp,
     this.isWinning = false,
+    this.bidderUserId,
+    this.bidderEmail,
   });
 
   factory Bid.fromJson(Map<String, dynamic> json) {
@@ -176,10 +182,17 @@ class Bid {
       id: json['_id'] ?? json['id'] ?? '',
       amount: (json['amount'] ?? 0.0).toDouble(),
       bidderName: json['bidder_user']?['full_name'] ?? 'Anonymous',
+      bidderUserId: json['bidder_user']?['_id'] ?? json['bidder_user']?['id'],
+      bidderEmail: json['bidder_user']?['email'],
       timestamp: DateTime.parse(
         json['placed_at'] ?? DateTime.now().toIso8601String(),
       ),
       isWinning: json['is_winning'] ?? false,
     );
+  }
+
+  // Add toJson method for bid placement
+  Map<String, dynamic> toJson() {
+    return {'amount': amount};
   }
 }
