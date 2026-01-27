@@ -92,7 +92,7 @@ class _MainHomePageState extends State<MainHomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const LoanApplicationStep1(),
+                builder: (context) => const LoanApplicationScreen(),
               ),
             );
             // Reset to home tab

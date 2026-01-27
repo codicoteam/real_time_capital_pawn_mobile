@@ -50,6 +50,7 @@ dependencies:
   carousel_slider: ^5.1.1
   iconsax: ^0.0.8
   flutter_custom_clippers: ^2.1.0
+  flutter_secure_storage: 
   # carousel_slider: ^4.2.1
 dev_dependencies:
   flutter_test:
