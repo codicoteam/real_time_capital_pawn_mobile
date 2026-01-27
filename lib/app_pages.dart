@@ -9,7 +9,7 @@ import 'package:real_time_pawn/features/auth_mngmt/screens/forgot_password_scree
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/verify_otp_screen.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/screens/user_bid_mngmt_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/user_bid_history_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart'
     show LoanApplicationDetailsScreen;
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';

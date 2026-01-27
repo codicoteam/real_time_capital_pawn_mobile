@@ -7,7 +7,7 @@ import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngm
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_mngmt_helper.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_history_helper.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 
 import '../../../widgets/custom_button/general_button.dart';

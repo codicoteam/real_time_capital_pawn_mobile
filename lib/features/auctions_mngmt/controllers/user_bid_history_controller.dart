@@ -2,7 +2,7 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/services/user_bid_mngmt_service.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/services/user_bid_history_service.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 
 class UserBidsController extends GetxController {
