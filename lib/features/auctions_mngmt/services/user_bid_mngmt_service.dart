@@ -8,7 +8,7 @@ import 'package:real_time_pawn/core/utils/api_response.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 
-import '../../auctions_mngmt/services/auctions_mngmt_service.dart';
+import 'auctions_mngmt_service.dart';
 
 class UserBidsService {
   /// GET USER'S BIDDING HISTORY

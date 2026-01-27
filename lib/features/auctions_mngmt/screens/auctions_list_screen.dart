@@ -6,8 +6,11 @@ import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_mngmt_helper.dart';
 
 import 'package:real_time_pawn/models/auction_models.dart';
+import 'package:real_time_pawn/widgets/custom_button/general_button.dart';
 
 class AuctionsListScreen extends StatefulWidget {
   const AuctionsListScreen({super.key});
@@ -109,6 +112,64 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
     });
   }
 
+  void _showBidDialog(Auction auction) {
+    final currentBidAmount = auction.winningBidAmount ?? auction.startingBid;
+
+    Get.dialog(
+      BidPlacementDialog(
+        auctionTitle: auction.asset.title,
+        currentBid: currentBidAmount,
+        reservePrice: auction.reservePrice,
+        startingBid: auction.startingBid,
+        onPlaceBid: (amount) async {
+          // Close dialog
+          Get.back();
+
+          // Show loading
+          Get.dialog(
+            const CustomLoader(message: 'Placing your bid...'),
+            barrierDismissible: false,
+          );
+
+          // Place the bid
+          final success = await auctionsController.placeBidRequest(
+            auctionId: auction.id,
+            amount: amount,
+          );
+
+          // Close loading
+          Get.back();
+
+          if (success) {
+            // Show success message
+            Get.snackbar(
+              'Bid Placed!',
+              'Your bid of \$${amount.toStringAsFixed(2)} has been placed successfully',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: RealTimeColors.success,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+
+            // Refresh auctions
+            await _refreshAuctions();
+          } else {
+            // Show error
+            Get.snackbar(
+              'Bid Failed',
+              auctionsController.errorMessage.value,
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: RealTimeColors.error,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+          }
+        },
+      ),
+      barrierDismissible: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,8 +208,7 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
             // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: // In _AuctionsListScreenState build method, update the search bar:
-              Container(
+              child: Container(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceColor,
                   borderRadius: BorderRadius.circular(12),
@@ -622,42 +682,17 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
                     Container(
                       margin: const EdgeInsets.only(top: 12),
                       width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            // Show bid placement dialog directly
-                            Get.dialog(
-                              BidPlacementDialog(
-                                auction: auction,
-                                currentBidAmount:
-                                    auction.winningBidAmount ??
-                                    auction.startingBid,
-                                onBidPlaced: (newAmount) {
-                                  // Refresh the auctions list
-                                  _refreshAuctions();
-                                },
-                              ),
-                              barrierDismissible: true,
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Center(
-                              child: Text(
-                                'Bid Now',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
+                      child: GeneralButton(
+                        onTap: () {
+                          _showBidDialog(auction);
+                        },
+                        btnColor: AppColors.primaryColor,
+                        child: Text(
+                          'Bid Now',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),

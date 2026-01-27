@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/bid_mngmt/controllers/bid_mngmt_controller.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/controllers/user_bid_mngmt_controller.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 
 class UserBidsHelper {

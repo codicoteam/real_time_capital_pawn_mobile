@@ -6,7 +6,11 @@ import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_mngmt_helper.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
+
+import '../../../widgets/custom_button/general_button.dart';
 
 class AuctionDetailsScreen extends StatefulWidget {
   final String auctionId;
@@ -53,6 +57,64 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
     return '${hours.toString().padLeft(2, '0')}:'
         '${minutes.toString().padLeft(2, '0')}:'
         '${seconds.toString().padLeft(2, '0')}';
+  }
+
+  void _showBidDialog(Auction auction) {
+    final currentBidAmount = auction.winningBidAmount ?? auction.startingBid;
+
+    Get.dialog(
+      BidPlacementDialog(
+        auctionTitle: auction.asset.title,
+        currentBid: currentBidAmount,
+        reservePrice: auction.reservePrice,
+        startingBid: auction.startingBid,
+        onPlaceBid: (amount) async {
+          // Close dialog
+          Get.back();
+
+          // Show loading
+          Get.dialog(
+            const CustomLoader(message: 'Placing your bid...'),
+            barrierDismissible: false,
+          );
+
+          // Place the bid
+          final success = await _auctionsController.placeBidRequest(
+            auctionId: auction.id,
+            amount: amount,
+          );
+
+          // Close loading
+          Get.back();
+
+          if (success) {
+            // Show success message
+            Get.snackbar(
+              'Bid Placed!',
+              'Your bid of \$${amount.toStringAsFixed(2)} has been placed successfully',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: RealTimeColors.success,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+
+            // Refresh auction details
+            await _loadAuctionDetails();
+          } else {
+            // Show error
+            Get.snackbar(
+              'Bid Failed',
+              _auctionsController.errorMessage.value,
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: RealTimeColors.error,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+          }
+        },
+      ),
+      barrierDismissible: true,
+    );
   }
 
   @override
@@ -717,7 +779,6 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
               ),
 
               // Fixed Bottom Action Bar
-              // Fixed Bottom Action Bar
               if (auction.status == AuctionStatus.live ||
                   auction.status == AuctionStatus.closed)
                 Container(
@@ -761,8 +822,8 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.list_alt_outlined, size: 18),
-                              SizedBox(width: 8),
+                              const Icon(Icons.list_alt_outlined, size: 18),
+                              const SizedBox(width: 8),
                               Text(
                                 'View Bids (${auction.bidCount ?? 0})',
                                 style: GoogleFonts.poppins(
@@ -776,57 +837,30 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                       ),
 
                       // Place Bid Button (only for live auctions)
-                    // In _AuctionDetailsScreenState class, update the Place Bid button:
-
-// Replace the existing Place Bid button in the bottom action bar:
-if (auction.status == AuctionStatus.live)
-  Container(
-    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
-    child: SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          // Show bid placement dialog
-          _showBidPlacementDialog(auction);
-        },
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: AppColors.primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 2,
-        ),
-        child: Text(
-          'Place Bid',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    ),
-  ),
-
-// Add this method to the _AuctionDetailsScreenState class:
-void _showBidPlacementDialog(Auction auction) {
-  final currentBidAmount = auction.winningBidAmount ?? auction.startingBid;
-  
-  Get.dialog(
-    BidPlacementDialog(
-      auction: auction,
-      currentBidAmount: currentBidAmount,
-      onBidPlaced: (newAmount) {
-        // Refresh auction details after bid placement
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _loadAuctionDetails();
-        });
-      },
-    ),
-    barrierDismissible: true,
-  );
-}
+                      if (auction.status == AuctionStatus.live)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 0,
+                          ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: GeneralButton(
+                              onTap: () {
+                                _showBidDialog(auction);
+                              },
+                              btnColor: AppColors.primaryColor,
+                              child: Text(
+                                'Place Bid',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

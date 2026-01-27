@@ -1,12 +1,11 @@
-// Add to AuctionsHelper class or create a new BidPlacementHelper
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/services/bid_placement_service.dart';
-import 'package:real_time_pawn/features/bid_mngmt/helpers/bid_mngmt_helper.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_mngmt_helper.dart';
+
 import 'package:real_time_pawn/models/auction_models.dart';
 
 class BidPlacementHelper {
@@ -23,14 +22,15 @@ class BidPlacementHelper {
     );
 
     try {
-      final response = await BidPlacementService.placeBid(
+      final auctionsController = Get.find<AuctionsController>();
+      final success = await auctionsController.placeBidRequest(
         auctionId: auctionId,
         amount: amount,
       );
 
       Get.back(); // Close loading
 
-      if (response.success && response.data != null) {
+      if (success) {
         // Show success
         Get.snackbar(
           'Bid Placed!',
@@ -38,19 +38,19 @@ class BidPlacementHelper {
           snackPosition: SnackPosition.TOP,
           backgroundColor: RealTimeColors.success,
           colorText: Colors.white,
-          duration: 3.seconds,
+          duration: const Duration(seconds: 3),
         );
 
         // Trigger refresh if needed
-        Get.find<AuctionsController>().refreshAuctions();
+        auctionsController.refreshAuctions();
       } else {
         Get.snackbar(
           'Bid Failed',
-          response.message ?? 'Failed to place bid',
+          auctionsController.errorMessage.value,
           snackPosition: SnackPosition.TOP,
           backgroundColor: RealTimeColors.error,
           colorText: Colors.white,
-          duration: 3.seconds,
+          duration: const Duration(seconds: 3),
         );
       }
     } catch (e) {
@@ -61,7 +61,7 @@ class BidPlacementHelper {
         snackPosition: SnackPosition.TOP,
         backgroundColor: RealTimeColors.error,
         colorText: Colors.white,
-        duration: 3.seconds,
+        duration: const Duration(seconds: 3),
       );
     }
   }
@@ -75,11 +75,17 @@ class BidPlacementHelper {
 
     Get.dialog(
       BidPlacementDialog(
-        auction: auction,
-        currentBidAmount: currentBidAmount,
-        onBidPlaced: (newAmount) {
-          // Could trigger refresh of auction list
-          Get.find<AuctionsController>().refreshAuctions();
+        auctionTitle: auction.asset.title,
+        currentBid: currentBidAmount,
+        reservePrice: auction.reservePrice,
+        startingBid: auction.startingBid,
+        onPlaceBid: (newAmount) {
+          placeBid(
+            context: context,
+            auctionId: auction.id,
+            amount: newAmount,
+            auctionTitle: auction.asset.title,
+          );
         },
       ),
       barrierDismissible: true,

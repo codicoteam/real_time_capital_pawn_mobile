@@ -559,6 +559,111 @@ class AuctionsServices {
       );
     }
   }
+
+  /// PLACE A BID ON AN AUCTION - ADD THIS METHOD
+  static Future<APIResponse<Bid>> placeBid({
+    required String auctionId,
+    required double amount,
+  }) async {
+    final token = await CacheUtils.checkToken();
+
+    if (token == null || token.isEmpty) {
+      return APIResponse<Bid>(
+        success: false,
+        message: 'Authentication required',
+        data: null,
+      );
+    }
+
+    var headers = {
+      'accept': 'application/json',
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    final body = json.encode({'amount': amount});
+
+    final uri = Uri.parse('${ApiKeys.baseUrl}/auctions/$auctionId/bids');
+
+    DevLogs.logInfo('Placing bid on auction $auctionId: $amount');
+
+    try {
+      final response = await http.post(uri, headers: headers, body: body);
+      final responseBody = response.body;
+      final responseData = json.decode(responseBody);
+
+      DevLogs.logInfo('Place bid response status: ${response.statusCode}');
+
+      if (response.statusCode == 201) {
+        if (responseData['success'] == true) {
+          final bidData = responseData['data'];
+          final bid = Bid.fromJson(bidData);
+
+          DevLogs.logSuccess('Bid placed successfully: \$${bid.amount}');
+
+          return APIResponse<Bid>(
+            success: true,
+            data: bid,
+            message: responseData['message'] ?? 'Bid placed successfully',
+          );
+        } else {
+          final errorMessage = responseData['message'] ?? 'Failed to place bid';
+          DevLogs.logError('Bid placement failed: $errorMessage');
+
+          return APIResponse<Bid>(
+            success: false,
+            message: errorMessage,
+            data: null,
+          );
+        }
+      } else if (response.statusCode == 400) {
+        final errorMessage =
+            responseData['message'] ??
+            'Invalid bid amount or auction not eligible';
+
+        return APIResponse<Bid>(
+          success: false,
+          message: errorMessage,
+          data: null,
+        );
+      } else if (response.statusCode == 401) {
+        return APIResponse<Bid>(
+          success: false,
+          message: 'Unauthorized - Please login again',
+          data: null,
+        );
+      } else if (response.statusCode == 403) {
+        return APIResponse<Bid>(
+          success: false,
+          message: responseData['message'] ?? 'You cannot bid on this auction',
+          data: null,
+        );
+      } else if (response.statusCode == 404) {
+        return APIResponse<Bid>(
+          success: false,
+          message: 'Auction not found',
+          data: null,
+        );
+      } else {
+        final errorMessage =
+            responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
+        DevLogs.logError('Bid placement HTTP error: $errorMessage');
+
+        return APIResponse<Bid>(
+          success: false,
+          message: errorMessage,
+          data: null,
+        );
+      }
+    } catch (e) {
+      DevLogs.logError('Error placing bid: $e');
+      return APIResponse<Bid>(
+        success: false,
+        message: 'An error occurred while placing bid: ${e.toString()}',
+        data: null,
+      );
+    }
+  }
 }
 
 class AuctionsResponse {

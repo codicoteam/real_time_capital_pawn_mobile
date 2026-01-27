@@ -259,6 +259,47 @@ class AuctionsController extends GetxController {
     }
   }
 
+  /// PLACE BID ON AUCTION
+  /// PLACE BID ON AUCTION
+  Future<bool> placeBidRequest({
+    required String auctionId,
+    required double amount,
+  }) async {
+    try {
+      isLoading(true);
+      successMessage.value = '';
+      errorMessage.value = '';
+
+      final response = await AuctionsServices.placeBid(
+        auctionId: auctionId,
+        amount: amount,
+      );
+
+      if (response.success && response.data != null) {
+        successMessage.value = response.message ?? 'Bid placed successfully';
+        DevLogs.logSuccess(successMessage.value);
+        return true;
+      } else {
+        // Check for specific server error
+        final errorMsg = response.message ?? 'Failed to place bid';
+        if (errorMsg.contains('next is not a function')) {
+          errorMessage.value =
+              'Server is temporarily unavailable. Please try again in a few minutes.';
+        } else {
+          errorMessage.value = errorMsg;
+        }
+        DevLogs.logError(errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      DevLogs.logError('Error placing bid: ${e.toString()}');
+      errorMessage.value = 'An error occurred: ${e.toString()}';
+      return false;
+    } finally {
+      isLoading(false);
+    }
+  }
+
   /// CLEAR SEARCH RESULTS
   void clearSearchResults() {
     searchResults.value = [];

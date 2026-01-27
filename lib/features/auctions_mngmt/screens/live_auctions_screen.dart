@@ -5,6 +5,8 @@ import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_mngmt_helper.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 
 class LiveAuctionsScreen extends StatefulWidget {
@@ -62,6 +64,64 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
         '${seconds.toString().padLeft(2, '0')}';
   }
 
+  void _showBidDialog(Auction auction) {
+    final currentBidAmount = auction.winningBidAmount ?? auction.startingBid;
+
+    Get.dialog(
+      BidPlacementDialog(
+        auctionTitle: auction.asset.title,
+        currentBid: currentBidAmount,
+        reservePrice: auction.reservePrice,
+        startingBid: auction.startingBid,
+        onPlaceBid: (amount) async {
+          // Close dialog
+          Get.back();
+
+          // Show loading
+          Get.dialog(
+            const CustomLoader(message: 'Placing your bid...'),
+            barrierDismissible: false,
+          );
+
+          // Place the bid
+          final success = await _auctionsController.placeBidRequest(
+            auctionId: auction.id,
+            amount: amount,
+          );
+
+          // Close loading
+          Get.back();
+
+          if (success) {
+            // Show success message
+            Get.snackbar(
+              'Bid Placed!',
+              'Your bid of \$${amount.toStringAsFixed(2)} has been placed successfully',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: RealTimeColors.success,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+
+            // Refresh live auctions
+            await _refreshAuctions();
+          } else {
+            // Show error
+            Get.snackbar(
+              'Bid Failed',
+              _auctionsController.errorMessage.value,
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: RealTimeColors.error,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+          }
+        },
+      ),
+      barrierDismissible: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,7 +161,6 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
                       }),
                     ],
                   ),
-                  // Add a search button here if you want
                   // Add history icon here too
                   IconButton(
                     onPressed: () {
@@ -255,24 +314,10 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
   }
 
   Widget _buildLiveAuctionCard(Auction auction) {
-    // In _buildLiveAuctionCard method of LiveAuctionsScreen, make the whole card tappable
-    // and add bid placement capability:
-
     return GestureDetector(
       onTap: () {
-        // Show bid placement dialog for live auctions
         if (auction.status == AuctionStatus.live) {
-          Get.dialog(
-            BidPlacementDialog(
-              auction: auction,
-              currentBidAmount: auction.winningBidAmount ?? auction.startingBid,
-              onBidPlaced: (newAmount) {
-                // Refresh live auctions
-                _refreshAuctions();
-              },
-            ),
-            barrierDismissible: true,
-          );
+          _showBidDialog(auction);
         } else {
           AuctionsHelper.navigateToAuctionDetails(
             auctionId: auction.id,
