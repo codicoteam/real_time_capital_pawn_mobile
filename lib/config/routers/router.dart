@@ -62,5 +62,16 @@ class RoutesHelper {
   // Add these to your existing RoutesHelper class
   static String userBiddingHistoryScreen = "/user_bidding_history";
 
+  // Bid Management Routes
+  static String myBidsScreen = "/my-bids";
+  static String bidDetailsScreen = "/bid-details/:id";
+  static const String bidPaymentScreen = "/bid-payment";
+
+  // Add these to RoutesHelper
+  static String myBidPaymentsScreen = "/my-bid-payments";
+  static String selectPaymentMethodScreen = "/select-payment-method";
+  static String confirmBidPaymentScreen = "/confirm-payment";
+  static String paymentDetailsScreen = "/payment-details/:id";
+
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

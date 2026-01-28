@@ -10,6 +10,12 @@ import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/verify_otp_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/user_bid_history_screen.dart';
+import 'package:real_time_pawn/features/bid_mngmnt/screens/bid_details_screen.dart';
+import 'package:real_time_pawn/features/bid_mngmnt/screens/my_bids_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/confirm_bid_payment_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/my_bid_payments_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_details_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/select_payment_method_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart'
     show LoanApplicationDetailsScreen;
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
@@ -251,6 +257,68 @@ class AppPages {
     GetPage(
       name: RoutesHelper.userBiddingHistoryScreen,
       page: () => const UserBiddingHistoryScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // BID MANAGEMENT SCREENS
+    GetPage(
+      name: RoutesHelper.myBidsScreen,
+      page: () => const MyBidsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.bidDetailsScreen,
+      page: () {
+        final id = Get.parameters['id'] ?? '';
+        return BidDetailsScreen(bidId: id);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // BID PAYMENT SCREENS =========================================
+    GetPage(
+      name: RoutesHelper.myBidPaymentsScreen,
+      page: () => const MyBidPaymentsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.selectPaymentMethodScreen,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>;
+        return SelectPaymentMethodScreen(
+          bidId: args['bidId'],
+          amount: args['amount'],
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.confirmBidPaymentScreen,
+      page: () => const ConfirmBidPaymentScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.paymentDetailsScreen,
+      page: () {
+        final id = Get.parameters['id'] ?? '';
+        return PaymentDetailsScreen(paymentId: id);
+      },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),

@@ -140,7 +140,10 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.payment,
                     title: 'Bid Payments',
                     color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(context, '/bid_payment'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.myBidPaymentsScreen,
+                    ),
                   ).animate().fadeIn(delay: 360.ms),
 
                   // Notifications
@@ -166,7 +169,7 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.local_offer_outlined,
                     title: 'Bids',
                     color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(context, '/bids'),
+                    onTap: () => _navigateAndClose(context, '/my-bids'),
                   ).animate().fadeIn(delay: 480.ms),
 
                   // FAQ
