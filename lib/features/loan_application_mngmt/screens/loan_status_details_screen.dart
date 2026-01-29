@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
 
-class LoanApplicationDetailsScreen extends StatelessWidget {
+class LoanStatusDetailsScreen extends StatelessWidget {
   final LoanApplication application;
 
-  const LoanApplicationDetailsScreen({super.key, required this.application});
+  const LoanStatusDetailsScreen({super.key, required this.application});
 
   @override
   Widget build(BuildContext context) {

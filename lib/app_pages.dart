@@ -16,9 +16,8 @@ import 'package:real_time_pawn/features/bid_payment_mngmt/screens/confirm_bid_pa
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/my_bid_payments_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_details_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/select_payment_method_screen.dart';
-import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart'
-    show LoanApplicationDetailsScreen;
-import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_status_details_screen.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_status_list_screen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
@@ -186,9 +185,10 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
+    // Add these two lines - that's all you need to fix!
     GetPage(
       name: RoutesHelper.loanApplicationsScreen,
-      page: () => const LoanApplicationsListScreen(),
+      page: () => const LoanStatusListScreen(),
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
@@ -198,13 +198,12 @@ class AppPages {
       name: RoutesHelper.loanApplicationDetailsScreen,
       page: () {
         final application = Get.arguments as LoanApplication;
-        return LoanApplicationDetailsScreen(application: application);
+        return LoanStatusDetailsScreen(application: application);
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
-
     // AUCTION SCREENS =========================================
     GetPage(
       name: RoutesHelper.auctionsListScreen,
