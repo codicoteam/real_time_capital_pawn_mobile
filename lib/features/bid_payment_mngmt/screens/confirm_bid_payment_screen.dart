@@ -46,12 +46,17 @@ class _ConfirmBidPaymentScreenState extends State<ConfirmBidPaymentScreen> {
       );
 
       if (success) {
-        // Navigate to payment details or back to payments list
-        Get.offAllNamed('/my-bid-payments');
+        // Show success message
         BidPaymentHelper.showSuccess('Payment initiated successfully!');
+
+        // Navigate back to payments list
+        await Future.delayed(const Duration(seconds: 2));
+        Get.offAllNamed('/my-bid-payments');
       } else {
-        Get.back();
+        BidPaymentHelper.showError('Failed to create payment');
       }
+    } catch (e) {
+      BidPaymentHelper.showError('Error: ${e.toString()}');
     } finally {
       setState(() {
         _isProcessing = false;

@@ -612,7 +612,7 @@ class BidPaymentService {
     }
   }
 
-  /// 7. SEARCH BID PAYMENTS
+  /// 7. SEARCH/FILTER BID PAYMENTS
   /// GET /api/v1/bid-payments/search
   static Future<APIResponse<List<BidPayment>>> searchPayments({
     required String query,
@@ -633,36 +633,49 @@ class BidPaymentService {
       );
     }
 
-    // Validate search query length
-    if (query.length < 2) {
-      return APIResponse<List<BidPayment>>(
-        success: false,
-        message: 'Search term must be at least 2 characters',
-        data: null,
-      );
+    // VALIDATION: Only require 2+ characters for text search
+    // Allow empty query when filtering by other parameters (status, auctionId, etc.)
+    if (query.isNotEmpty && query.length < 2) {
+      // Check if we have any other filters
+      final hasOtherFilters =
+          auctionId != null ||
+          payerUserId != null ||
+          status != null ||
+          method != null;
+
+      if (!hasOtherFilters) {
+        // Pure text search requires at least 2 characters
+        return APIResponse<List<BidPayment>>(
+          success: false,
+          message: 'Search term must be at least 2 characters',
+          data: null,
+        );
+      }
+      // If we have other filters, empty or short query is OK
     }
 
+    // ... rest of the method stays the same
     var headers = {
       'accept': 'application/json',
       'Authorization': 'Bearer $token',
     };
 
     final params = <String, String>{
-      'q': query,
       'page': page.toString(),
       'limit': limit.toString(),
+      // Only include q if it's not empty
+      if (query.isNotEmpty) 'q': query,
       if (auctionId != null && auctionId.isNotEmpty) 'auction_id': auctionId,
       if (payerUserId != null && payerUserId.isNotEmpty)
         'payer_user': payerUserId,
       if (status != null && status.isNotEmpty) 'status': status,
       if (method != null && method.isNotEmpty) 'method': method,
     };
-
     final uri = Uri.parse(
       '${ApiKeys.baseUrl}/bid-payments/search',
     ).replace(queryParameters: params);
 
-    DevLogs.logInfo('Searching payments: $uri');
+    DevLogs.logInfo('Searching/filtering payments: $uri');
 
     try {
       final response = await http.get(uri, headers: headers);
@@ -684,7 +697,9 @@ class BidPaymentService {
             ).map((paymentJson) => BidPayment.fromJson(paymentJson)).toList();
           }
 
-          DevLogs.logSuccess('Found ${payments.length} payments in search');
+          DevLogs.logSuccess(
+            'Found ${payments.length} payments in search/filter',
+          );
 
           return APIResponse<List<BidPayment>>(
             success: true,
@@ -705,7 +720,7 @@ class BidPaymentService {
       } else if (response.statusCode == 400) {
         return APIResponse<List<BidPayment>>(
           success: false,
-          message: 'Search term too short',
+          message: 'Invalid search/filter parameters',
           data: null,
         );
       } else if (response.statusCode == 401) {

@@ -15,7 +15,6 @@ class LoanApplicationsListScreen extends StatefulWidget {
 
 class _LoanApplicationsListScreenState
     extends State<LoanApplicationsListScreen> {
-  // REMOVED: Mock data list
   final List<LoanApplication> _loanApplications = [];
 
   String _selectedFilter = 'Newest';

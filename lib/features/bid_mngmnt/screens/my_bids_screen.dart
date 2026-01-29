@@ -69,53 +69,58 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.gavel_outlined, size: 64, color: RealTimeColors.grey400),
-          const SizedBox(height: 16),
-          Text(
-            'No Bids Yet',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.subtextColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'You haven\'t placed any bids yet. Start bidding on auctions to see them here.',
-              textAlign: TextAlign.center,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.gavel_outlined, size: 64, color: RealTimeColors.grey400),
+            const SizedBox(height: 16),
+            Text(
+              'No Bids Yet',
               style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: RealTimeColors.grey500,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Get.back(); // Go back to auctions
-            },
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: AppColors.primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Browse Auctions',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
+                color: AppColors.subtextColor,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'You haven\'t placed any bids yet. Start bidding on auctions to see them here.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: RealTimeColors.grey500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Get.back(); // Go back to auctions
+              },
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: AppColors.primaryColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Browse Auctions',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -140,89 +145,96 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Total amount row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Total Bid Amount',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.subtextColor,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Bid Amount',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.subtextColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    BidManagementHelper.formatCurrency(
-                      _controller.totalBidAmount,
+                    const SizedBox(height: 4),
+                    Text(
+                      BidManagementHelper.formatCurrency(
+                        _controller.totalBidAmount,
+                      ),
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryColor,
+                      ),
                     ),
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryColor,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Paid Amount',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.subtextColor,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Paid Amount',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.subtextColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    BidManagementHelper.formatCurrency(
-                      _controller.totalPaidAmount,
+                    const SizedBox(height: 4),
+                    Text(
+                      BidManagementHelper.formatCurrency(
+                        _controller.totalPaidAmount,
+                      ),
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: RealTimeColors.success,
+                      ),
                     ),
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: RealTimeColors.success,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          // Stats grid
-          GridView.count(
-            crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildStatItem(
-                value: stats['total']?.toString() ?? '0',
-                label: 'Total',
-                color: AppColors.primaryColor,
-              ),
-              _buildStatItem(
-                value: stats['active']?.toString() ?? '0',
-                label: 'Active',
-                color: RealTimeColors.warning,
-              ),
-              _buildStatItem(
-                value: stats['winning']?.toString() ?? '0',
-                label: 'Winning',
-                color: RealTimeColors.success,
-              ),
-              _buildStatItem(
-                value: stats['won']?.toString() ?? '0',
-                label: 'Won',
-                color: RealTimeColors.success,
-              ),
-            ],
+          // Stats grid - Fixed height to prevent overflow
+          SizedBox(
+            height: 80, // Fixed height for the grid
+            child: GridView.count(
+              crossAxisCount: 4,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildStatItem(
+                  value: stats['total']?.toString() ?? '0',
+                  label: 'Total',
+                  color: AppColors.primaryColor,
+                ),
+                _buildStatItem(
+                  value: stats['active']?.toString() ?? '0',
+                  label: 'Active',
+                  color: RealTimeColors.warning,
+                ),
+                _buildStatItem(
+                  value: stats['winning']?.toString() ?? '0',
+                  label: 'Winning',
+                  color: RealTimeColors.success,
+                ),
+                _buildStatItem(
+                  value: stats['won']?.toString() ?? '0',
+                  label: 'Won',
+                  color: RealTimeColors.success,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -346,57 +358,61 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Your Bid',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.subtextColor,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your Bid',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.subtextColor,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        BidManagementHelper.formatCurrency(
-                          bid.amount,
-                          bid.currency,
+                        const SizedBox(height: 4),
+                        Text(
+                          BidManagementHelper.formatCurrency(
+                            bid.amount,
+                            bid.currency,
+                          ),
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryColor,
+                          ),
                         ),
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Placed',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.subtextColor,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Placed',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.subtextColor,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        dateFormat.format(bid.placedAt),
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
+                        const SizedBox(height: 4),
+                        Text(
+                          dateFormat.format(bid.placedAt),
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textColor,
+                          ),
                         ),
-                      ),
-                      Text(
-                        timeFormat.format(bid.placedAt),
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.subtextColor,
+                        Text(
+                          timeFormat.format(bid.placedAt),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.subtextColor,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -536,56 +552,31 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
                 ],
               ),
 
-              const SizedBox(height: 12),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        BidManagementHelper.navigateToAuctionDetails(
-                          auctionId: bid.auction.id,
-                          context: context,
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryColor,
-                        side: BorderSide(color: AppColors.primaryColor),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+              // Only show Pay Now button if needed, otherwise show nothing
+              if (auctionStatus == 'closed' && isWon && !isPaid) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Navigate to select payment method
+                      Get.toNamed(
+                        '/select-payment-method',
+                        arguments: {'bidId': bid.id, 'amount': bid.amount},
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text('View Auction'),
                     ),
+                    child: const Text('Pay Now'),
                   ),
-                  const SizedBox(width: 8),
-                  if (auctionStatus == 'closed' && isWon && !isPaid)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Implement payment
-                          Get.snackbar(
-                            'Coming Soon',
-                            'Payment feature will be available soon',
-                            backgroundColor: AppColors.primaryColor,
-                            colorText: Colors.white,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: AppColors.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text('Pay Now'),
-                      ),
-                    ),
-                ],
-              ),
+                ),
+              ],
             ],
           ),
         ),
@@ -601,7 +592,7 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header - Fixed at top
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -636,131 +627,136 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
               ),
             ),
 
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search bids...',
-                  prefixIcon: const Icon(Icons.search_outlined),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            _controller.searchBids('');
-                          },
-                          icon: const Icon(Icons.close),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: AppColors.surfaceColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-                onChanged: (value) {
-                  _controller.searchBids(value);
-                },
-              ),
-            ),
-
-            // Status filter chips
-            SizedBox(
-              height: 48,
-              child: Obx(() {
-                return ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _controller.statusFilters.length,
-                  itemBuilder: (context, index) {
-                    final status = _controller.statusFilters[index];
-                    final isSelected =
-                        _controller.selectedStatus.value == status;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(status),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          _controller.filterBidsByStatus(
-                            selected ? status : 'All',
-                          );
-                        },
-                        backgroundColor: AppColors.surfaceColor,
-                        selectedColor: AppColors.primaryColor.withOpacity(0.1),
-                        labelStyle: GoogleFonts.poppins(
-                          color: isSelected
-                              ? AppColors.primaryColor
-                              : AppColors.subtextColor,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
-                            color: isSelected
-                                ? AppColors.primaryColor
-                                : AppColors.borderColor,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-
-            // Summary card
-            Obx(() {
-              if (_controller.userBids.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return _buildSummaryCard();
-            }),
-
-            // Bids list
+            // Everything in a single scrollable view
             Expanded(
-              child: Obx(() {
-                if (_controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+              child: RefreshIndicator(
+                onRefresh: _refreshBids,
+                child: Obx(() {
+                  if (_controller.isLoading.value) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (_controller.userBids.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                return RefreshIndicator(
-                  onRefresh: _refreshBids,
-                  child: ListView.builder(
+                  return ListView(
                     controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount:
-                        _controller.userBids.length + (_isLoadingMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= _controller.userBids.length) {
-                        return Padding(
+                    children: [
+                      // Search bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search bids...',
+                            prefixIcon: const Icon(Icons.search_outlined),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _controller.searchBids('');
+                                    },
+                                    icon: const Icon(Icons.close),
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor: AppColors.surfaceColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          onChanged: (value) {
+                            _controller.searchBids(value);
+                          },
+                        ),
+                      ),
+
+                      // Status filter chips
+                      SizedBox(
+                        height: 48,
+                        child: Obx(() {
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _controller.statusFilters.length,
+                            itemBuilder: (context, index) {
+                              final status = _controller.statusFilters[index];
+                              final isSelected =
+                                  _controller.selectedStatus.value == status;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: FilterChip(
+                                  label: Text(status),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    _controller.filterBidsByStatus(
+                                      selected ? status : 'All',
+                                    );
+                                  },
+                                  backgroundColor: AppColors.surfaceColor,
+                                  selectedColor: AppColors.primaryColor
+                                      .withOpacity(0.1),
+                                  labelStyle: GoogleFonts.poppins(
+                                    color: isSelected
+                                        ? AppColors.primaryColor
+                                        : AppColors.subtextColor,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? AppColors.primaryColor
+                                          : AppColors.borderColor,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      ),
+
+                      // Summary card (only if there are bids)
+                      if (_controller.userBids.isNotEmpty) _buildSummaryCard(),
+
+                      // Bids list or empty state
+                      if (_controller.userBids.isEmpty)
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: _buildEmptyState(),
+                        )
+                      else
+                        ..._controller.userBids
+                            .map((bid) => _buildBidCard(bid))
+                            .toList(),
+
+                      // Load more indicator
+                      if (_isLoadingMore)
+                        Padding(
                           padding: const EdgeInsets.all(16),
                           child: Center(
                             child: CircularProgressIndicator(
                               color: AppColors.primaryColor,
                             ),
                           ),
-                        );
-                      }
+                        ),
 
-                      return _buildBidCard(_controller.userBids[index]);
-                    },
-                  ),
-                );
-              }),
+                      // Add some bottom padding
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                }),
+              ),
             ),
           ],
         ),

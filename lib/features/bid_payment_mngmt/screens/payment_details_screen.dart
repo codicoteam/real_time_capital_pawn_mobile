@@ -23,6 +23,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
   void initState() {
     super.initState();
     _loadPaymentDetails();
+    _startPaymentPollingIfNeeded();
   }
 
   Future<void> _loadPaymentDetails() async {
@@ -31,6 +32,28 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
 
   Future<void> _refreshDetails() async {
     await _loadPaymentDetails();
+  }
+
+  Future<void> _startPaymentPollingIfNeeded() async {
+    final payment = _controller.selectedPayment.value;
+    if (payment != null &&
+        (payment.status == PaymentStatus.pending ||
+            payment.status == PaymentStatus.initiated ||
+            payment.status == PaymentStatus.processing)) {
+      // Start polling for status updates
+      await BidPaymentHelper.pollPaymentStatus(
+        paymentId: widget.paymentId,
+        maxAttempts: 20,
+        intervalSeconds: 3,
+        onStatusUpdate: (statusData) {
+          if (statusData != null && statusData['paid'] == true) {
+            // Refresh details when payment is complete
+            _loadPaymentDetails();
+            BidPaymentHelper.showSuccess('Payment completed!');
+          }
+        },
+      );
+    }
   }
 
   Widget _buildDetailRow(String label, String value, {Color? valueColor}) {

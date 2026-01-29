@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,6 +30,9 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
     'Refunded',
   ];
 
+  // Track active status filter
+  String? _activeStatusFilter;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +44,10 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    // Cancel search timer
+    if (_searchDebounceTimer != null) {
+      _searchDebounceTimer!.cancel();
+    }
     super.dispose();
   }
 
@@ -65,8 +74,112 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
     _controller.isLoadingMore.value = false;
   }
 
+  Timer? _searchDebounceTimer;
+
+  void _handleSearch(String query) {
+    // Cancel previous timer
+    if (_searchDebounceTimer != null) {
+      _searchDebounceTimer!.cancel();
+    }
+
+    // Set a new timer
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (query.isEmpty) {
+        _clearSearch();
+      } else if (query.length >= 2) {
+        // Check if there are any payments first
+        if (_controller.bidPayments.isEmpty) {
+          BidPaymentHelper.showError(
+            'No payments to search. You have no payments yet.',
+          );
+          return;
+        }
+
+        // Use client-side search
+        final results = _searchPaymentsLocallyImpl(query);
+        if (results.isNotEmpty) {
+          _controller.bidPayments.value = results;
+          BidPaymentHelper.showSuccess('Found ${results.length} payments');
+        } else {
+          BidPaymentHelper.showError('No payments found matching "$query"');
+        }
+      } else {
+        // 1 character - show message
+        BidPaymentHelper.showError('Search requires at least 2 characters');
+      }
+    });
+  }
+
+  // CLIENT-SIDE SEARCH METHOD
+  void _searchPaymentsLocally(String query) {
+    final results = _searchPaymentsLocallyImpl(query);
+    if (results.isNotEmpty) {
+      _controller.bidPayments.value = results;
+      BidPaymentHelper.showSuccess('Found ${results.length} payments');
+    } else {
+      BidPaymentHelper.showError('No payments found matching "$query"');
+      _refreshPayments(); // Reset to show all
+    }
+  }
+
+  // IMPLEMENTATION: Client-side search
+  List<BidPayment> _searchPaymentsLocallyImpl(String query) {
+    if (query.isEmpty || query.length < 2) return _controller.bidPayments;
+
+    final searchLower = query.toLowerCase();
+
+    return _controller.bidPayments.where((payment) {
+      return payment.auction.asset.title.toLowerCase().contains(searchLower) ||
+          payment.auction.auctionNo.toLowerCase().contains(searchLower) ||
+          payment.method.toLowerCase().contains(searchLower) ||
+          payment.provider.toLowerCase().contains(searchLower) ||
+          payment.statusText.toLowerCase().contains(searchLower) ||
+          (payment.receiptNo?.toLowerCase().contains(searchLower) ?? false) ||
+          (payment.payerPhone?.toLowerCase().contains(searchLower) ?? false);
+    }).toList();
+  }
+
+  // CLIENT-SIDE STATUS FILTERING METHOD
+  List<BidPayment> _filterPaymentsByStatus(String statusText) {
+    if (statusText == 'All') return _controller.bidPayments;
+
+    PaymentStatus status;
+    switch (statusText.toLowerCase()) {
+      case 'successful':
+        status = PaymentStatus.success;
+        break;
+      case 'pending':
+        status = PaymentStatus.pending;
+        break;
+      case 'failed':
+        status = PaymentStatus.failed;
+        break;
+      case 'refunded':
+        status = PaymentStatus.refunded;
+        break;
+      default:
+        return _controller.bidPayments;
+    }
+
+    return _controller.bidPayments
+        .where((payment) => payment.status == status)
+        .toList();
+  }
+
+  void _clearSearch() {
+    // Clear search and refresh original list
+    setState(() {
+      _activeStatusFilter = null;
+    });
+    _controller.clearSearch();
+    _refreshPayments();
+  }
+
   Future<void> _refreshPayments() async {
     await BidPaymentHelper.loadPayerPayments(showLoader: false);
+    setState(() {
+      _activeStatusFilter = null;
+    });
   }
 
   Widget _buildEmptyState() {
@@ -91,23 +204,96 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'You haven\'t made any bid payments yet. Payments will appear here after you pay for won bids.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: RealTimeColors.grey500,
-              ),
+            child: Column(
+              children: [
+                Text(
+                  'You haven\'t made any bid payments yet.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: RealTimeColors.grey500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Payments will appear here after you:',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: RealTimeColors.grey500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 12,
+                      color: RealTimeColors.success,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Win an auction',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: RealTimeColors.grey500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 12,
+                      color: RealTimeColors.success,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Make a payment for your won bid',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: RealTimeColors.grey500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              Get.back(); // Go back to bids
+              // Go to auctions instead of bids
+              Get.offAllNamed('/auctions');
             },
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: AppColors.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Browse Auctions',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () {
+              Get.toNamed('/my-bids');
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryColor,
+              side: BorderSide(color: AppColors.primaryColor),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -550,7 +736,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
                       ? IconButton(
                           onPressed: () {
                             _searchController.clear();
-                            // TODO: Implement search
+                            _clearSearch();
                           },
                           icon: const Icon(Icons.close),
                         )
@@ -566,13 +752,11 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
                     vertical: 12,
                   ),
                 ),
-                onChanged: (value) {
-                  // TODO: Implement search
-                },
+                onChanged: _handleSearch,
               ),
             ),
 
-            // Status filter chips - REMOVED Obx wrapper
+            // Status filter chips
             SizedBox(
               height: 48,
               child: ListView.builder(
@@ -586,19 +770,67 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
                       label: Text(status),
-                      selected: false,
+                      selected: _activeStatusFilter == status,
                       onSelected: (selected) {
-                        // TODO: Implement filter
+                        setState(() {
+                          if (selected) {
+                            _activeStatusFilter = status;
+                          } else {
+                            _activeStatusFilter = null;
+                          }
+                        });
+
+                        if (selected) {
+                          if (status == 'All') {
+                            _refreshPayments();
+                          } else {
+                            // Check if there are any payments first
+                            if (_controller.bidPayments.isEmpty) {
+                              BidPaymentHelper.showError(
+                                'No payments to filter. You have no payments yet.',
+                              );
+                              setState(() {
+                                _activeStatusFilter = null;
+                              });
+                              return;
+                            }
+
+                            // Use client-side filtering
+                            final filtered = _filterPaymentsByStatus(status);
+                            if (filtered.isNotEmpty) {
+                              _controller.bidPayments.value = filtered;
+                              BidPaymentHelper.showSuccess(
+                                'Found ${filtered.length} ${status.toLowerCase()} payments',
+                              );
+                            } else {
+                              BidPaymentHelper.showError(
+                                'No ${status.toLowerCase()} payments found',
+                              );
+                              // Don't clear the filter - keep it selected but show empty state
+                            }
+                          }
+                        } else {
+                          // Deselected - show all
+                          _refreshPayments();
+                        }
                       },
                       backgroundColor: AppColors.surfaceColor,
                       selectedColor: AppColors.primaryColor.withOpacity(0.1),
                       labelStyle: GoogleFonts.poppins(
-                        color: AppColors.subtextColor,
-                        fontWeight: FontWeight.normal,
+                        color: _activeStatusFilter == status
+                            ? AppColors.primaryColor
+                            : AppColors.subtextColor,
+                        fontWeight: _activeStatusFilter == status
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(color: AppColors.borderColor),
+                        side: BorderSide(
+                          color: _activeStatusFilter == status
+                              ? AppColors.primaryColor
+                              : AppColors.borderColor,
+                        ),
                       ),
                     ),
                   );

@@ -39,11 +39,52 @@ class UserBid {
     required this.updatedAt,
   });
 
+  // Replace the current UserBid.fromJson factory constructor with this:
+
   factory UserBid.fromJson(Map<String, dynamic> json) {
+    // Handle bidder_user which might be a string ID or an object
+    dynamic bidderUserData = json['bidder_user'];
+    UserBidder bidder;
+
+    if (bidderUserData is String) {
+      // If it's just a string ID, create a minimal UserBidder
+      bidder = UserBidder(
+        id: bidderUserData,
+        email: '',
+        phone: '',
+        roles: [],
+        firstName: '',
+        lastName: '',
+        fullName: 'Unknown Bidder',
+        status: 'active',
+        emailVerified: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else if (bidderUserData is Map<String, dynamic>) {
+      // If it's already an object, parse it normally
+      bidder = UserBidder.fromJson(bidderUserData);
+    } else {
+      // Fallback if data is null or invalid
+      bidder = UserBidder(
+        id: '',
+        email: '',
+        phone: '',
+        roles: [],
+        firstName: '',
+        lastName: '',
+        fullName: 'Unknown Bidder',
+        status: 'active',
+        emailVerified: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
     return UserBid(
       id: json['_id'] ?? json['id'] ?? '',
       auction: UserBidAuction.fromJson(json['auction'] ?? {}),
-      bidder: UserBidder.fromJson(json['bidder_user'] ?? {}),
+      bidder: bidder,
       amount: (json['amount'] ?? 0.0).toDouble(),
       currency: json['currency'] ?? 'USD',
       placedAt: DateTime.parse(
@@ -113,8 +154,46 @@ class UserBidAuction {
     required this.createdAt,
     required this.updatedAt,
   });
-
   factory UserBidAuction.fromJson(Map<String, dynamic> json) {
+    // Handle created_by which might be a string ID or an object
+    dynamic createdByData = json['created_by'];
+    UserBidder createdBy;
+
+    if (createdByData is String) {
+      // If it's just a string ID, create a minimal UserBidder
+      createdBy = UserBidder(
+        id: createdByData,
+        email: '',
+        phone: '',
+        roles: [],
+        firstName: '',
+        lastName: '',
+        fullName: 'Unknown User',
+        status: 'active',
+        emailVerified: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else if (createdByData is Map<String, dynamic>) {
+      // If it's already an object, parse it normally
+      createdBy = UserBidder.fromJson(createdByData);
+    } else {
+      // Fallback if data is null or invalid
+      createdBy = UserBidder(
+        id: '',
+        email: '',
+        phone: '',
+        roles: [],
+        firstName: '',
+        lastName: '',
+        fullName: 'Unknown User',
+        status: 'active',
+        emailVerified: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
     return UserBidAuction(
       id: json['_id'] ?? json['id'] ?? '',
       auctionNo: json['auction_no'] ?? '',
@@ -137,7 +216,7 @@ class UserBidAuction {
       winningBidAmount: json['winning_bid_amount'] != null
           ? (json['winning_bid_amount']).toDouble()
           : null,
-      createdBy: UserBidder.fromJson(json['created_by'] ?? {}),
+      createdBy: createdBy, // Use the handled created_by
       createdAt: DateTime.parse(
         json['created_at'] ?? DateTime.now().toIso8601String(),
       ),
@@ -235,19 +314,60 @@ class BidDispute {
     this.resolutionNotes,
   });
 
+  // In BidDispute.fromJson():
   factory BidDispute.fromJson(Map<String, dynamic> json) {
+    // Handle raised_by which might be string or object
+    dynamic raisedByData = json['raised_by'];
+    UserBidder? raisedBy;
+
+    if (raisedByData is String && raisedByData.isNotEmpty) {
+      raisedBy = UserBidder(
+        id: raisedByData,
+        email: '',
+        phone: '',
+        roles: [],
+        firstName: '',
+        lastName: '',
+        fullName: 'Unknown User',
+        status: 'active',
+        emailVerified: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else if (raisedByData is Map<String, dynamic>) {
+      raisedBy = UserBidder.fromJson(raisedByData);
+    }
+
+    // Similar logic for resolved_by
+    dynamic resolvedByData = json['resolved_by'];
+    UserBidder? resolvedBy;
+
+    if (resolvedByData is String && resolvedByData.isNotEmpty) {
+      resolvedBy = UserBidder(
+        id: resolvedByData,
+        email: '',
+        phone: '',
+        roles: [],
+        firstName: '',
+        lastName: '',
+        fullName: 'Unknown User',
+        status: 'active',
+        emailVerified: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else if (resolvedByData is Map<String, dynamic>) {
+      resolvedBy = UserBidder.fromJson(resolvedByData);
+    }
+
     return BidDispute(
       status: _parseDisputeStatus(json['status'] ?? 'none'),
       reason: json['reason'],
-      raisedBy: json['raised_by'] != null
-          ? UserBidder.fromJson(json['raised_by'])
-          : null,
+      raisedBy: raisedBy,
       raisedAt: json['raised_at'] != null
           ? DateTime.parse(json['raised_at'])
           : null,
-      resolvedBy: json['resolved_by'] != null
-          ? UserBidder.fromJson(json['resolved_by'])
-          : null,
+      resolvedBy: resolvedBy,
       resolvedAt: json['resolved_at'] != null
           ? DateTime.parse(json['resolved_at'])
           : null,
