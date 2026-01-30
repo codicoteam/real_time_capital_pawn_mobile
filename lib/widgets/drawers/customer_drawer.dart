@@ -183,6 +183,7 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateAndClose(
                       context,
                       RoutesHelper.loanApplicationsScreen,
+                      arguments: "69674a2fa4d065b5cd86e6e1",
                     ),
                   ).animate().fadeIn(delay: 520.ms),
 
@@ -282,8 +283,12 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  void _navigateAndClose(BuildContext context, String route) {
-    Get.toNamed(route);
+  void _navigateAndClose(
+    BuildContext context,
+    String route, {
+    dynamic arguments,
+  }) {
+    Get.toNamed(route, arguments: arguments);
   }
 
   void _showLogoutDialog(BuildContext context) {

@@ -9,7 +9,6 @@ import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_appl
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
-import 'package:real_time_pawn/models/loan_application_model.dart';
 
 import 'features/auth_mngmt/screens/account_verification_screen.dart';
 import 'features/auth_mngmt/screens/confirm_email_screen.dart';
@@ -18,6 +17,7 @@ import 'features/auth_mngmt/screens/reset_password_screen.dart'
 import 'features/faq_mngmt/screens/faq_mngmt_screen.dart';
 import 'features/home_management/screens/home_screen.dart';
 import 'features/home_management/screens/main_screen.dart';
+import 'models/loan_application.model.dart';
 // import 'package:mrpace/features/about_management/screens/about_screen.dart';
 // import 'package:mrpace/features/auth_management/Screens/account_verfication.dart';
 // import 'package:mrpace/features/auth_management/Screens/confirm_email.dart';
@@ -176,16 +176,34 @@ class AppPages {
 
     GetPage(
       name: RoutesHelper.loanApplicationsScreen,
-      page: () => const LoanApplicationsListScreen(),
+      page: () {
+        // Safely extract customerUserId from arguments
+        final args = Get.arguments;
+        String customerUserId;
+
+        if (args is Map && args['customerUserId'] != null) {
+          // If arguments is a Map with customerUserId key
+          customerUserId = args['customerUserId'] as String;
+        } else if (args is String) {
+          // If arguments is directly a String
+          customerUserId = args;
+        } else {
+          // Fallback - throw error or return error screen
+          throw Exception(
+            'Customer User ID is required for Loan Applications screen',
+          );
+        }
+
+        return LoanApplicationsListScreen(customerUserId: customerUserId);
+      },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
     ),
 
     GetPage(
       name: RoutesHelper.loanApplicationDetailsScreen,
       page: () {
-        final application = Get.arguments as LoanApplication;
+        final application = Get.arguments as LoanApplicationModel;
         return LoanApplicationDetailsScreen(application: application);
       },
       transition: Transition.fadeIn,
