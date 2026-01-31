@@ -1,31 +1,14 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/helpers/search_auctions_screen.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_details_screen.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/screens/auctions_list_screen.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/screens/live_auctions_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/forgot_password_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/verify_otp_screen.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/screens/user_bid_history_screen.dart';
-import 'package:real_time_pawn/features/bid_mngmnt/screens/bid_details_screen.dart';
-import 'package:real_time_pawn/features/bid_mngmnt/screens/my_bids_screen.dart';
-import 'package:real_time_pawn/features/bid_payment_mngmt/screens/confirm_bid_payment_screen.dart';
-import 'package:real_time_pawn/features/bid_payment_mngmt/screens/my_bid_payments_screen.dart';
-import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_details_screen.dart';
-import 'package:real_time_pawn/features/bid_payment_mngmt/screens/select_payment_method_screen.dart';
-import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_status_details_screen.dart';
-import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_status_list_screen.dart';
-import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_charges_screen.dart';
-import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_details_screen.dart';
-import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_payment_screen.dart';
-import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_screen.dart';
-import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_status_screen.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart'
+    show LoanApplicationDetailsScreen;
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
-import 'package:real_time_pawn/models/loan_application_model.dart';
 
 import 'features/auth_mngmt/screens/account_verification_screen.dart';
 import 'features/auth_mngmt/screens/confirm_email_screen.dart';
@@ -34,6 +17,7 @@ import 'features/auth_mngmt/screens/reset_password_screen.dart'
 import 'features/faq_mngmt/screens/faq_mngmt_screen.dart';
 import 'features/home_management/screens/home_screen.dart';
 import 'features/home_management/screens/main_screen.dart';
+import 'models/loan_application.model.dart';
 // import 'package:mrpace/features/about_management/screens/about_screen.dart';
 // import 'package:mrpace/features/auth_management/Screens/account_verfication.dart';
 // import 'package:mrpace/features/auth_management/Screens/confirm_email.dart';
@@ -190,198 +174,42 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
-    // Loan Management Routes
-    GetPage(
-      name: RoutesHelper.LoansScreen,
-      page: () => const LoansScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.LoanDetailsScreen,
-      page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        return LoanDetailsScreen(loanId: arguments['loanId'] ?? '');
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.LoanChargesScreen,
-      page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        return LoanChargesScreen(loanId: arguments['loanId'] ?? '');
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.LoanPaymentScreen,
-      page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        return LoanPaymentScreen(loanId: arguments['loanId'] ?? '');
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.LoanStatusScreen,
-      page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        return LoanStatusScreen(loanId: arguments['loanId'] ?? '');
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    /* // Add these two lines - that's all you need to fix!
     GetPage(
       name: RoutesHelper.loanApplicationsScreen,
-      page: () => const LoanStatusListScreen(),
+      page: () {
+        // Safely extract customerUserId from arguments
+        final args = Get.arguments;
+        String customerUserId;
+
+        if (args is Map && args['customerUserId'] != null) {
+          // If arguments is a Map with customerUserId key
+          customerUserId = args['customerUserId'] as String;
+        } else if (args is String) {
+          // If arguments is directly a String
+          customerUserId = args;
+        } else {
+          // Fallback - throw error or return error screen
+          throw Exception(
+            'Customer User ID is required for Loan Applications screen',
+          );
+        }
+
+        return LoanApplicationsListScreen(customerUserId: customerUserId);
+      },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
     ),
 
     GetPage(
       name: RoutesHelper.loanApplicationDetailsScreen,
       page: () {
-        final application = Get.arguments as LoanApplication;
-        return LoanStatusDetailsScreen(application: application);
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),*/
-    // AUCTION SCREENS =========================================
-    GetPage(
-      name: RoutesHelper.auctionsListScreen,
-      page: () => const AuctionsListScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.liveAuctionsScreen,
-      page: () => const LiveAuctionsScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.auctionDetailsScreen,
-      page: () {
-        // Extract auction ID from route parameters
-        final id = Get.parameters['id'] ?? '';
-        return AuctionDetailsScreen(auctionId: id);
+        final application = Get.arguments as LoanApplicationModel;
+        return LoanApplicationDetailsScreen(application: application);
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
-    // Add to AppPages
-    GetPage(
-      name: RoutesHelper.searchAuctionsScreen,
-      page: () => const SearchAuctionsScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.auctionBidsScreen,
-      page: () {
-        final id = Get.parameters['id'] ?? '';
-        final title = Get.arguments as String? ?? 'Auction Bids';
-        return AuctionBidsScreen(auctionId: id, auctionTitle: title);
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-    // USER BIDDING HISTORY SCREEN ================================
-    GetPage(
-      name: RoutesHelper.userBiddingHistoryScreen,
-      page: () => const UserBiddingHistoryScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    // BID MANAGEMENT SCREENS
-    GetPage(
-      name: RoutesHelper.myBidsScreen,
-      page: () => const MyBidsScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.bidDetailsScreen,
-      page: () {
-        final id = Get.parameters['id'] ?? '';
-        return BidDetailsScreen(bidId: id);
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    // BID PAYMENT SCREENS =========================================
-    GetPage(
-      name: RoutesHelper.myBidPaymentsScreen,
-      page: () => const MyBidPaymentsScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.selectPaymentMethodScreen,
-      page: () {
-        final args = Get.arguments as Map<String, dynamic>;
-        return SelectPaymentMethodScreen(
-          bidId: args['bidId'],
-          amount: args['amount'],
-        );
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.confirmBidPaymentScreen,
-      page: () => const ConfirmBidPaymentScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    GetPage(
-      name: RoutesHelper.paymentDetailsScreen,
-      page: () {
-        final id = Get.parameters['id'] ?? '';
-        return PaymentDetailsScreen(paymentId: id);
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
-    // END AUCTION SCREENS =====================================
 
     // GetPage(
     //   name: RoutesHelper.all_races_page,
