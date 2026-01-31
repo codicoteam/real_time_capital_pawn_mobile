@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/test/curved_edges.dart';
@@ -294,3 +294,4 @@ class _LoanApplicationsListScreenState extends State<LoanStatusListScreen> {
     );
   }
 }
+*/

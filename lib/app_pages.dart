@@ -18,6 +18,11 @@ import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_detail
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/select_payment_method_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_status_details_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_status_list_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_charges_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_details_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_payment_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_status_screen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
@@ -185,7 +190,60 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
-    // Add these two lines - that's all you need to fix!
+    // Loan Management Routes
+    GetPage(
+      name: RoutesHelper.LoansScreen,
+      page: () => const LoansScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.LoanDetailsScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanDetailsScreen(loanId: arguments['loanId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.LoanChargesScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanChargesScreen(loanId: arguments['loanId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.LoanPaymentScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanPaymentScreen(loanId: arguments['loanId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.LoanStatusScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanStatusScreen(loanId: arguments['loanId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    /* // Add these two lines - that's all you need to fix!
     GetPage(
       name: RoutesHelper.loanApplicationsScreen,
       page: () => const LoanStatusListScreen(),
@@ -203,7 +261,7 @@ class AppPages {
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
-    ),
+    ),*/
     // AUCTION SCREENS =========================================
     GetPage(
       name: RoutesHelper.auctionsListScreen,

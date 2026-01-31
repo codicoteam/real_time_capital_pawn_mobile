@@ -73,5 +73,13 @@ class RoutesHelper {
   static String confirmBidPaymentScreen = "/confirm-payment";
   static String paymentDetailsScreen = "/payment-details/:id";
 
+  // Loan Management Routes
+  // Loan Management Routes
+  static String LoansScreen = "/loans";
+  static String LoanDetailsScreen = "/loan-details";
+  static String LoanChargesScreen = "/loan-charges";
+  static String LoanPaymentScreen = "/loan-payment";
+  static String LoanStatusScreen = "/loan-status";
+
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

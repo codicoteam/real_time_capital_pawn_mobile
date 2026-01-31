@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
@@ -254,4 +254,4 @@ class LoanStatusDetailsScreen extends StatelessWidget {
       ),
     );
   }
-}
+}*/
