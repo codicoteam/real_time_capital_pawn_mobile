@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+import 'package:real_time_pawn/features/loan_mngmt/controllers/loan_mngmt_controller.dart';
 
 class LoanChargesScreen extends StatefulWidget {
   final String loanId;
@@ -13,7 +15,73 @@ class LoanChargesScreen extends StatefulWidget {
 }
 
 class _LoanChargesScreenState extends State<LoanChargesScreen> {
-  bool _isLoading = false;
+  final LoanController _controller = Get.find<LoanController>();
+  Map<String, dynamic>? _chargesData;
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCharges();
+  }
+
+  Future<void> _loadCharges() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final charges = await _controller.calculateLoanCharges(widget.loanId);
+
+      if (charges != null) {
+        setState(() {
+          _chargesData = charges;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Failed to load charges';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error loading charges: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatCurrency(double amount) {
+    // Assuming USD currency - you might want to get this from loan data
+    return '\$${amount.toStringAsFixed(2)}';
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final monthNames = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${date.day} ${monthNames[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,185 +130,400 @@ class _LoanChargesScreenState extends State<LoanChargesScreen> {
                       ],
                     ),
                   ),
+                  IconButton(
+                    onPressed: _loadCharges,
+                    icon: const Icon(Icons.refresh_outlined),
+                    color: AppColors.textColor,
+                  ),
                 ],
               ),
             ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Total Charges Summary
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderColor),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _buildChargeSummaryItem(
-                                label: 'Total Charges',
-                                amount: 'K2,250.00', // From API: totalCharges
-                              ),
-                              _buildChargeSummaryItem(
-                                label: 'Paid',
-                                amount: 'K250.00', // From API: totalPaid
-                                color: RealTimeColors.success,
-                              ),
-                            ],
+            if (_isLoading)
+              Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              )
+            else if (_errorMessage.isNotEmpty)
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: RealTimeColors.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _errorMessage,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: AppColors.textColor,
                           ),
-                          const SizedBox(height: 12),
-                          Divider(color: AppColors.borderColor),
-                          const SizedBox(height: 12),
-                          _buildChargeSummaryItem(
-                            label: 'Outstanding Charges',
-                            amount: 'K2,000.00', // From API: outstandingCharges
-                            color: RealTimeColors.warning,
-                            isLarge: true,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadCharges,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: AppColors.primaryColor,
                           ),
-                        ],
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else if (_chargesData == null)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 64,
+                        color: RealTimeColors.grey400,
                       ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Charges Breakdown by Type
-                    Text(
-                      'Charges by Type',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildChargeTypeCard(
-                      type: 'Principal',
-                      amount: 'K10,000.00', // From API charge breakdown
-                      description: 'Original loan amount',
-                      isPaid: false,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildChargeTypeCard(
-                      type: 'Interest',
-                      amount: 'K1,500.00', // From API charge breakdown
-                      description: 'Monthly interest @ 15%',
-                      isPaid: false,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildChargeTypeCard(
-                      type: 'Storage Fee',
-                      amount: 'K500.00', // From API charge breakdown
-                      description: 'Monthly storage fee',
-                      isPaid: false,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildChargeTypeCard(
-                      type: 'Insurance',
-                      amount: 'K250.00', // From API charge breakdown
-                      description: 'Monthly insurance premium',
-                      isPaid: true, // Already paid
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Detailed Charges List
-                    Text(
-                      'Detailed Charges',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDetailedChargeItem(
-                      date: '02 Jan 2024',
-                      description: 'Principal Disbursement',
-                      type: 'Principal',
-                      amount: 'K10,000.00',
-                      isPaid: false,
-                    ),
-                    _buildDetailedChargeItem(
-                      date: '02 Jan 2024',
-                      description: 'Interest Charge',
-                      type: 'Interest',
-                      amount: 'K1,500.00',
-                      isPaid: false,
-                    ),
-                    _buildDetailedChargeItem(
-                      date: '02 Jan 2024',
-                      description: 'Storage Fee',
-                      type: 'Storage',
-                      amount: 'K500.00',
-                      isPaid: false,
-                    ),
-                    _buildDetailedChargeItem(
-                      date: '02 Jan 2024',
-                      description: 'Insurance Premium',
-                      type: 'Insurance',
-                      amount: 'K250.00',
-                      isPaid: true,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Calculation Notes
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceColor.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.borderColor.withOpacity(0.5),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No charges data available',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.subtextColor,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: AppColors.subtextColor,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Calculation Notes',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textColor,
+                    ],
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Total Charges Summary
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.borderColor),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: _buildChargeSummaryItem(
+                                    label: 'Principal',
+                                    amount: _formatCurrency(
+                                      (_chargesData!['principal'] as num?)
+                                              ?.toDouble() ??
+                                          0.0,
+                                    ),
+                                  ),
                                 ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildChargeSummaryItem(
+                                    label: 'Days Elapsed',
+                                    amount:
+                                        '${_chargesData!['days_elapsed'] ?? 0} days',
+                                    color: AppColors.subtextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Divider(color: AppColors.borderColor),
+                            const SizedBox(height: 12),
+                            _buildChargeSummaryItem(
+                              label: 'Total Due',
+                              amount: _formatCurrency(
+                                (_chargesData!['total_due'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
                               ),
-                            ],
+                              color: RealTimeColors.warning,
+                              isLarge: true,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Interest Charges
+                      Text(
+                        'Interest Charges',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildChargeTypeCard(
+                        type: 'Principal Amount',
+                        amount: _formatCurrency(
+                          (_chargesData!['principal'] as num?)?.toDouble() ??
+                              0.0,
+                        ),
+                        description: 'Original loan amount',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildChargeTypeCard(
+                        type: 'Interest Rate',
+                        amount: '${_chargesData!['interest_rate'] ?? 0.0}%',
+                        description: 'Annual interest rate',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildChargeTypeCard(
+                        type: 'Interest Accrued',
+                        amount: _formatCurrency(
+                          (_chargesData!['interest_accrued'] as num?)
+                                  ?.toDouble() ??
+                              0.0,
+                        ),
+                        description:
+                            'Accrued interest for ${_chargesData!['days_elapsed'] ?? 0} days',
+                        color: RealTimeColors.warning,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Additional Charges
+                      Text(
+                        'Additional Charges',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildChargeTypeCard(
+                        type: 'Storage Charge',
+                        amount: _formatCurrency(
+                          (_chargesData!['storage_charge'] as num?)
+                                  ?.toDouble() ??
+                              0.0,
+                        ),
+                        description:
+                            '${_chargesData!['storage_charge_percent'] ?? 0.0}% of principal',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildChargeTypeCard(
+                        type: 'Penalty Charge',
+                        amount: _formatCurrency(
+                          (_chargesData!['penalty'] as num?)?.toDouble() ?? 0.0,
+                        ),
+                        description:
+                            '${_chargesData!['penalty_percent'] ?? 0.0}% penalty',
+                        color:
+                            ((_chargesData!['penalty'] as num?)?.toDouble() ??
+                                    0.0) >
+                                0
+                            ? RealTimeColors.error
+                            : RealTimeColors.success,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Loan Status Information
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.borderColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Loan Status',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildStatusRow(
+                              label: 'Current Balance',
+                              value: _formatCurrency(
+                                (_chargesData!['current_balance'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
+                              ),
+                            ),
+                            _buildStatusRow(
+                              label: 'Total Loan Days',
+                              value:
+                                  '${_chargesData!['total_loan_days'] ?? 0} days',
+                            ),
+                            _buildStatusRow(
+                              label: 'Due Date',
+                              value: _formatDate(
+                                _chargesData!['due_date']?.toString() ?? '',
+                              ),
+                            ),
+                            _buildStatusRow(
+                              label: 'Overdue Status',
+                              value:
+                                  (_chargesData!['is_overdue'] as bool?) == true
+                                  ? '${_chargesData!['overdue_days'] ?? 0} days overdue'
+                                  : 'Not overdue',
+                              color:
+                                  (_chargesData!['is_overdue'] as bool?) == true
+                                  ? RealTimeColors.error
+                                  : RealTimeColors.success,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Detailed Calculation
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceColor.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.borderColor.withOpacity(0.5),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '• Interest: 15% per month on principal\n'
-                            '• Storage: K500 monthly flat fee\n'
-                            '• Insurance: 2.5% of collateral value\n'
-                            '• All charges accrue daily',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: AppColors.subtextColor,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calculate_outlined,
+                                  size: 16,
+                                  color: AppColors.subtextColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Calculation Breakdown',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCalculationRow(
+                              label: 'Principal',
+                              value: _formatCurrency(
+                                (_chargesData!['principal'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
+                              ),
+                            ),
+                            _buildCalculationRow(
+                              label:
+                                  'Interest (${_chargesData!['interest_rate'] ?? 0.0}%)',
+                              value: _formatCurrency(
+                                (_chargesData!['interest_accrued'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
+                              ),
+                            ),
+                            _buildCalculationRow(
+                              label:
+                                  'Storage (${_chargesData!['storage_charge_percent'] ?? 0.0}%)',
+                              value: _formatCurrency(
+                                (_chargesData!['storage_charge'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
+                              ),
+                            ),
+                            _buildCalculationRow(
+                              label:
+                                  'Penalty (${_chargesData!['penalty_percent'] ?? 0.0}%)',
+                              value: _formatCurrency(
+                                (_chargesData!['penalty'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
+                              ),
+                            ),
+                            Divider(
+                              color: AppColors.borderColor,
+                              height: 24,
+                              thickness: 1,
+                            ),
+                            _buildCalculationRow(
+                              label: 'Total Amount Due',
+                              value: _formatCurrency(
+                                (_chargesData!['total_due'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
+                              ),
+                              isTotal: true,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Make Payment Button
+                      if (((_chargesData!['total_due'] as num?)?.toDouble() ??
+                              0.0) >
+                          0)
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.toNamed(
+                              RoutesHelper.CreatePaymentScreen,
+                              arguments: {
+                                'loanId': widget.loanId,
+                                'amount':
+                                    (_chargesData!['total_due'] as num?)
+                                        ?.toDouble() ??
+                                    0.0,
+                                'charges': _chargesData,
+                              },
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: AppColors.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
+                          child: Text(
+                            'Make Payment - ${_formatCurrency((_chargesData!['total_due'] as num?)?.toDouble() ?? 0.0)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -278,6 +561,8 @@ class _LoanChargesScreenState extends State<LoanChargesScreen> {
               fontWeight: FontWeight.bold,
               color: color ?? AppColors.textColor,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -288,7 +573,7 @@ class _LoanChargesScreenState extends State<LoanChargesScreen> {
     required String type,
     required String amount,
     required String description,
-    required bool isPaid,
+    Color? color,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -304,48 +589,23 @@ class _LoanChargesScreenState extends State<LoanChargesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getChargeTypeColor(type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        type,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: _getChargeTypeColor(type),
-                        ),
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getChargeTypeColor(type).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    type,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: color ?? _getChargeTypeColor(type),
                     ),
-                    if (isPaid) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: RealTimeColors.success.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'PAID',
-                          style: GoogleFonts.poppins(
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                            color: RealTimeColors.success,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -363,7 +623,7 @@ class _LoanChargesScreenState extends State<LoanChargesScreen> {
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+              color: color ?? AppColors.textColor,
             ),
           ),
         ],
@@ -371,92 +631,61 @@ class _LoanChargesScreenState extends State<LoanChargesScreen> {
     );
   }
 
-  Widget _buildDetailedChargeItem({
-    required String date,
-    required String description,
-    required String type,
-    required String amount,
-    required bool isPaid,
+  Widget _buildStatusRow({
+    required String label,
+    required String value,
+    Color? color,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                date,
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  color: AppColors.subtextColor,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _getChargeTypeColor(type).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  type,
-                  style: GoogleFonts.poppins(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w600,
-                    color: _getChargeTypeColor(type),
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppColors.subtextColor,
+            ),
           ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isPaid
-                      ? RealTimeColors.success.withOpacity(0.1)
-                      : RealTimeColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  isPaid ? 'PAID' : 'DUE',
-                  style: GoogleFonts.poppins(
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    color: isPaid
-                        ? RealTimeColors.success
-                        : RealTimeColors.warning,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: color ?? AppColors.textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationRow({
+    required String label,
+    required String value,
+    bool isTotal = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+              color: AppColors.textColor,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: isTotal ? 18 : 14,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              color: isTotal ? RealTimeColors.warning : AppColors.textColor,
+            ),
           ),
         ],
       ),
@@ -466,13 +695,18 @@ class _LoanChargesScreenState extends State<LoanChargesScreen> {
   Color _getChargeTypeColor(String type) {
     switch (type.toLowerCase()) {
       case 'principal':
+      case 'principal amount':
         return AppColors.primaryColor;
       case 'interest':
+      case 'interest rate':
+      case 'interest accrued':
         return RealTimeColors.warning;
       case 'storage':
-        return RealTimeColors.warning;
-      case 'insurance':
-        return RealTimeColors.success;
+      case 'storage charge':
+        return AppColors.primaryColor.withOpacity(0.7);
+      case 'penalty':
+      case 'penalty charge':
+        return RealTimeColors.error;
       default:
         return AppColors.textColor;
     }

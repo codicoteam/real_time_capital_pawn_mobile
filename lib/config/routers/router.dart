@@ -74,12 +74,22 @@ class RoutesHelper {
   static String paymentDetailsScreen = "/payment-details/:id";
 
   // Loan Management Routes
-  // Loan Management Routes
   static String LoansScreen = "/loans";
   static String LoanDetailsScreen = "/loan-details";
   static String LoanChargesScreen = "/loan-charges";
   static String LoanPaymentScreen = "/loan-payment";
   static String LoanStatusScreen = "/loan-status";
+
+  // Loan Terms Management routes
+  static const String loanTermsScreen = "/loan-terms";
+  static const String loanTermDetailsScreen = "/loan-term-details";
+  static const String loanTermTimelineScreen = "/loan-term-timeline";
+  static const String renewLoanTermScreen = "/renew-loan-term";
+
+  // Payment Management Routes
+  static const String PaymentListScreen = "/payment-list";
+  static const String PaymentDetailsScreen = "/payment-details";
+  static const String CreatePaymentScreen = "/create-payment";
 
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

@@ -230,6 +230,8 @@ class LoanService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (responseData['success'] == true) {
           final data = responseData['data'];
+
+          // FIXED: Use fromMap instead of fromJson since data is already a Map
           final loan = LoanModel.fromMap(data);
 
           DevLogs.logSuccess('Fetched loan details successfully');

@@ -4,12 +4,22 @@ import 'package:real_time_pawn/features/auth_mngmt/screens/forgot_password_scree
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/verify_otp_screen.dart';
-import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart'
-    show LoanApplicationDetailsScreen;
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_details_screen.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_charges_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_details_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_payment_screen.dart';
+import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_screen.dart';
+import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_term_mngmt_details_screen.dart';
+import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_term_mngmt_timeline_screen.dart';
+import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_terms_mngmt_screen.dart';
+import 'package:real_time_pawn/features/loan_terms_mngmt/screens/renew_loan_term_mngmt_screen.dart';
+import 'package:real_time_pawn/features/payments_mngmt/screens/create_payment_screen.dart';
+import 'package:real_time_pawn/features/payments_mngmt/screens/payment_list_screen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
-
+import 'package:real_time_pawn/models/loan_terms_model.dart';
 import 'features/auth_mngmt/screens/account_verification_screen.dart';
 import 'features/auth_mngmt/screens/confirm_email_screen.dart';
 import 'features/auth_mngmt/screens/reset_password_screen.dart'
@@ -205,6 +215,150 @@ class AppPages {
       page: () {
         final application = Get.arguments as LoanApplicationModel;
         return LoanApplicationDetailsScreen(application: application);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Loans Screen
+    GetPage(
+      name: RoutesHelper.LoansScreen,
+      page: () => const LoansScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Loan Details Screen - Extract loanId from arguments
+    GetPage(
+      name: RoutesHelper.LoanDetailsScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanDetailsScreen(loanId: arguments['loanId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Loan Charges Screen - Extract loanId from arguments
+    GetPage(
+      name: RoutesHelper.LoanChargesScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanChargesScreen(loanId: arguments['loanId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Loan Payment Screen - Extract loanId and initialAmount from arguments
+    GetPage(
+      name: RoutesHelper.LoanPaymentScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanPaymentScreen(
+          loanId: arguments['loanId'] ?? '',
+          initialAmount: (arguments['amount'] as num?)?.toDouble(),
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Loan Terms Pages
+    GetPage(
+      name: RoutesHelper.loanTermsScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanTermsScreen(
+          loanId: arguments['loanId'] ?? '',
+          loanNo: arguments['loanNo'] ?? '',
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.loanTermDetailsScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanTermDetailsScreen(
+          termId: arguments['termId'] ?? '',
+          loanId: arguments['loanId'] ?? '',
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.loanTermTimelineScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanTermTimelineScreen(loanId: arguments['loanId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.renewLoanTermScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return RenewLoanTermScreen(
+          loanId: arguments['loanId'] ?? '',
+          currentTerm: arguments['currentTerm'] as LoanTerm?,
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.PaymentListScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>? ?? {};
+        return PaymentListScreen(
+          loanId: arguments['loanId'],
+          isLoanPayments: arguments['loanId'] != null,
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Payment Details Screen - requires paymentId
+    GetPage(
+      name: RoutesHelper.PaymentDetailsScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return PaymentDetailsScreen(paymentId: arguments['paymentId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Create Payment Screen - requires loanId, optional amount and chargesData
+    GetPage(
+      name: RoutesHelper.CreatePaymentScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return CreatePaymentScreen(
+          loanId: arguments['loanId'] ?? '',
+          initialAmount: (arguments['amount'] as num?)?.toDouble(),
+          chargesData: arguments['charges'],
+        );
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),

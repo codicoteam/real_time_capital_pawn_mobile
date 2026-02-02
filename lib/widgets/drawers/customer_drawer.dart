@@ -132,7 +132,8 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.account_balance_wallet_outlined,
                     title: 'Loans',
                     color: RealTimeColors.primaryGreen,
-                    onTap: () => _navigateAndClose(context, '/loans'),
+                    onTap: () =>
+                        _navigateAndClose(context, RoutesHelper.LoansScreen),
                   ).animate().fadeIn(delay: 400.ms),
 
                   // Bid Payment

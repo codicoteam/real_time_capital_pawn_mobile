@@ -12,20 +12,18 @@ import 'package:real_time_pawn/widgets/cards/loan_application_card.dart';
 class LoanApplicationsListScreen extends StatefulWidget {
   final String customerUserId;
 
-  const LoanApplicationsListScreen({
-    super.key,
-    required this.customerUserId,
-  });
+  const LoanApplicationsListScreen({super.key, required this.customerUserId});
 
   @override
   State<LoanApplicationsListScreen> createState() =>
       _LoanApplicationsListScreenState();
 }
 
-class _LoanApplicationsListScreenState
-    extends State<LoanApplicationsListScreen> with TickerProviderStateMixin {
-  final LoanApplicationController _controller =
-      Get.put(LoanApplicationController());
+class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
+    with TickerProviderStateMixin {
+  final LoanApplicationController _controller = Get.put(
+    LoanApplicationController(),
+  );
   final TextEditingController _searchController = TextEditingController();
 
   String _selectedFilter = 'created_at';
@@ -154,7 +152,8 @@ class _LoanApplicationsListScreenState
     if (_selectedStatus != null && _selectedStatus != 'all') {
       applications = applications
           .where(
-            (app) => app.status?.toLowerCase() == _selectedStatus?.toLowerCase(),
+            (app) =>
+                app.status?.toLowerCase() == _selectedStatus?.toLowerCase(),
           )
           .toList();
     }
@@ -183,36 +182,37 @@ class _LoanApplicationsListScreenState
 
                   // Search & Filters Section
                   SliverToBoxAdapter(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(32),
-                          topRight: Radius.circular(32),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 32),
-                          _buildSearchBar(),
-                          const SizedBox(height: 16),
-                          _buildSortFilters(),
-                          const SizedBox(height: 16),
-                          _buildCategoryFilters(),
-                          const SizedBox(height: 16),
-                          _buildStatusFilters(),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 400.ms)
-                        .slideY(
-                          begin: 0.3,
-                          end: 0,
-                          duration: 500.ms,
-                          curve: Curves.easeOutCubic,
-                        ),
+                    child:
+                        Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(32),
+                                  topRight: Radius.circular(32),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: 32),
+                                  _buildSearchBar(),
+                                  const SizedBox(height: 16),
+                                  _buildSortFilters(),
+                                  const SizedBox(height: 16),
+                                  _buildCategoryFilters(),
+                                  const SizedBox(height: 16),
+                                  _buildStatusFilters(),
+                                  const SizedBox(height: 24),
+                                ],
+                              ),
+                            )
+                            .animate()
+                            .fadeIn(duration: 400.ms)
+                            .slideY(
+                              begin: 0.3,
+                              end: 0,
+                              duration: 500.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
                   ),
 
                   // Loan Applications List
@@ -236,27 +236,24 @@ class _LoanApplicationsListScreenState
                     return SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final application = filteredApplications[index];
-                            return LoanApplicationCard(
-                              application: application,
-                              index: index,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        LoanApplicationDetailsScreen(
-                                      application: application,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          childCount: filteredApplications.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final application = filteredApplications[index];
+                          return LoanApplicationCard(
+                            application: application,
+                            index: index,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      LoanApplicationDetailsScreen(
+                                        application: application,
+                                      ),
+                                ),
+                              );
+                            },
+                          );
+                        }, childCount: filteredApplications.length),
                       ),
                     );
                   }),
@@ -316,34 +313,34 @@ class _LoanApplicationsListScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      )
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          )
                           .animate()
                           .fadeIn(delay: 200.ms, duration: 400.ms)
                           .slideX(begin: -0.3, end: 0),
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.refresh_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          onPressed: _refreshLoanApplications,
-                        ),
-                      )
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.refresh_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: _refreshLoanApplications,
+                            ),
+                          )
                           .animate()
                           .fadeIn(delay: 300.ms, duration: 400.ms)
                           .scale(begin: const Offset(0.8, 0.8)),
@@ -353,14 +350,14 @@ class _LoanApplicationsListScreenState
 
                   // Title
                   Text(
-                    'Loan Applications',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
-                  )
+                        'Loan Applications',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                        ),
+                      )
                       .animate()
                       .fadeIn(delay: 400.ms, duration: 500.ms)
                       .slideY(begin: 0.3, end: 0),
@@ -368,50 +365,54 @@ class _LoanApplicationsListScreenState
 
                   // Count
                   Obx(
-                    () => Text(
-                      '${_getFilteredApplications().length} Applications',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 500.ms, duration: 500.ms)
-                        .slideY(begin: 0.3, end: 0),
+                    () =>
+                        Text(
+                              '${_getFilteredApplications().length} Applications',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            )
+                            .animate()
+                            .fadeIn(delay: 500.ms, duration: 500.ms)
+                            .slideY(begin: 0.3, end: 0),
                   ),
                   const SizedBox(height: 24),
 
                   // Total amount
                   Obx(
-                    () => Text(
-                      _formatCurrency(_calculateTotalRequested().toInt()),
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -1,
-                        height: 1,
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 600.ms, duration: 500.ms)
-                        .slideY(begin: 0.3, end: 0)
-                        .shimmer(
-                          delay: 800.ms,
-                          duration: 1500.ms,
-                          color: Colors.white.withOpacity(0.3),
-                        ),
+                    () =>
+                        Text(
+                              _formatCurrency(
+                                _calculateTotalRequested().toInt(),
+                              ),
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -1,
+                                height: 1,
+                              ),
+                            )
+                            .animate()
+                            .fadeIn(delay: 600.ms, duration: 500.ms)
+                            .slideY(begin: 0.3, end: 0)
+                            .shimmer(
+                              delay: 800.ms,
+                              duration: 1500.ms,
+                              color: Colors.white.withOpacity(0.3),
+                            ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Total Requested Amount',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.85),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  )
+                        'Total Requested Amount',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.85),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      )
                       .animate()
                       .fadeIn(delay: 700.ms, duration: 500.ms)
                       .slideY(begin: 0.3, end: 0),
@@ -502,17 +503,16 @@ class _LoanApplicationsListScreenState
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: _sortOptions.map((option) {
-                final isSelected = _selectedFilter == option['sortBy'] &&
+                final isSelected =
+                    _selectedFilter == option['sortBy'] &&
                     _selectedOrder == option['order'];
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: _buildFilterChip(
                     label: option['label']!,
                     isSelected: isSelected,
-                    onTap: () => _updateSort(
-                      option['sortBy']!,
-                      option['order']!,
-                    ),
+                    onTap: () =>
+                        _updateSort(option['sortBy']!, option['order']!),
                   ),
                 );
               }).toList(),
@@ -543,7 +543,8 @@ class _LoanApplicationsListScreenState
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: _categoryOptions.map((option) {
-                final isSelected = _selectedCategory == option['value'] ||
+                final isSelected =
+                    _selectedCategory == option['value'] ||
                     (_selectedCategory == null && option['value'] == 'all');
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
@@ -588,7 +589,8 @@ class _LoanApplicationsListScreenState
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: _statusOptions.map((option) {
-                final isSelected = _selectedStatus == option['value'] ||
+                final isSelected =
+                    _selectedStatus == option['value'] ||
                     (_selectedStatus == null && option['value'] == 'all');
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
@@ -597,8 +599,9 @@ class _LoanApplicationsListScreenState
                     isSelected: isSelected,
                     onTap: () {
                       setState(() {
-                        _selectedStatus =
-                            option['value'] == 'all' ? null : option['value'];
+                        _selectedStatus = option['value'] == 'all'
+                            ? null
+                            : option['value'];
                       });
                     },
                   ),
@@ -617,39 +620,40 @@ class _LoanApplicationsListScreenState
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                isSelected ? AppColors.primaryColor : AppColors.borderColor,
-            width: 1.5,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryColor : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : AppColors.borderColor,
+                width: 1.5,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primaryColor.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                color: isSelected ? Colors.white : AppColors.textColor,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryColor.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.poppins(
-            color: isSelected ? Colors.white : AppColors.textColor,
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ),
-    )
+        )
         .animate(target: isSelected ? 1 : 0)
         .scale(
           duration: 200.ms,
@@ -680,50 +684,51 @@ class _LoanApplicationsListScreenState
     }
 
     return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                isSelected ? AppColors.primaryColor : AppColors.borderColor,
-            width: 1.5,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryColor.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              iconData,
-              size: 18,
-              color: isSelected ? Colors.white : AppColors.textColor,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                color: isSelected ? Colors.white : AppColors.textColor,
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryColor : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : AppColors.borderColor,
+                width: 1.5,
               ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primaryColor.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
             ),
-          ],
-        ),
-      ),
-    )
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  iconData,
+                  size: 18,
+                  color: isSelected ? Colors.white : AppColors.textColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    color: isSelected ? Colors.white : AppColors.textColor,
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
         .animate(target: isSelected ? 1 : 0)
         .scale(
           duration: 200.ms,
@@ -739,26 +744,26 @@ class _LoanApplicationsListScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
-            width: 60,
-            height: 60,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppColors.primaryColor,
-              ),
-            ),
-          )
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryColor,
+                  ),
+                ),
+              )
               .animate(onPlay: (controller) => controller.repeat())
               .rotate(duration: 1500.ms),
           const SizedBox(height: 24),
           Text(
-            'Loading applications...',
-            style: GoogleFonts.poppins(
-              color: AppColors.subtextColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          )
+                'Loading applications...',
+                style: GoogleFonts.poppins(
+                  color: AppColors.subtextColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              )
               .animate(onPlay: (controller) => controller.repeat())
               .fadeIn(duration: 800.ms)
               .then()
@@ -775,17 +780,17 @@ class _LoanApplicationsListScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.errorColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.error_outline_rounded,
-              size: 60,
-              color: AppColors.errorColor,
-            ),
-          )
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.errorColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  size: 60,
+                  color: AppColors.errorColor,
+                ),
+              )
               .animate()
               .scale(delay: 100.ms, duration: 400.ms)
               .shake(delay: 500.ms),
@@ -838,17 +843,17 @@ class _LoanApplicationsListScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.inbox_outlined,
-              size: 80,
-              color: AppColors.primaryColor,
-            ),
-          )
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.inbox_outlined,
+                  size: 80,
+                  color: AppColors.primaryColor,
+                ),
+              )
               .animate()
               .scale(delay: 100.ms, duration: 500.ms)
               .fadeIn(delay: 100.ms),
@@ -892,28 +897,29 @@ class _LoanApplicationsListScreenState
         builder: (context, child) {
           return Transform.scale(
             scale: _fabAnimationController.value,
-            child: FloatingActionButton.extended(
-              onPressed: () {
-                // Navigate to create loan application screen
-                // Get.toNamed(RoutesHelper.createLoanApplication);
-              },
-              backgroundColor: AppColors.primaryColor,
-              elevation: 8,
-              icon: const Icon(Icons.add_rounded, size: 24),
-              label: Text(
-                'New Application',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )
-                .animate(onPlay: (controller) => controller.repeat())
-                .shimmer(
-                  delay: 2000.ms,
-                  duration: 1500.ms,
-                  color: Colors.white.withOpacity(0.3),
-                ),
+            child:
+                FloatingActionButton.extended(
+                      onPressed: () {
+                        // Navigate to create loan application screen
+                        // Get.toNamed(RoutesHelper.createLoanApplication);
+                      },
+                      backgroundColor: AppColors.primaryColor,
+                      elevation: 8,
+                      icon: const Icon(Icons.add_rounded, size: 24),
+                      label: Text(
+                        'New Application',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .shimmer(
+                      delay: 2000.ms,
+                      duration: 1500.ms,
+                      color: Colors.white.withOpacity(0.3),
+                    ),
           );
         },
       ),

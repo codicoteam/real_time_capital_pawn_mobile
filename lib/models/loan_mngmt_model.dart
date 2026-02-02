@@ -76,7 +76,10 @@ class LoanModel {
         : DateTime.now(),
     status: json["status"] ?? 'active',
     attachments: json["attachments"] ?? [],
-    createdBy: json["created_by"] ?? '',
+    // FIX: created_by is an object, not a string. Extract the email or convert to string
+    createdBy: json["created_by"] is Map
+        ? (json["created_by"]["email"] ?? json["created_by"]["_id"] ?? '')
+        : (json["created_by"]?.toString() ?? ''),
     createdAt: json["created_at"] != null
         ? DateTime.parse(json["created_at"])
         : DateTime.now(),
