@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/controllers/bid_payment_mngmt_controller.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/helpers/bid_payment_mngmt_helper.dart';
@@ -471,7 +472,9 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          Get.toNamed('/payment-details/${payment.id}');
+          Get.toNamed(
+            RoutesHelper.paymentDetailsScreen.replaceFirst(':id', payment.id),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16),

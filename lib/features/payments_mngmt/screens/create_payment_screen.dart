@@ -23,14 +23,14 @@ class CreatePaymentScreen extends StatefulWidget {
 }
 
 class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
-  final PaymentController _controller = Get.find<PaymentController>();
+  final PaymentController _controller = Get.put(PaymentController());
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _accountController = TextEditingController();
 
   String _selectedProvider = 'ecocash'; // Default to EcoCash for Zimbabwe
-  String _selectedMethod = 'mobile'; // Default method for mobile money
+  // Default method for mobile money
   double _paymentAmount = 0.0;
 
   // Zimbabwe-specific payment providers
@@ -60,43 +60,28 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   String? _selectedBankMethod;
   String? _selectedEcocashMethod = 'mobile'; // Default to mobile wallet
 
-  // Phone validation for Zimbabwe numbers
+  // Phone validation for Zimbabwe numbers - SIMPLIFIED
   bool _isValidZimbabwePhone(String phone) {
     // Remove any non-digit characters
     final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
 
-    // Zimbabwe mobile numbers are typically 9 digits starting with 7 or 71-79
-    // Format: +263 7X XXX XXXX or 07X XXX XXXX
-    if (cleaned.length == 9) {
-      return RegExp(r'^7[0-9]{8}$').hasMatch(cleaned);
-    } else if (cleaned.length == 10) {
-      // If starts with 0 then 7
-      return RegExp(r'^07[0-9]{8}$').hasMatch(cleaned);
-    } else if (cleaned.length == 12) {
-      // If includes +263
-      return RegExp(r'^2637[0-9]{9}$').hasMatch(cleaned);
+    // Zimbabwe mobile numbers: exactly 9 digits starting with 7
+    if (cleaned.length != 9 || !cleaned.startsWith('7')) {
+      return false;
     }
-    return false;
+
+    // Additional check for valid network prefixes
+    final prefix = cleaned.substring(0, 2);
+    final validPrefixes = ['77', '78', '79', '71', '73'];
+    return validPrefixes.contains(prefix);
   }
 
   String _formatZimbabwePhone(String phone) {
     // Remove any non-digit characters
     String cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
 
-    // Convert to international format: +263 7X XXX XXXX
-    if (cleaned.startsWith('0')) {
-      cleaned = '263' + cleaned.substring(1);
-    }
-
-    if (cleaned.startsWith('263') && cleaned.length == 12) {
-      // Format as +263 7X XXX XXXX
-      return '+${cleaned.substring(0, 3)} ${cleaned.substring(3, 5)} ${cleaned.substring(5, 8)} ${cleaned.substring(8)}';
-    } else if (cleaned.length == 9) {
-      // Assume it's 7X XXX XXXX
-      return '+263 $cleaned';
-    }
-
-    return phone; // Return as is if can't format
+    // Always return in +263 format
+    return '+263 $cleaned';
   }
 
   @override
@@ -193,19 +178,51 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
       };
     }
 
-    // Format phone number for API
+    // Format phone number for API - send JUST 9 digits
     String? formattedPhone;
     if (_phoneController.text.isNotEmpty) {
-      formattedPhone = _formatZimbabwePhone(_phoneController.text);
+      // Extract just the 9 digits (remove +263, spaces, etc.)
+      final cleanedPhone = _phoneController.text.replaceAll(
+        RegExp(r'[^\d]'),
+        '',
+      );
+
+      // Validate it's exactly 9 digits starting with 7
+      if (cleanedPhone.length == 9 && cleanedPhone.startsWith('7')) {
+        formattedPhone = cleanedPhone; // Send as-is (just 9 digits)
+      } else {
+        // Show error to user and stop the payment
+        Get.snackbar(
+          'Invalid Phone Number',
+          'Please enter a valid 9-digit Zimbabwe mobile number starting with 7 (e.g., 780197542)',
+          backgroundColor: RealTimeColors.error,
+          colorText: Colors.white,
+        );
+        return; // Exit the function, don't proceed with payment
+      }
+    }
+
+    // FIX 1: Get the correct method based on provider
+    String paymentMethod;
+    if (_selectedProvider == 'ecocash') {
+      paymentMethod = _selectedEcocashMethod ?? 'mobile';
+    } else if (_selectedProvider == 'bank') {
+      paymentMethod = _selectedBankMethod ?? 'rtgs';
+    } else if (_selectedProvider == 'paynow') {
+      paymentMethod = 'card'; // PayNow always uses 'card' method
+    } else if (_selectedProvider == 'cash') {
+      paymentMethod = 'cash';
+    } else {
+      paymentMethod = 'mobile'; // Default for other providers
     }
 
     final result = await _controller.createPayment(
       loanId: widget.loanId,
+      loanTermId:
+          widget.loanId, // ← FIX 2: Use loan ID as loan_term (not "regular")
       amount: _paymentAmount,
       provider: _selectedProvider,
-      method: _selectedProvider == 'ecocash'
-          ? (_selectedEcocashMethod ?? 'mobile')
-          : (_selectedBankMethod ?? 'rtgs'),
+      method: paymentMethod, // ← FIX 3: Use the corrected method
       interestComponent: components['interestComponent'],
       principalComponent: components['principalComponent'],
       storageComponent: components['storageComponent'],
@@ -220,6 +237,9 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   }
 
   void _showPaymentSuccess(Map<String, dynamic> paymentResult) {
+    // Extract the actual payment data
+    final paymentData = paymentResult['payment'] ?? paymentResult;
+
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -258,8 +278,15 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
               child: Column(
                 children: [
                   _buildReceiptRow(
-                    'Reference:',
-                    paymentResult['reference'] ?? 'N/A',
+                    'Receipt No:',
+                    paymentData['receipt_no'] ??
+                        paymentData['paynow_invoice_id'] ??
+                        paymentData['reference'] ??
+                        'N/A',
+                  ),
+                  _buildReceiptRow(
+                    'Payment ID:',
+                    paymentData['_id']?.substring(0, 8) ?? 'N/A',
                   ),
                   _buildReceiptRow(
                     'Amount:',
@@ -305,7 +332,9 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _selectedProvider == 'ecocash'
+                    _selectedProvider == 'paynow'
+                        ? 'You will be redirected to PayNow to complete your payment.'
+                        : _selectedProvider == 'ecocash'
                         ? 'Please check your EcoCash wallet for a payment request and approve it to complete the transaction.'
                         : 'Your payment is being processed. You will receive a confirmation once completed.',
                     style: GoogleFonts.poppins(
@@ -333,7 +362,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
             onPressed: () {
               Get.back(); // Close dialog
               Get.offAll(
-                () => PaymentDetailsScreen(paymentId: paymentResult['_id']),
+                () => PaymentDetailsScreen(paymentId: paymentData['_id']),
               );
             },
             child: const Text('Track Payment'),
@@ -623,9 +652,13 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                             TextField(
                               controller: _phoneController,
                               decoration: InputDecoration(
-                                labelText: 'Enter Mobile Number',
-                                hintText:
-                                    'e.g., 077 123 4567 or +263 77 123 4567',
+                                labelText: 'Mobile Number',
+                                hintText: '780197542',
+                                prefixText: '+263 ',
+                                prefixStyle: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textColor,
+                                ),
                                 prefixIcon: const Icon(Icons.phone),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -649,16 +682,45 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                                       )
                                     : null,
                               ),
-                              keyboardType: TextInputType.phone,
+                              keyboardType: TextInputType.number,
+                              maxLength: 9, // Only 9 digits after +263
+                              buildCounter:
+                                  (
+                                    context, {
+                                    required currentLength,
+                                    required isFocused,
+                                    maxLength,
+                                  }) => null, // Hide counter
                               onChanged: (value) {
+                                // Remove any spaces or non-digits
+                                final cleaned = value.replaceAll(
+                                  RegExp(r'[^\d]'),
+                                  '',
+                                );
+                                // Update controller with cleaned value
+                                if (cleaned != value) {
+                                  _phoneController.value = TextEditingValue(
+                                    text: cleaned,
+                                    selection: TextSelection.collapsed(
+                                      offset: cleaned.length,
+                                    ),
+                                  );
+                                }
                                 setState(() {});
                               },
                             ),
                             const SizedBox(height: 8),
+                            Text(
+                              'Enter 9-digit number starting with 7 (e.g., 780197542)',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: AppColors.subtextColor,
+                              ),
+                            ),
                             if (_phoneController.text.isNotEmpty &&
                                 !_isValidZimbabwePhone(_phoneController.text))
                               Text(
-                                'Enter a valid Zimbabwe mobile number (e.g., 077 123 4567)',
+                                'Number must be 9 digits starting with 7',
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   color: RealTimeColors.error,

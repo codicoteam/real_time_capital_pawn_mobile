@@ -155,14 +155,15 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateAndClose(context, '/notifications'),
                   ).animate().fadeIn(delay: 420.ms),
 
-                  // Auctions
+                  // Auctions - FIXED
                   _buildDrawerItem(
                     icon: Icons.gavel,
                     title: 'Auctions',
                     color: RealTimeColors.grey800,
-                    onTap: () => Get.toNamed(
-                      RoutesHelper.auctionsListScreen,
-                    ), // Changed this
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.auctionsListScreen, // Use the route name
+                    ),
                   ).animate().fadeIn(delay: 460.ms),
 
                   // Bids
@@ -170,9 +171,12 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.local_offer_outlined,
                     title: 'Bids',
                     color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(context, '/my-bids'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper
+                          .myBidsScreen, // Changed from '/my-bids' to RoutesHelper.myBidsScreen
+                    ),
                   ).animate().fadeIn(delay: 480.ms),
-
                   // FAQ
                   _buildDrawerItem(
                     icon: Icons.question_answer_outlined,

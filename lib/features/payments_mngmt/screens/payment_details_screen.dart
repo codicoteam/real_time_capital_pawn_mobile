@@ -171,19 +171,25 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: AppColors.subtextColor,
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: AppColors.subtextColor,
+              ),
             ),
           ),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: isAmount ? AppColors.textColor : AppColors.textColor,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isAmount ? AppColors.textColor : AppColors.textColor,
+              ),
             ),
           ),
         ],
@@ -204,6 +210,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
         border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             label,
@@ -211,6 +218,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
               fontSize: 12,
               color: AppColors.subtextColor,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Text(
@@ -220,6 +228,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -228,15 +237,22 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final isLargeScreen = screenWidth > 600;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header - FIXED
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 12 : 16,
+                vertical: isSmallScreen ? 8 : 12,
+              ),
               decoration: BoxDecoration(
                 color: AppColors.surfaceColor,
                 border: Border(
@@ -249,8 +265,9 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
                     onPressed: () => Get.back(),
                     icon: const Icon(Icons.arrow_back),
                     color: AppColors.textColor,
+                    iconSize: isSmallScreen ? 20 : 24,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: isSmallScreen ? 4 : 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,16 +275,18 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
                         Text(
                           'Payment Details',
                           style: GoogleFonts.poppins(
-                            fontSize: 18,
+                            fontSize: isSmallScreen ? 16 : 18,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textColor,
                           ),
                         ),
                         if (_payment != null)
                           Text(
-                            _payment!.reference,
+                            _payment!.reference.length > 20 && isSmallScreen
+                                ? '${_payment!.reference.substring(0, 20)}...'
+                                : _payment!.reference,
                             style: GoogleFonts.poppins(
-                              fontSize: 12,
+                              fontSize: isSmallScreen ? 10 : 12,
                               color: AppColors.subtextColor,
                             ),
                           ),
@@ -280,425 +299,489 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
               ),
             ),
 
-            if (_isLoading)
-              Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryColor,
-                  ),
-                ),
-              )
-            else if (_errorMessage.isNotEmpty)
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: RealTimeColors.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _errorMessage,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: AppColors.textColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadPaymentDetails,
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: AppColors.primaryColor,
-                          ),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else if (_payment == null)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.receipt_long_outlined,
-                        size: 64,
-                        color: RealTimeColors.grey400,
+            // Main Content - SCROLLABLE
+            Expanded(
+              child: _isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryColor,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Payment not found',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.subtextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Amount Summary
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
+                    )
+                  : _errorMessage.isNotEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              'Total Amount',
+                            Icon(
+                              Icons.error_outline,
+                              size: isSmallScreen ? 48 : 64,
+                              color: RealTimeColors.error,
+                            ),
+                            SizedBox(height: isSmallScreen ? 8 : 16),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 8 : 16,
+                              ),
+                              child: Text(
+                                _errorMessage,
+                                style: GoogleFonts.poppins(
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  color: AppColors.textColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            SizedBox(height: isSmallScreen ? 8 : 16),
+                            SizedBox(
+                              width: isSmallScreen ? 120 : 150,
+                              child: ElevatedButton(
+                                onPressed: _loadPaymentDetails,
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.primaryColor,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: isSmallScreen ? 10 : 12,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Retry',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: isSmallScreen ? 12 : 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _payment == null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            size: isSmallScreen ? 48 : 64,
+                            color: RealTimeColors.grey400,
+                          ),
+                          SizedBox(height: isSmallScreen ? 8 : 16),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 8 : 16,
+                            ),
+                            child: Text(
+                              'Payment not found',
                               style: GoogleFonts.poppins(
-                                fontSize: 14,
+                                fontSize: isSmallScreen ? 16 : 20,
+                                fontWeight: FontWeight.w600,
                                 color: AppColors.subtextColor,
                               ),
+                              textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _payment!.formattedAmount,
-                              style: GoogleFonts.poppins(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textColor,
+                          ),
+                        ],
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Amount Summary - RESPONSIVE
+                          Container(
+                            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceColor,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.borderColor),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Total Amount',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: isSmallScreen ? 12 : 14,
+                                    color: AppColors.subtextColor,
+                                  ),
+                                ),
+                                SizedBox(height: isSmallScreen ? 4 : 8),
+                                Text(
+                                  _payment!.formattedAmount,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: isSmallScreen ? 24 : 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textColor,
+                                  ),
+                                ),
+                                if (_payment!.receiptNo != null) ...[
+                                  SizedBox(height: isSmallScreen ? 8 : 12),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isSmallScreen ? 8 : 12,
+                                      vertical: isSmallScreen ? 4 : 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryColor.withOpacity(
+                                        0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.receipt_outlined,
+                                          size: isSmallScreen ? 14 : 16,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                        SizedBox(width: isSmallScreen ? 4 : 6),
+                                        Flexible(
+                                          child: Text(
+                                            _payment!.receiptNo!.length > 15 &&
+                                                    isSmallScreen
+                                                ? 'Receipt: ${_payment!.receiptNo!.substring(0, 15)}...'
+                                                : 'Receipt: ${_payment!.receiptNo!}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: isSmallScreen ? 10 : 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 12 : 20),
+
+                          // Quick Action - Check Status for PayNow payments
+                          if (_payment!.provider == 'paynow' &&
+                              (_payment!.isPending || _payment!.isProcessing))
+                            Container(
+                              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                              decoration: BoxDecoration(
+                                color: RealTimeColors.warning.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: RealTimeColors.warning.withOpacity(
+                                    0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        color: RealTimeColors.warning,
+                                        size: isSmallScreen ? 16 : 20,
+                                      ),
+                                      SizedBox(width: isSmallScreen ? 4 : 8),
+                                      Expanded(
+                                        child: Text(
+                                          'This is a PayNow payment. You can check the status manually.',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: isSmallScreen ? 11 : 12,
+                                            color: RealTimeColors.warning,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 8 : 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: _isCheckingStatus
+                                          ? null
+                                          : _checkPaymentStatus,
+                                      style: ElevatedButton.styleFrom(
+                                        foregroundColor: Colors.white,
+                                        backgroundColor: RealTimeColors.warning,
+                                        minimumSize: Size(
+                                          double.infinity,
+                                          isSmallScreen ? 40 : 44,
+                                        ),
+                                      ),
+                                      child: _isCheckingStatus
+                                          ? SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.refresh,
+                                                  size: isSmallScreen ? 16 : 18,
+                                                ),
+                                                SizedBox(
+                                                  width: isSmallScreen ? 4 : 8,
+                                                ),
+                                                Text(
+                                                  'Check Status Now',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: isSmallScreen
+                                                        ? 12
+                                                        : 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            if (_payment!.receiptNo != null) ...[
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+
+                          if (_payment!.provider == 'paynow' &&
+                              (_payment!.isPending || _payment!.isProcessing))
+                            SizedBox(height: isSmallScreen ? 12 : 20),
+
+                          // Payment Components Breakdown - RESPONSIVE
+                          Text(
+                            'Payment Allocation',
+                            style: GoogleFonts.poppins(
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textColor,
+                            ),
+                          ),
+                          SizedBox(height: isSmallScreen ? 8 : 12),
+                          GridView(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: isSmallScreen ? 2 : 2,
+                                  crossAxisSpacing: isSmallScreen ? 8 : 12,
+                                  mainAxisSpacing: isSmallScreen ? 8 : 12,
+                                  childAspectRatio: isSmallScreen
+                                      ? 1.3
+                                      : (isLargeScreen ? 1.8 : 1.5),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
-                                    0.1,
+                            children: [
+                              _buildComponentCard(
+                                label: 'Principal',
+                                amount: _payment!.principalComponent,
+                                color: AppColors.primaryColor,
+                              ),
+                              _buildComponentCard(
+                                label: 'Interest',
+                                amount: _payment!.interestComponent,
+                                color: RealTimeColors.warning,
+                              ),
+                              _buildComponentCard(
+                                label: 'Storage',
+                                amount: _payment!.storageComponent,
+                                color: AppColors.primaryColor.withOpacity(0.7),
+                              ),
+                              _buildComponentCard(
+                                label: 'Penalty',
+                                amount: _payment!.penaltyComponent,
+                                color: RealTimeColors.error,
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 12 : 20),
+
+                          // Payment Information
+                          Container(
+                            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceColor,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.borderColor),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Payment Information',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textColor,
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                SizedBox(height: isSmallScreen ? 8 : 16),
+                                _buildInfoRow(
+                                  label: 'Payment Method',
+                                  value:
+                                      _payment!.method?.toUpperCase() ?? 'N/A',
+                                ),
+                                if (_payment!.provider != null)
+                                  _buildInfoRow(
+                                    label: 'Provider',
+                                    value: _payment!.provider!.toUpperCase(),
+                                  ),
+                                _buildInfoRow(
+                                  label: 'Currency',
+                                  value: _payment!.currency,
+                                ),
+                                _buildInfoRow(
+                                  label: 'Created Date',
+                                  value: _formatDateFull(_payment!.createdAt),
+                                ),
+                                if (_payment!.paymentDate != null)
+                                  _buildInfoRow(
+                                    label: 'Payment Date',
+                                    value: _payment!.paymentDate!,
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 8 : 16),
+
+                          // Transaction Details
+                          Container(
+                            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceColor,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.borderColor),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Transaction Details',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textColor,
+                                  ),
+                                ),
+                                SizedBox(height: isSmallScreen ? 8 : 16),
+                                _buildInfoRow(
+                                  label: 'Payment ID',
+                                  value: _payment!.id.length > 12
+                                      ? '${_payment!.id.substring(0, 12)}...'
+                                      : _payment!.id,
+                                ),
+                                _buildInfoRow(
+                                  label: 'Reference',
+                                  value: _payment!.reference.length > 15
+                                      ? '${_payment!.reference.substring(0, 15)}...'
+                                      : _payment!.reference,
+                                ),
+                                if (_payment!.loan.isNotEmpty)
+                                  _buildInfoRow(
+                                    label: 'Loan ID',
+                                    value: _payment!.loan.length > 12
+                                        ? '${_payment!.loan.substring(0, 12)}...'
+                                        : _payment!.loan,
+                                  ),
+                                if (_payment!.loanTerm != null)
+                                  _buildInfoRow(
+                                    label: 'Loan Term',
+                                    value: _payment!.loanTerm!,
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 8 : 16),
+
+                          // Notes
+                          if (_payment!.notes != null &&
+                              _payment!.notes!.isNotEmpty)
+                            Container(
+                              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceColor,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: AppColors.borderColor,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Notes',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: isSmallScreen ? 14 : 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textColor,
+                                    ),
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 8 : 12),
+                                  Text(
+                                    _payment!.notes!,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                      color: AppColors.subtextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          SizedBox(height: isSmallScreen ? 16 : 24),
+
+                          // Share/Print Receipt Button
+                          if (_payment!.isPaid && _payment!.receiptNo != null)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Get.snackbar(
+                                    'Receipt',
+                                    'Receipt sharing feature coming soon!',
+                                    backgroundColor: AppColors.primaryColor,
+                                    colorText: Colors.white,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.primaryColor,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: isSmallScreen ? 12 : 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                                 child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
-                                      Icons.receipt_outlined,
-                                      size: 16,
-                                      color: AppColors.primaryColor,
+                                      Icons.share_outlined,
+                                      size: isSmallScreen ? 18 : 24,
                                     ),
-                                    const SizedBox(width: 6),
+                                    SizedBox(width: isSmallScreen ? 4 : 8),
                                     Text(
-                                      'Receipt: ${_payment!.receiptNo!}',
+                                      'Share Receipt',
                                       style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.primaryColor,
+                                        fontSize: isSmallScreen ? 14 : 16,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Quick Action - Check Status for PayNow payments
-                      if (_payment!.provider == 'paynow' &&
-                          (_payment!.isPending || _payment!.isProcessing))
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: RealTimeColors.warning.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: RealTimeColors.warning.withOpacity(0.3),
                             ),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: RealTimeColors.warning,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'This is a PayNow payment. You can check the status manually.',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: RealTimeColors.warning,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: _isCheckingStatus
-                                    ? null
-                                    : _checkPaymentStatus,
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: RealTimeColors.warning,
-                                  minimumSize: const Size(double.infinity, 44),
-                                ),
-                                child: _isCheckingStatus
-                                    ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.refresh, size: 18),
-                                          SizedBox(width: 8),
-                                          Text('Check Status Now'),
-                                        ],
-                                      ),
-                              ),
-                            ],
-                          ),
-                        ),
 
-                      if (_payment!.provider == 'paynow' &&
-                          (_payment!.isPending || _payment!.isProcessing))
-                        const SizedBox(height: 20),
-
-                      // Payment Components Breakdown
-                      Text(
-                        'Payment Allocation',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      GridView(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 1.5,
-                            ),
-                        children: [
-                          _buildComponentCard(
-                            label: 'Principal',
-                            amount: _payment!.principalComponent,
-                            color: AppColors.primaryColor,
-                          ),
-                          _buildComponentCard(
-                            label: 'Interest',
-                            amount: _payment!.interestComponent,
-                            color: RealTimeColors.warning,
-                          ),
-                          _buildComponentCard(
-                            label: 'Storage',
-                            amount: _payment!.storageComponent,
-                            color: AppColors.primaryColor.withOpacity(0.7),
-                          ),
-                          _buildComponentCard(
-                            label: 'Penalty',
-                            amount: _payment!.penaltyComponent,
-                            color: RealTimeColors.error,
-                          ),
+                          SizedBox(height: isSmallScreen ? 16 : 24),
                         ],
                       ),
-
-                      const SizedBox(height: 20),
-
-                      // Payment Information
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Payment Information',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInfoRow(
-                              label: 'Payment Method',
-                              value: _payment!.method?.toUpperCase() ?? 'N/A',
-                            ),
-                            if (_payment!.provider != null)
-                              _buildInfoRow(
-                                label: 'Provider',
-                                value: _payment!.provider!.toUpperCase(),
-                              ),
-                            _buildInfoRow(
-                              label: 'Currency',
-                              value: _payment!.currency,
-                            ),
-                            _buildInfoRow(
-                              label: 'Created Date',
-                              value: _formatDateFull(_payment!.createdAt),
-                            ),
-                            if (_payment!.paymentDate != null)
-                              _buildInfoRow(
-                                label: 'Payment Date',
-                                value: _payment!.paymentDate!,
-                              ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Transaction Details
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Transaction Details',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInfoRow(
-                              label: 'Payment ID',
-                              value: _payment!.id.substring(0, 12) + '...',
-                            ),
-                            _buildInfoRow(
-                              label: 'Reference',
-                              value: _payment!.reference,
-                            ),
-                            if (_payment!.loan.isNotEmpty)
-                              _buildInfoRow(
-                                label: 'Loan ID',
-                                value: _payment!.loan,
-                              ),
-                            if (_payment!.loanTerm != null)
-                              _buildInfoRow(
-                                label: 'Loan Term',
-                                value: _payment!.loanTerm!,
-                              ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Notes
-                      if (_payment!.notes != null &&
-                          _payment!.notes!.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.borderColor),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Notes',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textColor,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                _payment!.notes!,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: AppColors.subtextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      const SizedBox(height: 24),
-
-                      // Share/Print Receipt Button
-                      if (_payment!.isPaid && _payment!.receiptNo != null)
-                        ElevatedButton(
-                          onPressed: () {
-                            // TODO: Implement receipt sharing/printing
-                            Get.snackbar(
-                              'Receipt',
-                              'Receipt sharing feature coming soon!',
-                              backgroundColor: AppColors.primaryColor,
-                              colorText: Colors.white,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: AppColors.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.share_outlined),
-                              SizedBox(width: 8),
-                              Text('Share Receipt'),
-                            ],
-                          ),
-                        ),
-
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
+            ),
           ],
         ),
       ),

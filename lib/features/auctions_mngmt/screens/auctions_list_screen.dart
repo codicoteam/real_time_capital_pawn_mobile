@@ -199,7 +199,7 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
                     },
                     icon: const Icon(Icons.history_outlined),
                     color: AppColors.textColor,
-                    tooltip: 'View My Bidding History',
+                    tooltip: 'Bidding History',
                   ),
                 ],
               ),

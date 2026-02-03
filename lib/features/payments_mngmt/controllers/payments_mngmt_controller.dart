@@ -238,6 +238,7 @@ class PaymentController extends GetxController {
 
   Future<Map<String, dynamic>?> createPayment({
     required String loanId,
+    required String loanTermId, // ← ADD THIS LINE
     required double amount,
     required String provider,
     required String method,
@@ -260,6 +261,7 @@ class PaymentController extends GetxController {
 
       final response = await PaymentService.createPayment(
         loanId: loanId,
+        loanTermId: loanTermId, // ← PASS THIS
         amount: amount,
         provider: provider,
         method: method,

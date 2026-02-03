@@ -21,7 +21,7 @@ class PaymentListScreen extends StatefulWidget {
 }
 
 class _PaymentListScreenState extends State<PaymentListScreen> {
-  final PaymentController _controller = Get.find<PaymentController>();
+  final PaymentController _controller = Get.put(PaymentController());
   final ScrollController _scrollController = ScrollController();
   bool _isRefreshing = false;
 
@@ -104,7 +104,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header - FIXED HEIGHT
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -124,6 +124,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           widget.isLoanPayments
@@ -172,7 +173,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
               ),
             ),
 
-            // Statistics Summary
+            // Statistics Summary - FIXED HEIGHT
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -207,7 +208,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
               ),
             ),
 
-            // Payments List
+            // Payments List - TAKES ALL REMAINING SPACE
             Expanded(
               child: Obx(() {
                 if (_controller.isLoading.value &&
@@ -232,13 +233,16 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                             color: RealTimeColors.error,
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            _controller.errorMessage.value,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              color: AppColors.textColor,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              _controller.errorMessage.value,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: AppColors.textColor,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
@@ -246,8 +250,12 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                             style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.white,
                               backgroundColor: AppColors.primaryColor,
+                              minimumSize: const Size(120, 44),
                             ),
-                            child: const Text('Retry'),
+                            child: Text(
+                              'Retry',
+                              style: GoogleFonts.poppins(fontSize: 14),
+                            ),
                           ),
                         ],
                       ),
@@ -257,35 +265,41 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
 
                 if (_controller.payments.isEmpty) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.payments_outlined,
-                          size: 64,
-                          color: RealTimeColors.grey400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No payments found',
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.subtextColor,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.payments_outlined,
+                            size: 64,
+                            color: RealTimeColors.grey400,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.isLoanPayments
-                              ? 'No payments have been made for this loan yet'
-                              : 'You haven\'t made any payments yet',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: AppColors.subtextColor,
+                          const SizedBox(height: 16),
+                          Text(
+                            'No payments found',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.subtextColor,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(
+                              widget.isLoanPayments
+                                  ? 'No payments have been made for this loan yet'
+                                  : 'You haven\'t made any payments yet',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: AppColors.subtextColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -330,6 +344,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
     required Color color,
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
@@ -371,6 +386,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -378,6 +394,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           payment.reference,
@@ -386,6 +403,8 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                             fontWeight: FontWeight.w600,
                             color: AppColors.textColor,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -398,6 +417,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -426,67 +446,70 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Amount',
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          color: AppColors.subtextColor,
-                        ),
-                      ),
-                      Text(
-                        payment.formattedAmount,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (payment.method != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Method',
+                          'Amount',
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             color: AppColors.subtextColor,
                           ),
                         ),
                         Text(
-                          payment.method!.toUpperCase(),
+                          payment.formattedAmount,
                           style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                             color: AppColors.textColor,
                           ),
                         ),
                       ],
                     ),
+                  ),
+                  if (payment.method != null)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Method',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: AppColors.subtextColor,
+                            ),
+                          ),
+                          Text(
+                            payment.method!.toUpperCase(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
-              const SizedBox(height: 8),
-              if (payment.notes != null && payment.notes!.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text(
-                      'Notes: ${payment.notes!}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: AppColors.subtextColor,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+              if (payment.notes != null && payment.notes!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Notes: ${payment.notes!}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.subtextColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ],
             ],
           ),
         ),

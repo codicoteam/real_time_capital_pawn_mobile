@@ -13,11 +13,12 @@ class AttachmentService {
   getAttachmentsByUserAndEntity({
     required String userId,
     required String entityType,
+    required String entityId,
   }) async {
     final token = await CacheUtils.checkToken();
 
     final String url =
-        '${ApiKeys.baseUrl}/attachments/user/$userId/entity/$entityType';
+        '${ApiKeys.baseUrl}/attachments/entity/$entityType/$entityId';
 
     final headers = {
       'Authorization': 'Bearer $token',
@@ -128,6 +129,86 @@ class AttachmentService {
       return APIResponse<AttachmentModel>(
         success: false,
         message: 'Error uploading attachment: $e',
+      );
+    }
+  }
+
+  /// Update attachment
+  static Future<APIResponse<AttachmentModel>> updateAttachment({
+    required String attachmentId,
+    required Map<String, dynamic> payload,
+  }) async {
+    final token = await CacheUtils.checkToken();
+    final String url = '${ApiKeys.baseUrl}/attachments/$attachmentId';
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(payload),
+      );
+
+      DevLogs.logInfo('Update attachment response: ${response.body}');
+
+      final decoded = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return APIResponse<AttachmentModel>(
+          success: true,
+          data: AttachmentModel.fromMap(decoded['data']),
+          message: decoded['message'] ?? 'Attachment updated successfully',
+        );
+      } else {
+        return APIResponse<AttachmentModel>(
+          success: false,
+          message: decoded['message'] ?? 'Failed to update attachment',
+        );
+      }
+    } catch (e) {
+      DevLogs.logError('Update attachment error: $e');
+      return APIResponse<AttachmentModel>(
+        success: false,
+        message: 'Error updating attachment: $e',
+      );
+    }
+  }
+
+  /// Delete attachment
+  static Future<APIResponse<void>> deleteAttachment(String attachmentId) async {
+    final token = await CacheUtils.checkToken();
+    final String url = '${ApiKeys.baseUrl}/attachments/$attachmentId';
+
+    try {
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      DevLogs.logInfo('Delete attachment response: ${response.body}');
+
+      final decoded = json.decode(response.body);
+      if (response.statusCode == 200) {
+        return APIResponse<void>(
+          success: true,
+          message: decoded['message'] ?? 'Attachment deleted successfully',
+        );
+      } else {
+        return APIResponse<void>(
+          success: false,
+          message: decoded['message'] ?? 'Failed to delete attachment',
+        );
+      }
+    } catch (e) {
+      DevLogs.logError('Delete attachment error: $e');
+      return APIResponse<void>(
+        success: false,
+        message: 'Error deleting attachment: $e',
       );
     }
   }

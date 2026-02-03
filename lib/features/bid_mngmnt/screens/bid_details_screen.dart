@@ -21,9 +21,9 @@ class BidDetailsScreen extends StatefulWidget {
 
 class _BidDetailsScreenState extends State<BidDetailsScreen> {
   // Change this line:
-  final BidManagementController _controller = Get.put(
-    BidManagementController(),
-  );
+  final BidManagementController _controller =
+      Get.find<BidManagementController>();
+
   final TextEditingController _disputeReasonController =
       TextEditingController();
   bool _showDisputeForm = false;

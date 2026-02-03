@@ -1,10 +1,21 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/search_auctions_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_details_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auctions_list_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/live_auctions_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/user_bid_history_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/forgot_password_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/verify_otp_screen.dart';
+import 'package:real_time_pawn/features/bid_mngmnt/screens/bid_details_screen.dart';
+import 'package:real_time_pawn/features/bid_mngmnt/screens/my_bids_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/confirm_bid_payment_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/my_bid_payments_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_details_screen.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/Loan%20application%20upload%20screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
 import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_charges_screen.dart';
@@ -221,6 +232,23 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
+    // Add this after your loanApplicationDetailsScreen GetPage
+    GetPage(
+      name: RoutesHelper.loanApplicationUploadScreen,
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return LoanApplicationUploadScreen(
+          loanId: arguments['loanId'] ?? '',
+          loanCategory: arguments['loanCategory'] ?? '',
+          applicationNo: arguments['applicationNo'] ?? '',
+          userId: arguments['userId'] ?? '', // Add user ID parameter
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
     // Loans Screen
     GetPage(
       name: RoutesHelper.LoansScreen,
@@ -364,6 +392,159 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
+
+    // =============================================
+    // AUCTION ROUTES
+    // =============================================
+
+    // Auctions List Screen
+    GetPage(
+      name: RoutesHelper.auctionsListScreen,
+      page: () => const AuctionsListScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Live Auctions Screen
+    GetPage(
+      name: RoutesHelper.liveAuctionsScreen,
+      page: () => const LiveAuctionsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Auction Details Screen - With parameter extraction
+    GetPage(
+      name: RoutesHelper.auctionDetailsScreen,
+      page: () {
+        final auctionId = Get.parameters['id'] ?? '';
+        return AuctionDetailsScreen(auctionId: auctionId);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Search Auctions Screen
+    GetPage(
+      name: RoutesHelper.searchAuctionsScreen,
+      page: () => const SearchAuctionsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Auction Bids Screen - With parameter extraction
+    GetPage(
+      name: RoutesHelper.auctionBidsScreen,
+      page: () {
+        final auctionId = Get.parameters['id'] ?? '';
+        // Get auction title from arguments if available
+        final args = Get.arguments as Map<String, dynamic>?;
+        return AuctionBidsScreen(
+          auctionId: auctionId,
+          auctionTitle: args?['auctionTitle'] ?? 'Auction Details',
+        );
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+    // Bidding History
+    GetPage(
+      name: RoutesHelper.userBiddingHistoryScreen,
+      page: () => const UserBiddingHistoryScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // =============================================
+    // BID MANAGEMENT ROUTES
+    // =============================================
+
+    // My Bids Screen
+    GetPage(
+      name: RoutesHelper.myBidsScreen,
+      page: () => const MyBidsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Bid Details Screen - With parameter extraction
+    GetPage(
+      name: RoutesHelper.bidDetailsScreen,
+      page: () {
+        final bidId = Get.parameters['id'] ?? '';
+        return BidDetailsScreen(bidId: bidId);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // My Bid Payments Screen (you already have this)
+    GetPage(
+      name: RoutesHelper.myBidPaymentsScreen,
+      page: () => const MyBidPaymentsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // =============================================
+    // BID PAYMENT ROUTES
+    // =============================================
+
+    // My Bid Payments Screen (already works)
+    GetPage(
+      name: RoutesHelper.myBidPaymentsScreen,
+      page: () => const MyBidPaymentsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Confirm Bid Payment Screen - With arguments
+    GetPage(
+      name: RoutesHelper.confirmBidPaymentScreen,
+      page: () {
+        return ConfirmBidPaymentScreen();
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Select Payment Method Screen - You need to create this
+    // GetPage(
+    //   name: RoutesHelper.selectPaymentMethodScreen,
+    //   page: () {
+    //     final args = Get.arguments as Map<String, dynamic>;
+    //     return SelectPaymentMethodScreen(
+    //       bidId: args['bidId'] ?? '',
+    //       amount: (args['amount'] as num).toDouble(),
+    //     );
+    //   },
+    //   transition: Transition.fadeIn,
+    //   transitionDuration: const Duration(milliseconds: 300),
+    //   customTransition: CustomPageTransition(),
+    // ),
+
+    // Payment Details Screen - Create this screen or skip for now
+    // GetPage(
+    //   name: RoutesHelper.paymentDetailsScreen,
+    //   page: () {
+    //     final paymentId = Get.parameters['id'] ?? '';
+    //     return PaymentDetailsScreen(paymentId: paymentId);
+    //   },
+    //   transition: Transition.fadeIn,
+    //   transitionDuration: const Duration(milliseconds: 300),
+    //   customTransition: CustomPageTransition(),
+    // ),
 
     // GetPage(
     //   name: RoutesHelper.all_races_page,

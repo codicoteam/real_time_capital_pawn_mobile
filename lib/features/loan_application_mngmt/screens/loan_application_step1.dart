@@ -3,11 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/attached_files_mngmt/screens/asset_upload_section.dart'
-    show UploadedAsset, AssetUploadSection;
 import 'package:real_time_pawn/widgets/custom_button.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
-import '../helpers/loan_application_mngmt_helper.dart' show LoanApplicationHelper;
+import '../../../core/utils/shared_pref_methods.dart' show CacheUtils;
+import '../helpers/loan_application_mngmt_helper.dart'
+    show LoanApplicationHelper;
 import 'Loan application upload screen.dart';
 
 class LoanApplicationScreen extends StatefulWidget {
@@ -419,11 +419,11 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
                             physics: const NeverScrollableScrollPhysics(),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.8,
-                            ),
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.8,
+                                ),
                             itemCount: _loanCategories.length,
                             itemBuilder: (context, index) {
                               final category = _loanCategories[index];
@@ -882,7 +882,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
             : null,
       },
       "requested_loan_amount": int.tryParse(_loanAmountController.text),
-      "collateral_category": _selectedLoanCategoryType, // Use type instead of title
+      "collateral_category": _selectedLoanCategoryType,
       "collateral_description": _collateralDescController.text,
       "surety_description": _suretyDescController.text.isNotEmpty
           ? _suretyDescController.text
@@ -893,7 +893,11 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
       "declaration_signed_at": DateTime.now().toIso8601String(),
       "declaration_signature_name": _fullNameController.text,
     };
-    DevLogs.logError("Selected Loan Category Type: ${_selectedLoanCategoryType}");
+
+    DevLogs.logError(
+      "Selected Loan Category Type: ${_selectedLoanCategoryType}",
+    );
+
     // Call helper and get loan ID
     final result = await LoanApplicationHelper.createLoanApplication(
       payload: payload,
@@ -904,6 +908,20 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
     });
 
     if (result.success && result.loanId != null) {
+      // Get user ID from CacheUtils
+      final String? currentUserId = await CacheUtils.getUserId();
+
+      if (currentUserId == null || currentUserId.isEmpty) {
+        // Show error if no user ID found
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User ID not found. Please login again.'),
+            backgroundColor: AppColors.errorColor,
+          ),
+        );
+        return;
+      }
+
       // Navigate to upload screen
       Navigator.push(
         context,
@@ -912,7 +930,16 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
             loanId: result.loanId!,
             loanCategory: _selectedLoanCategory ?? '',
             applicationNo: result.applicationNo ?? '',
+            userId: currentUserId, // REAL USER ID
           ),
+        ),
+      );
+    } else {
+      // Show error message if creation fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message ?? 'Failed to create application'),
+          backgroundColor: AppColors.errorColor,
         ),
       );
     }

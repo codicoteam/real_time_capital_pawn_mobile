@@ -8,9 +8,10 @@ import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/models/payment_mngmt_model.dart';
 
 class PaymentService {
-  /// CREATE NEW PAYMENT
+  /// CREATE NEW PAYMENT - CORRECTED VERSION
   static Future<APIResponse<Map<String, dynamic>>> createPayment({
     required String loanId,
+    required String loanTermId,
     required double amount,
     required String provider,
     required String method,
@@ -20,7 +21,7 @@ class PaymentService {
     double? storageComponent,
     double? penaltyComponent,
     String? notes,
-    String? phoneNumber, // ADD THIS PARAMETER
+    String? phoneNumber,
   }) async {
     final token = await CacheUtils.checkToken();
 
@@ -38,8 +39,10 @@ class PaymentService {
       'Content-Type': 'application/json',
     };
 
-    final body = json.encode({
+    // Build the body according to backend API documentation
+    final Map<String, dynamic> requestBody = {
       'loan': loanId,
+      'loan_term': loanTermId,
       'amount': amount,
       'currency': currency,
       'provider': provider,
@@ -50,10 +53,21 @@ class PaymentService {
       if (storageComponent != null) 'storage_component': storageComponent,
       if (penaltyComponent != null) 'penalty_component': penaltyComponent,
       if (notes != null && notes.isNotEmpty) 'notes': notes,
-      if (phoneNumber != null && phoneNumber.isNotEmpty)
-        'phoneNumber': phoneNumber, // ADD THIS LINE
-    });
+    };
 
+    // Only add phoneNumber for mobile money providers
+    if (provider == 'ecocash' ||
+        provider == 'onemoney' ||
+        provider == 'telecash') {
+      if (phoneNumber != null && phoneNumber.isNotEmpty) {
+        // Try camelCase first since it's more common in APIs
+        requestBody['phoneNumber'] = phoneNumber;
+        // Also add snake_case as backup
+        requestBody['phone_number'] = phoneNumber;
+      }
+    }
+
+    final body = json.encode(requestBody);
     final uri = Uri.parse('${ApiKeys.baseUrl}/payments');
 
     DevLogs.logInfo('Creating payment: $uri');
@@ -70,7 +84,6 @@ class PaymentService {
       if (response.statusCode == 201) {
         if (responseData['success'] == true) {
           final data = responseData['data'];
-
           DevLogs.logSuccess('Payment created successfully');
 
           return APIResponse<Map<String, dynamic>>(

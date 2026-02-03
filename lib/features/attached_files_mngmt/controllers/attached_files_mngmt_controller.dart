@@ -33,6 +33,7 @@ class AttachmentController extends GetxController {
   Future<void> fetchAttachmentsByUserAndEntity({
     required String userId,
     required String entityType,
+    required String entityId, // ADD THIS
   }) async {
     try {
       isLoading(true);
@@ -40,6 +41,7 @@ class AttachmentController extends GetxController {
       final response = await AttachmentService.getAttachmentsByUserAndEntity(
         userId: userId,
         entityType: entityType,
+        entityId: entityId, // ADD THIS
       );
 
       if (response.success) {
@@ -120,10 +122,12 @@ class AttachmentController extends GetxController {
   Future<void> refreshAttachments({
     required String userId,
     required String entityType,
+    required String entityId, // ADD THIS
   }) async {
     await fetchAttachmentsByUserAndEntity(
       userId: userId,
       entityType: entityType,
+      entityId: entityId, // ADD THIS
     );
   }
 
