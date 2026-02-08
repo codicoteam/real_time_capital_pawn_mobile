@@ -210,7 +210,10 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.help_outline,
                     title: 'Support',
                     color: RealTimeColors.warning,
-                    onTap: () => _navigateAndClose(context, '/support'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.ticketListScreen, // Using the route name
+                    ),
                   ).animate().fadeIn(delay: 580.ms),
 
                   const Divider(height: 32, indent: 20, endIndent: 20),

@@ -13,7 +13,7 @@ class LoanStatusScreen extends StatefulWidget {
 }
 
 class _LoanStatusScreenState extends State<LoanStatusScreen> {
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   final List<Map<String, dynamic>> _statusHistory = [
     {
@@ -223,7 +223,7 @@ class _LoanStatusScreenState extends State<LoanStatusScreen> {
                     const SizedBox(height: 12),
                     ..._futureStatuses.map((status) {
                       return _buildFutureStatusCard(status);
-                    }).toList(),
+                    }),
 
                     const SizedBox(height: 32),
                   ],

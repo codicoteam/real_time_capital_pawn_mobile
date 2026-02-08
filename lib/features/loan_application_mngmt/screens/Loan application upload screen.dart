@@ -837,7 +837,7 @@ class _LoanApplicationUploadScreenState
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

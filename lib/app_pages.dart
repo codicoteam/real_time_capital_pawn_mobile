@@ -28,6 +28,9 @@ import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_terms_mngm
 import 'package:real_time_pawn/features/loan_terms_mngmt/screens/renew_loan_term_mngmt_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/create_payment_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/payment_list_screen.dart';
+import 'package:real_time_pawn/features/support_mngmt/screens/create_ticket_screen.dart';
+import 'package:real_time_pawn/features/support_mngmt/screens/ticket_detail_screen.dart';
+import 'package:real_time_pawn/features/support_mngmt/screens/ticket_list_screen.dart';
 import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
 import 'package:real_time_pawn/models/loan_terms_model.dart';
@@ -513,6 +516,40 @@ class AppPages {
       name: RoutesHelper.confirmBidPaymentScreen,
       page: () {
         return ConfirmBidPaymentScreen();
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // =============================================
+    // SUPPORT TICKET ROUTES (YOUR SCREENS ONLY)
+    // =============================================
+
+    // Create New Ticket (your CreateTicketScreen)
+    GetPage(
+      name: RoutesHelper.createTicketScreen,
+      page: () => const CreateTicketScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Ticket List (your TicketListScreen)
+    GetPage(
+      name: RoutesHelper.ticketListScreen,
+      page: () => const TicketListScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Ticket Details - With parameter extraction
+    GetPage(
+      name: RoutesHelper.ticketDetailsScreen,
+      page: () {
+        final ticketId = Get.parameters['id'] ?? '';
+        return TicketDetailScreen(ticketId: ticketId);
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),

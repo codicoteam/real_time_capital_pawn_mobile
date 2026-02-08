@@ -497,8 +497,9 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
             // Summary Section (Only show if we have real bids, not mock preview)
             Obx(() {
               final bids = _auctionsController.auctionBids;
-              if (bids.isEmpty || IS_DEVELOPMENT)
+              if (bids.isEmpty || IS_DEVELOPMENT) {
                 return const SizedBox.shrink();
+              }
 
               final highestBid = bids.isNotEmpty ? bids.first : null;
               final totalBids = bids.length;

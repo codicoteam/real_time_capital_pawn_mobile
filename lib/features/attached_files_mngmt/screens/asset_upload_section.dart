@@ -67,13 +67,13 @@ class AssetUploadSection extends StatefulWidget {
   final String entityId;
 
   const AssetUploadSection({
-    Key? key,
+    super.key,
     required this.uploadedAssets,
     required this.selectedLoanCategory,
     required this.onAssetsUpdated,
     required this.entityType,
     required this.entityId,
-  }) : super(key: key);
+  });
 
   @override
   State<AssetUploadSection> createState() => _AssetUploadSectionState();
@@ -296,7 +296,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
           errorMessage +=
               'Access denied. Make sure the storage bucket is public in Supabase Dashboard.';
         } else {
-          errorMessage += e.message!;
+          errorMessage += e.message;
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -992,11 +992,11 @@ class AssetDetailsModal extends StatefulWidget {
   onAssetSaved;
 
   const AssetDetailsModal({
-    Key? key,
+    super.key,
     required this.imageFile,
     required this.selectedLoanCategory,
     required this.onAssetSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<AssetDetailsModal> createState() => _AssetDetailsModalState();
@@ -1161,11 +1161,11 @@ class AssetEditModal extends StatefulWidget {
   final VoidCallback onAssetRemoved;
 
   const AssetEditModal({
-    Key? key,
+    super.key,
     required this.asset,
     required this.onAssetUpdated,
     required this.onAssetRemoved,
-  }) : super(key: key);
+  });
 
   @override
   State<AssetEditModal> createState() => _AssetEditModalState();

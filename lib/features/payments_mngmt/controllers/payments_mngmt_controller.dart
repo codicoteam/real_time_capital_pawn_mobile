@@ -36,12 +36,6 @@ class PaymentController extends GetxController {
   }
 
   @override
-  void onInit() {
-    super.onInit();
-    // Initialize any required setup
-  }
-
-  @override
   void onClose() {
     clearAll();
     super.onClose();

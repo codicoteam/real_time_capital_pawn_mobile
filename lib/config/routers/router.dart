@@ -93,5 +93,18 @@ class RoutesHelper {
   static const String PaymentDetailsScreen = "/payment-details";
   static const String CreatePaymentScreen = "/create-payment";
 
+  // =============================================
+  // SUPPORT TICKET ROUTES (CUSTOMER ONLY)
+  // =============================================
+
+  // Create New Ticket
+  static String createTicketScreen = "/create-ticket";
+
+  // Ticket List (your TicketListScreen)
+  static String ticketListScreen = "/ticket-list";
+
+  // Ticket Details (with parameter)
+  static String ticketDetailsScreen = "/ticket-details/:id";
+
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

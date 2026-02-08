@@ -1,5 +1,4 @@
-// lib/features/profile_mngmt/models/profile_models.dart
-
+// lib/features/profile_mngmt/models/profile_mngmt_models.dart
 enum DocumentType { national_id, passport, proof_of_address, other }
 
 enum UserRole {
@@ -45,6 +44,32 @@ class Document {
         return 'Other';
     }
   }
+
+  // Convert to API payload
+  Map<String, dynamic> toApiPayload() {
+    String typeString;
+    switch (type) {
+      case DocumentType.national_id:
+        typeString = 'national_id';
+        break;
+      case DocumentType.passport:
+        typeString = 'passport';
+        break;
+      case DocumentType.proof_of_address:
+        typeString = 'proof_of_address';
+        break;
+      default:
+        typeString = 'other';
+    }
+
+    return {
+      'type': typeString,
+      'url': url,
+      'file_name': fileName,
+      'mime_type': mimeType,
+      if (notes != null && notes!.isNotEmpty) 'notes': notes,
+    };
+  }
 }
 
 class UserProfile {
@@ -77,6 +102,7 @@ class UserProfile {
   // Additional fields
   bool isEmailVerified;
   DateTime createdAt;
+  DateTime updatedAt;
 
   UserProfile({
     required this.id,
@@ -87,16 +113,17 @@ class UserProfile {
     required this.lastName,
     this.fullName,
     this.status = UserStatus.pending,
-    this.nationalIdNumber,
-    this.dateOfBirth,
-    this.address,
-    this.location,
+    this.nationalIdNumber, // nullable
+    this.dateOfBirth, // nullable
+    this.address, // nullable
+    this.location, // nullable
     this.termsAcceptedAt,
-    this.nationalIdImageUrl,
-    this.profilePicUrl,
+    this.nationalIdImageUrl, // nullable
+    this.profilePicUrl, // nullable
     this.documents = const [],
     required this.isEmailVerified,
     required this.createdAt,
+    required this.updatedAt,
   });
 
   String get fullNameDisplay => '$firstName $lastName';
@@ -108,4 +135,35 @@ class UserProfile {
       nationalIdNumber != null &&
       nationalIdNumber!.isNotEmpty &&
       dateOfBirth != null;
+
+  // Convert to API update payload
+  Map<String, dynamic> toUpdatePayload() {
+    return {
+      'first_name': firstName,
+      'last_name': lastName,
+      if (phone != null && phone!.isNotEmpty) 'phone': phone,
+      if (dateOfBirth != null)
+        'date_of_birth': dateOfBirth!.toIso8601String().split('T').first,
+      if (address != null && address!.isNotEmpty) 'address': address,
+      if (location != null && location!.isNotEmpty) 'location': location,
+      if (profilePicUrl != null && profilePicUrl!.isNotEmpty)
+        'profile_pic_url': profilePicUrl,
+    };
+  }
+
+  // Format date for display
+  String? get formattedDateOfBirth {
+    if (dateOfBirth == null) return null;
+    return '${dateOfBirth!.day.toString().padLeft(2, '0')}-'
+        '${dateOfBirth!.month.toString().padLeft(2, '0')}-'
+        '${dateOfBirth!.year}';
+  }
+
+  // Format date for API (YYYY-MM-DD)
+  String? get apiDateOfBirth {
+    if (dateOfBirth == null) return null;
+    return '${dateOfBirth!.year}-'
+        '${dateOfBirth!.month.toString().padLeft(2, '0')}-'
+        '${dateOfBirth!.day.toString().padLeft(2, '0')}';
+  }
 }

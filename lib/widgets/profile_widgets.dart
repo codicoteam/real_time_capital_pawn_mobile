@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import '../models/profile_models.dart';
+import '../models/profile_mngmt_model.dart';
 
 class ProfileHeader extends StatelessWidget {
   final UserProfile user;

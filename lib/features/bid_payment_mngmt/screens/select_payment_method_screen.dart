@@ -394,9 +394,9 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Payment methods list
-                      ..._controller.paymentMethods
-                          .map((method) => _buildPaymentMethodCard(method))
-                          .toList(),
+                      ..._controller.paymentMethods.map(
+                        (method) => _buildPaymentMethodCard(method),
+                      ),
 
                       // Phone number input (for mobile payments)
                       if (_selectedMethodId != null &&

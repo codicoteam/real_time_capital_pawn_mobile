@@ -333,14 +333,14 @@ class BidPaymentHelper {
     TextEditingController searchController,
     Function(String) onSearch,
   ) {
-    Timer? _debounceTimer;
+    Timer? debounceTimer;
 
     searchController.addListener(() {
-      if (_debounceTimer != null) {
-        _debounceTimer!.cancel();
+      if (debounceTimer != null) {
+        debounceTimer!.cancel();
       }
 
-      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      debounceTimer = Timer(const Duration(milliseconds: 500), () {
         final query = searchController.text.trim();
         if (query.length >= 2 || query.isEmpty) {
           onSearch(query);

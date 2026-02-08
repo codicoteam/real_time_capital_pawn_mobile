@@ -285,7 +285,7 @@ class TimelineEvent {
     description: json["description"] ?? '',
     data: json["data"] ?? {},
     termNo: json["term_no"] ?? json["termNo"],
-    amount: json["amount"] != null ? json["amount"].toDouble() : null,
+    amount: json["amount"]?.toDouble(),
     status: json["status"],
   );
 

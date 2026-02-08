@@ -50,12 +50,15 @@ class AuctionsServices {
       params['category'] = category.toLowerCase().replaceAll(' ', '_');
     }
     if (assetId != null && assetId.isNotEmpty) params['asset_id'] = assetId;
-    if (createdFrom != null && createdFrom.isNotEmpty)
+    if (createdFrom != null && createdFrom.isNotEmpty) {
       params['created_from'] = createdFrom;
-    if (createdTo != null && createdTo.isNotEmpty)
+    }
+    if (createdTo != null && createdTo.isNotEmpty) {
       params['created_to'] = createdTo;
-    if (startsFrom != null && startsFrom.isNotEmpty)
+    }
+    if (startsFrom != null && startsFrom.isNotEmpty) {
       params['starts_from'] = startsFrom;
+    }
     if (startsTo != null && startsTo.isNotEmpty) params['starts_to'] = startsTo;
     if (endsFrom != null && endsFrom.isNotEmpty) params['ends_from'] = endsFrom;
     if (endsTo != null && endsTo.isNotEmpty) params['ends_to'] = endsTo;

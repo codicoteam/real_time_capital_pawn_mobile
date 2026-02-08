@@ -813,7 +813,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
                   primary: AppColors.primaryColor,
                   onPrimary: Colors.white,
                 ),
-                dialogBackgroundColor: Colors.white,
+                dialogTheme: DialogThemeData(backgroundColor: Colors.white),
               ),
               child: child!,
             );
@@ -894,9 +894,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
       "declaration_signature_name": _fullNameController.text,
     };
 
-    DevLogs.logError(
-      "Selected Loan Category Type: ${_selectedLoanCategoryType}",
-    );
+    DevLogs.logError("Selected Loan Category Type: $_selectedLoanCategoryType");
 
     // Call helper and get loan ID
     final result = await LoanApplicationHelper.createLoanApplication(

@@ -736,9 +736,9 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
                           child: _buildEmptyState(),
                         )
                       else
-                        ..._controller.userBids
-                            .map((bid) => _buildBidCard(bid))
-                            .toList(),
+                        ..._controller.userBids.map(
+                          (bid) => _buildBidCard(bid),
+                        ),
 
                       // Load more indicator
                       if (_isLoadingMore)
