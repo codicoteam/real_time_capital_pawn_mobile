@@ -68,6 +68,7 @@ class ProfileMngmtServices {
           }
         }
 
+        // ✅ UPDATED: Only parse fields that exist in your backend
         final userProfile = UserProfile(
           id: data['_id']?.toString() ?? '',
           email: data['email']?.toString() ?? '',
@@ -77,17 +78,11 @@ class ProfileMngmtServices {
           lastName: data['last_name']?.toString() ?? '',
           fullName: data['full_name']?.toString(),
           status: _parseUserStatus(data['status']?.toString() ?? 'pending'),
-          nationalIdNumber: data['national_id_number']?.toString(),
-          dateOfBirth: data['date_of_birth'] != null
-              ? DateTime.tryParse(data['date_of_birth'].toString())
-              : null,
-          address: data['address']?.toString(),
-          location: data['location']?.toString(),
           termsAcceptedAt: data['terms_accepted_at'] != null
               ? DateTime.tryParse(data['terms_accepted_at'].toString())
               : null,
-          nationalIdImageUrl: data['national_id_image_url']?.toString(),
-          profilePicUrl: data['profile_pic_url']?.toString(),
+          profilePicUrl: data['profile_pic_url']
+              ?.toString(), // Optional UI field
           documents: documents,
           isEmailVerified: data['email_verified'] == true,
           createdAt: data['created_at'] != null
@@ -133,25 +128,22 @@ class ProfileMngmtServices {
     required String firstName,
     required String lastName,
     String? phone,
-    String? dateOfBirth,
-    String? address,
-    String? location,
+    // ❌ REMOVED: These fields don't exist in your backend
+    // String? dateOfBirth,
+    // String? address,
+    // String? location,
     String? profilePicUrl,
   }) async {
     try {
       final headers = await _getAuthHeaders();
       final url = Uri.parse('${ApiKeys.baseUrl}/users/profile');
 
+      // ✅ UPDATED: Only include fields that exist in your backend
       final payload = {
         'first_name': firstName,
         'last_name': lastName,
         if (phone != null && phone.isNotEmpty) 'phone': phone,
-        if (dateOfBirth != null && dateOfBirth.isNotEmpty)
-          'date_of_birth': dateOfBirth,
-        if (address != null && address.isNotEmpty) 'address': address,
-        if (location != null && location.isNotEmpty) 'location': location,
-        if (profilePicUrl != null && profilePicUrl.isNotEmpty)
-          'profile_pic_url': profilePicUrl,
+        // ❌ NO date_of_birth, address, or location - they don't exist
       };
 
       DevLogs.logInfo('Updating profile with payload: $payload');
@@ -191,6 +183,7 @@ class ProfileMngmtServices {
           }
         }
 
+        // ✅ UPDATED: Only parse fields that exist in your backend
         final userProfile = UserProfile(
           id: data['_id']?.toString() ?? '',
           email: data['email']?.toString() ?? '',
@@ -200,17 +193,11 @@ class ProfileMngmtServices {
           lastName: data['last_name']?.toString() ?? '',
           fullName: data['full_name']?.toString(),
           status: _parseUserStatus(data['status']?.toString() ?? 'pending'),
-          nationalIdNumber: data['national_id_number']?.toString(),
-          dateOfBirth: data['date_of_birth'] != null
-              ? DateTime.tryParse(data['date_of_birth'].toString())
-              : null,
-          address: data['address']?.toString(),
-          location: data['location']?.toString(),
           termsAcceptedAt: data['terms_accepted_at'] != null
               ? DateTime.tryParse(data['terms_accepted_at'].toString())
               : null,
-          nationalIdImageUrl: data['national_id_image_url']?.toString(),
-          profilePicUrl: data['profile_pic_url']?.toString(),
+          profilePicUrl: data['profile_pic_url']
+              ?.toString(), // Optional UI field
           documents: documents,
           isEmailVerified: data['email_verified'] == true,
           createdAt: data['created_at'] != null
@@ -509,8 +496,6 @@ class ProfileMngmtServices {
     }
     return DocumentType.other;
   }
-
-  // In profile_mngmt_services.dart, update the _parseDocuments method:
 
   static List<Document> _parseDocuments(List<dynamic> documents) {
     return documents.map((doc) {

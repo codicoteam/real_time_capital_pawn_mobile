@@ -3,7 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+import 'package:real_time_pawn/features/profile_mngmt/helpers/profile_mngmt_helper.dart';
+import 'package:real_time_pawn/features/profile_mngmt/screens/profile_mngmt_screen.dart';
 import 'package:real_time_pawn/widgets/custom_button.dart';
+import 'package:real_time_pawn/widgets/profile_widgets/profile_autofill_banner.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 import '../../../core/utils/shared_pref_methods.dart' show CacheUtils;
 import '../helpers/loan_application_mngmt_helper.dart'
@@ -49,6 +52,11 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
   bool _isDeclarationChecked = false;
   late AnimationController _categoryAnimationController;
   bool _isSubmitting = false;
+
+  // Auto-fill variables
+  Map<String, dynamic>? _userData;
+  bool _isAutoFilling = false;
+  bool _showAutoFillBanner = false;
 
   // Category options
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
@@ -103,6 +111,11 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+
+    // Auto-fill user data when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoFillUserData();
+    });
   }
 
   @override
@@ -143,6 +156,94 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
         _collateralDescController.text.isNotEmpty &&
         _assetValueController.text.isNotEmpty &&
         _isDeclarationChecked;
+  }
+
+  // Auto-fill Methods
+  Future<void> _autoFillUserData() async {
+    if (_isAutoFilling) return;
+
+    setState(() => _isAutoFilling = true);
+
+    // Get user data from profile
+    _userData = await ProfileMngmtHelper.getUserDataForLoanApplication();
+
+    if (_userData != null && mounted) {
+      setState(() {
+        // ✅ Fill what we HAVE from profile
+        _fullNameController.text = _userData!['fullName'] ?? '';
+        _emailController.text = _userData!['email'] ?? '';
+        _phoneController.text = _userData!['phone'] ?? '';
+
+        // ❌ These will likely be empty (not in your profile)
+        // But we try anyway - they'll just be empty strings
+        _dateOfBirthController.text = _userData!['dateOfBirth'] ?? '';
+        _nationalIdController.text = _userData!['nationalIdNumber'] ?? '';
+        _addressController.text = _userData!['address'] ?? '';
+
+        // Try to auto-fill work location from profile location
+        if (_userData!['location'] != null &&
+            _userData!['location']!.isNotEmpty) {
+          _workLocationController.text = _userData!['location']!;
+        }
+
+        _showAutoFillBanner = true;
+      });
+
+      // Show appropriate feedback
+      _showAutoFillFeedback(_userData!);
+    }
+
+    setState(() => _isAutoFilling = false);
+  }
+
+  void _showAutoFillFeedback(Map<String, dynamic> userData) {
+    final hasBasicInfo = userData['hasBasicInfo'] ?? false;
+    final missingFields = userData['missingFields'] as List<String>? ?? [];
+
+    if (!hasBasicInfo) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Complete your profile to enable auto-fill',
+            style: GoogleFonts.poppins(color: Colors.white),
+          ),
+          backgroundColor: AppColors.warningColor,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (hasBasicInfo && missingFields.isNotEmpty) {
+      final missingCount = missingFields.length;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Basic info auto-filled',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Add $missingCount more fields to complete profile',
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.primaryColor,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   @override
@@ -212,6 +313,21 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Auto-fill banner
+                  if (_userData != null && _userData!['hasBasicInfo'] == true)
+                    ProfileAutofillBanner(
+                      userData: _userData!,
+                      onEditProfile: () {
+                        // Navigate to profile screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
+                        );
+                      },
+                    ).animate().fadeIn().slideY(begin: 0.1),
+
                   // Personal Information Card
                   _buildSectionCard(
                         title: 'Personal Information',

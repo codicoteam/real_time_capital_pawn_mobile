@@ -78,31 +78,32 @@ class UserProfile {
   String? phone;
   List<UserRole> roles;
 
-  // Name fields
+  // ✅ ONLY FIELDS FROM YOUR BACKEND RESPONSE:
   String firstName;
   String lastName;
   String? fullName;
-
   UserStatus status;
-
-  // KYC fields (all optional)
-  String? nationalIdNumber;
-  DateTime? dateOfBirth;
-  String? address;
-  String? location;
   DateTime? termsAcceptedAt;
 
-  // Image URLs (optional)
-  String? nationalIdImageUrl;
-  String? profilePicUrl;
-
-  // Documents
+  // ✅ FROM BACKEND: Documents array
   List<Document> documents;
 
-  // Additional fields
+  // ✅ FROM BACKEND: Email verification status
   bool isEmailVerified;
+
+  // ✅ FROM BACKEND: Timestamps
   DateTime createdAt;
   DateTime updatedAt;
+
+  // ❌ REMOVED (NOT IN BACKEND):
+  // String? nationalIdNumber;
+  // DateTime? dateOfBirth;
+  // String? address;
+  // String? location;
+  // String? nationalIdImageUrl;
+
+  // ✅ Optional for UI only (not from backend)
+  String? profilePicUrl;
 
   UserProfile({
     required this.id,
@@ -113,13 +114,8 @@ class UserProfile {
     required this.lastName,
     this.fullName,
     this.status = UserStatus.pending,
-    this.nationalIdNumber, // nullable
-    this.dateOfBirth, // nullable
-    this.address, // nullable
-    this.location, // nullable
     this.termsAcceptedAt,
-    this.nationalIdImageUrl, // nullable
-    this.profilePicUrl, // nullable
+    this.profilePicUrl,
     this.documents = const [],
     required this.isEmailVerified,
     required this.createdAt,
@@ -127,47 +123,36 @@ class UserProfile {
   });
 
   String get fullNameDisplay => '$firstName $lastName';
+
   String get primaryRole => roles.contains(UserRole.customer)
       ? 'Customer'
       : roles.first.toString().split('.').last.replaceAll('_', ' ');
 
-  bool get hasCompletedBasicKyc =>
-      nationalIdNumber != null &&
-      nationalIdNumber!.isNotEmpty &&
-      dateOfBirth != null;
+  // ✅ UPDATED: KYC completion based on ACTUAL backend fields
+  bool get hasCompletedBasicKyc {
+    // Check if user has uploaded any documents
+    if (documents.isEmpty) return false;
 
-  // Convert to API update payload
+    // Check if email is verified (from backend)
+    if (!isEmailVerified) return false;
+
+    // Check if phone is provided
+    if (phone == null || phone!.isEmpty) return false;
+
+    return true;
+  }
+
+  // ✅ UPDATED: Convert to API update payload (only fields that exist)
   Map<String, dynamic> toUpdatePayload() {
     return {
       'first_name': firstName,
       'last_name': lastName,
       if (phone != null && phone!.isNotEmpty) 'phone': phone,
-      if (dateOfBirth != null)
-        'date_of_birth': dateOfBirth!.toIso8601String().split('T').first,
-      if (address != null && address!.isNotEmpty) 'address': address,
-      if (location != null && location!.isNotEmpty) 'location': location,
-      if (profilePicUrl != null && profilePicUrl!.isNotEmpty)
-        'profile_pic_url': profilePicUrl,
+      // ❌ NO date_of_birth, address, or location - they don't exist in backend
     };
   }
 
-  // Format date for display
-  String? get formattedDateOfBirth {
-    if (dateOfBirth == null) return null;
-    return '${dateOfBirth!.day.toString().padLeft(2, '0')}-'
-        '${dateOfBirth!.month.toString().padLeft(2, '0')}-'
-        '${dateOfBirth!.year}';
-  }
-
-  // Format date for API (YYYY-MM-DD)
-  String? get apiDateOfBirth {
-    if (dateOfBirth == null) return null;
-    return '${dateOfBirth!.year}-'
-        '${dateOfBirth!.month.toString().padLeft(2, '0')}-'
-        '${dateOfBirth!.day.toString().padLeft(2, '0')}';
-  }
-
-  // ✅ ADD THIS copyWith METHOD
+  // ✅ UPDATED copyWith METHOD (only backend fields)
   UserProfile copyWith({
     String? id,
     String? email,
@@ -177,12 +162,7 @@ class UserProfile {
     String? lastName,
     String? fullName,
     UserStatus? status,
-    String? nationalIdNumber,
-    DateTime? dateOfBirth,
-    String? address,
-    String? location,
     DateTime? termsAcceptedAt,
-    String? nationalIdImageUrl,
     String? profilePicUrl,
     List<Document>? documents,
     bool? isEmailVerified,
@@ -198,12 +178,7 @@ class UserProfile {
       lastName: lastName ?? this.lastName,
       fullName: fullName ?? this.fullName,
       status: status ?? this.status,
-      nationalIdNumber: nationalIdNumber ?? this.nationalIdNumber,
-      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-      address: address ?? this.address,
-      location: location ?? this.location,
       termsAcceptedAt: termsAcceptedAt ?? this.termsAcceptedAt,
-      nationalIdImageUrl: nationalIdImageUrl ?? this.nationalIdImageUrl,
       profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       documents: documents ?? this.documents,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,

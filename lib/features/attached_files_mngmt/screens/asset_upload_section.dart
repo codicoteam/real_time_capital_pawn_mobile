@@ -81,7 +81,6 @@ class AssetUploadSection extends StatefulWidget {
 
 class _AssetUploadSectionState extends State<AssetUploadSection> {
   late List<UploadedAsset> _uploadedAssets;
-  int? _selectedAssetIndex;
   final ImagePicker _picker = ImagePicker();
   final SupabaseClient _supabase = Supabase.instance.client;
   bool _isUploading = false;
@@ -498,9 +497,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
   }
 
   void _editAssetDetails(int index) {
-    setState(() {
-      _selectedAssetIndex = index;
-    });
+    setState(() {});
     _showAssetEditModal(index);
   }
 

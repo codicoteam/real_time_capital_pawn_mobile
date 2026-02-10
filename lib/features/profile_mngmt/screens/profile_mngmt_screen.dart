@@ -8,7 +8,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/helpers/attached_files_mngmt_helper.dart';
@@ -18,7 +17,7 @@ import 'package:real_time_pawn/widgets/custom_button/general_button.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../widgets/profile_widgets.dart';
+import '../../../widgets/profile_widgets/profile_widgets.dart';
 import '../controllers/profile_mngmt_controller.dart';
 import '../helpers/profile_mngmt_helper.dart';
 
@@ -41,13 +40,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String errorMessage = '';
   final ImagePicker _imagePicker = ImagePicker();
 
-  // Controllers
+  // ✅ UPDATED: Only controllers for fields that exist
   late TextEditingController firstNameCtrl;
   late TextEditingController lastNameCtrl;
   late TextEditingController phoneCtrl;
-  late TextEditingController dateOfBirthCtrl;
-  late TextEditingController addressCtrl;
-  late TextEditingController locationCtrl;
+
+  // ❌ REMOVED: Controllers for non-existent fields
+  // late TextEditingController dateOfBirthCtrl;
+  // late TextEditingController addressCtrl;
+  // late TextEditingController locationCtrl;
 
   // For account deletion
   final TextEditingController otpController = TextEditingController();
@@ -99,9 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     firstNameCtrl = TextEditingController();
     lastNameCtrl = TextEditingController();
     phoneCtrl = TextEditingController();
-    dateOfBirthCtrl = TextEditingController();
-    addressCtrl = TextEditingController();
-    locationCtrl = TextEditingController();
+    // ❌ NO dateOfBirthCtrl, addressCtrl, or locationCtrl
   }
 
   void _updateControllers() {
@@ -111,9 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         firstNameCtrl.text = user.firstName;
         lastNameCtrl.text = user.lastName;
         phoneCtrl.text = user.phone ?? '';
-        dateOfBirthCtrl.text = user.formattedDateOfBirth ?? '';
-        addressCtrl.text = user.address ?? '';
-        locationCtrl.text = user.location ?? '';
+        // ❌ NO dateOfBirth, address, or location fields to update
       });
     }
   }
@@ -123,9 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     firstNameCtrl.dispose();
     lastNameCtrl.dispose();
     phoneCtrl.dispose();
-    dateOfBirthCtrl.dispose();
-    addressCtrl.dispose();
-    locationCtrl.dispose();
+    // ❌ NO dateOfBirthCtrl, addressCtrl, or locationCtrl to dispose
     otpController.dispose();
     super.dispose();
   }
@@ -235,9 +230,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 3. Update profile with the URL
 
       // For now, we'll just update the profile without the image
-      // Replace this with your actual image upload logic:
-      // final imageUrl = await uploadToStorage(imageFile);
-
       Get.snackbar(
         'Info',
         'Image upload feature requires storage integration',
@@ -251,9 +243,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       //   firstName: firstNameCtrl.text.trim(),
       //   lastName: lastNameCtrl.text.trim(),
       //   phone: phoneCtrl.text.trim(),
-      //   dateOfBirth: dateOfBirthCtrl.text.trim(),
-      //   address: addressCtrl.text.trim(),
-      //   location: locationCtrl.text.trim(),
       //   profilePicUrl: imageUrl, // <- ACTUAL IMAGE URL HERE
       // );
     } catch (e) {
@@ -301,19 +290,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => isLoading = true);
 
     try {
+      // ✅ UPDATED: Only pass fields that exist
       final success = await ProfileMngmtHelper.updateProfile(
         firstName: firstNameCtrl.text.trim(),
         lastName: lastNameCtrl.text.trim(),
         phone: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
-        dateOfBirth: dateOfBirthCtrl.text.trim().isNotEmpty
-            ? dateOfBirthCtrl.text.trim()
-            : null,
-        address: addressCtrl.text.trim().isNotEmpty
-            ? addressCtrl.text.trim()
-            : null,
-        location: locationCtrl.text.trim().isNotEmpty
-            ? locationCtrl.text.trim()
-            : null,
+        // ❌ NO dateOfBirth, address, or location parameters
       );
 
       if (success) {
@@ -626,33 +608,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> selectDateOfBirth() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 25)),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primaryColor,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        dateOfBirthCtrl.text = DateFormat('dd-MM-yyyy').format(picked);
-      });
-    }
-  }
+  // ❌ REMOVED: selectDateOfBirth method since no date field exists
+  // Future<void> selectDateOfBirth() async { ... }
 
   Future<void> _requestAccountDeletion() async {
     final user = _profileController.userProfile.value;
@@ -992,49 +949,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               focusedBorderColor: AppColors.primaryColor,
               fillColor: isEditing ? Colors.white : Colors.grey.shade50,
             ),
-            const SizedBox(height: 12),
-
-            Text(
-              'KYC Information (Optional)',
-              style: GoogleFonts.nunito(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            GestureDetector(
-              onTap: isEditing ? selectDateOfBirth : null,
-              child: AbsorbPointer(
-                child: CustomTextField(
-                  controller: dateOfBirthCtrl,
-                  labelText: 'Date of Birth (DD-MM-YYYY)',
-                  enabled: isEditing,
-                  focusedBorderColor: AppColors.primaryColor,
-                  fillColor: isEditing ? Colors.white : Colors.grey.shade50,
-                  prefixIcon: const Icon(Icons.calendar_today_outlined),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            CustomTextField(
-              controller: addressCtrl,
-              labelText: 'Address',
-              enabled: isEditing,
-              focusedBorderColor: AppColors.primaryColor,
-              fillColor: isEditing ? Colors.white : Colors.grey.shade50,
-            ),
-            const SizedBox(height: 12),
-
-            CustomTextField(
-              controller: locationCtrl,
-              labelText: 'Location/City',
-              enabled: isEditing,
-              focusedBorderColor: AppColors.primaryColor,
-              fillColor: isEditing ? Colors.white : Colors.grey.shade50,
-            ),
             const SizedBox(height: 20),
 
             Row(
@@ -1172,15 +1086,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               )
-            // In _buildDocumentsSection() method
-            // In _buildDocumentsSection() method
             else
               Column(
                 children: user.documents.map((document) {
                   return DocumentItem(
                     document: document,
-                    onTap: () =>
-                        _openDocument(document), // ✅ Only onTap remains
+                    onTap: () => _openDocument(document),
                   );
                 }).toList(),
               ),

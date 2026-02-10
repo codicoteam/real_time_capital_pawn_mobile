@@ -51,9 +51,10 @@ class ProfileController extends GetxController {
     required String firstName,
     required String lastName,
     String? phone,
-    String? dateOfBirth,
-    String? address,
-    String? location,
+    // ❌ REMOVED: These fields don't exist in your backend
+    // String? dateOfBirth,
+    // String? address,
+    // String? location,
     String? profilePicUrl,
   }) async {
     try {
@@ -65,9 +66,10 @@ class ProfileController extends GetxController {
             firstName: firstName,
             lastName: lastName,
             phone: phone,
-            dateOfBirth: dateOfBirth,
-            address: address,
-            location: location,
+            // ❌ REMOVED: These parameters
+            // dateOfBirth: dateOfBirth,
+            // address: address,
+            // location: location,
             profilePicUrl: profilePicUrl,
           );
 
@@ -110,26 +112,9 @@ class ProfileController extends GetxController {
           );
 
       if (response.success && userProfile.value != null) {
-        // Add to local profile
-        final newProfile = UserProfile(
-          id: userProfile.value!.id,
-          email: userProfile.value!.email,
-          phone: userProfile.value!.phone,
-          roles: userProfile.value!.roles,
-          firstName: userProfile.value!.firstName,
-          lastName: userProfile.value!.lastName,
-          fullName: userProfile.value!.fullName,
-          status: userProfile.value!.status,
-          nationalIdNumber: userProfile.value!.nationalIdNumber,
-          dateOfBirth: userProfile.value!.dateOfBirth,
-          address: userProfile.value!.address,
-          location: userProfile.value!.location,
-          termsAcceptedAt: userProfile.value!.termsAcceptedAt,
-          nationalIdImageUrl: userProfile.value!.nationalIdImageUrl,
-          profilePicUrl: userProfile.value!.profilePicUrl,
+        // ✅ UPDATED: Use copyWith method (which doesn't have non-existent fields)
+        final newProfile = userProfile.value!.copyWith(
           documents: [...userProfile.value!.documents, response.data!],
-          isEmailVerified: userProfile.value!.isEmailVerified,
-          createdAt: userProfile.value!.createdAt,
           updatedAt: DateTime.now(),
         );
 
@@ -164,25 +149,9 @@ class ProfileController extends GetxController {
             .where((doc) => doc.id != documentId)
             .toList();
 
-        final newProfile = UserProfile(
-          id: userProfile.value!.id,
-          email: userProfile.value!.email,
-          phone: userProfile.value!.phone,
-          roles: userProfile.value!.roles,
-          firstName: userProfile.value!.firstName,
-          lastName: userProfile.value!.lastName,
-          fullName: userProfile.value!.fullName,
-          status: userProfile.value!.status,
-          nationalIdNumber: userProfile.value!.nationalIdNumber,
-          dateOfBirth: userProfile.value!.dateOfBirth,
-          address: userProfile.value!.address,
-          location: userProfile.value!.location,
-          termsAcceptedAt: userProfile.value!.termsAcceptedAt,
-          nationalIdImageUrl: userProfile.value!.nationalIdImageUrl,
-          profilePicUrl: userProfile.value!.profilePicUrl,
+        // ✅ UPDATED: Use copyWith method
+        final newProfile = userProfile.value!.copyWith(
           documents: updatedDocuments,
-          isEmailVerified: userProfile.value!.isEmailVerified,
-          createdAt: userProfile.value!.createdAt,
           updatedAt: DateTime.now(),
         );
 
@@ -307,6 +276,7 @@ class ProfileController extends GetxController {
           ...attachmentsAsDocuments, // New attachments
         ];
 
+        // ✅ UPDATED: Use copyWith method
         userProfile.value = user.copyWith(documents: allDocuments);
       }
     } catch (e) {

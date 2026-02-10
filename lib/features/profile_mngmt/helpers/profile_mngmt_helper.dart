@@ -28,9 +28,10 @@ class ProfileMngmtHelper {
     required String firstName,
     required String lastName,
     String? phone,
-    String? dateOfBirth,
-    String? address,
-    String? location,
+    // ❌ REMOVED: These fields don't exist in your backend
+    // String? dateOfBirth,
+    // String? address,
+    // String? location,
     String? profilePicUrl,
   }) async {
     // Validation
@@ -44,13 +45,12 @@ class ProfileMngmtHelper {
     }
 
     try {
+      // ✅ UPDATED: Only pass fields that exist
       final success = await _profileController.updateProfile(
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         phone: phone?.trim(),
-        dateOfBirth: dateOfBirth?.trim(),
-        address: address?.trim(),
-        location: location?.trim(),
+        // ❌ REMOVED: dateOfBirth, address, location
         profilePicUrl: profilePicUrl,
       );
 
@@ -235,5 +235,81 @@ class ProfileMngmtHelper {
 
   static void clearMessages() {
     _profileController.clearMessages();
+  }
+
+  /// Get user data for loan application auto-fill
+  static Future<Map<String, dynamic>?> getUserDataForLoanApplication() async {
+    try {
+      final controller = _profileController;
+
+      // If profile not loaded, fetch it first
+      if (controller.userProfile.value == null) {
+        await fetchUserProfile();
+      }
+
+      final user = controller.userProfile.value;
+      if (user == null) return null;
+
+      // ✅ ONLY USE FIELDS FROM YOUR BACKEND
+      return {
+        // ✅ Available from profile response
+        'fullName': '${user.firstName} ${user.lastName}',
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        'email': user.email,
+        'phone': user.phone ?? '',
+
+        // ✅ Document info if available
+        'hasDocuments': user.documents.isNotEmpty,
+        'documentCount': user.documents.length,
+
+        // ✅ Status information
+        'isEmailVerified': user.isEmailVerified,
+        'status': user.status.toString(),
+
+        // ✅ Calculate profile completeness based on ACTUAL fields
+        'hasBasicInfo': _hasBasicInfo(user),
+        'hasCompleteProfile': _hasCompleteProfile(user),
+        'missingFields': _getMissingFields(user),
+      };
+    } catch (e) {
+      showError('Error fetching user data: ${e.toString()}');
+      return null;
+    }
+  }
+
+  /// ✅ Update: Check if we have minimum required for auto-fill
+  static bool _hasBasicInfo(UserProfile user) {
+    return user.firstName.isNotEmpty &&
+        user.lastName.isNotEmpty &&
+        user.email.isNotEmpty &&
+        user.isEmailVerified;
+  }
+
+  /// ✅ Update: Check if profile is complete based on ACTUAL requirements
+  static bool _hasCompleteProfile(UserProfile user) {
+    return _hasBasicInfo(user) &&
+        user.phone != null &&
+        user.phone!.isNotEmpty &&
+        user.documents.isNotEmpty;
+  }
+
+  /// ✅ Update: Get list of missing fields based on ACTUAL fields
+  static List<String> _getMissingFields(UserProfile user) {
+    List<String> missing = [];
+
+    if (user.phone == null || user.phone!.isEmpty) {
+      missing.add('Phone Number');
+    }
+
+    if (!user.isEmailVerified) {
+      missing.add('Email Verification');
+    }
+
+    if (user.documents.isEmpty) {
+      missing.add('Documents (ID, Proof of Address)');
+    }
+
+    return missing;
   }
 }
