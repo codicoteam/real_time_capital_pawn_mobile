@@ -1,5 +1,8 @@
 // lib/features/profile_mngmt/screens/profile_screen.dart
+import 'dart:convert';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
@@ -8,12 +11,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+import 'package:real_time_pawn/features/attached_files_mngmt/helpers/attached_files_mngmt_helper.dart';
+import 'package:real_time_pawn/features/attached_files_mngmt/services/attached_files_mngmt_service.dart';
 import 'package:real_time_pawn/models/profile_mngmt_model.dart';
 import 'package:real_time_pawn/widgets/custom_button/general_button.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../widgets/profile_widgets.dart';
 import '../controllers/profile_mngmt_controller.dart';
 import '../helpers/profile_mngmt_helper.dart';
+
+// ✅ ADD THE ENUM HERE
+enum DocumentType { national_id, passport, proof_of_address }
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -59,10 +69,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
+      // 1. Fetch user profile
       final success = await ProfileMngmtHelper.fetchUserProfile();
 
       if (success && _profileController.userProfile.value != null) {
         _updateControllers();
+
+        // 2. ALSO FETCH ATTACHMENTS FROM ATTACHMENTS API
+        await _profileController.fetchUserAttachments();
       } else {
         setState(() {
           hasError = true;
@@ -353,41 +367,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (documentType == null) return;
 
     // Pick file
-    final XFile? file = await ImagePicker().pickImage(
+    final XFile? pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
     );
 
-    if (file == null) return;
+    if (pickedFile == null) return;
 
     setState(() => isLoading = true);
 
     try {
-      // TODO: IMPLEMENT ACTUAL FILE UPLOAD TO YOUR STORAGE SERVICE
-      // 1. Upload to AWS S3 / Firebase Storage / etc.
-      // 2. Get the public URL
-      // 3. Upload document with the URL
+      final user = _profileController.userProfile.value;
+      if (user == null) {
+        Get.snackbar('Error', 'User profile not loaded');
+        return;
+      }
 
-      // For now, we'll show a message
-      Get.snackbar(
-        'Info',
-        'Document upload requires storage integration',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue,
-        colorText: Colors.white,
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
+
+      String publicUrl;
+
+      if (kIsWeb) {
+        // WEB: Use dummy URL for testing
+        publicUrl = 'https://dummyimage.com/600x400/000/fff.jpg&text=$fileName';
+        print('WEB MODE: Testing with dummy URL: $publicUrl');
+      } else {
+        // ANDROID: Real Supabase upload
+        final supabase = Supabase.instance.client;
+        final filePath = 'profile_documents/$fileName';
+
+        await supabase.storage
+            .from('attachments')
+            .upload(
+              filePath,
+              File(pickedFile.path),
+              fileOptions: FileOptions(
+                contentType: 'image/jpeg',
+                upsert: false,
+              ),
+            );
+
+        publicUrl = supabase.storage.from('attachments').getPublicUrl(filePath);
+      }
+
+      // Map DocumentType to API category (must match dropdown values)
+      String apiCategory;
+      switch (documentType) {
+        case DocumentType.national_id:
+          apiCategory = 'national_id'; // ✅ Valid dropdown value
+          break;
+        case DocumentType.passport:
+          apiCategory = 'other'; // ✅ 'passport' not in dropdown, use 'other'
+          break;
+        case DocumentType.proof_of_address:
+          apiCategory = 'proof_of_residence'; // ✅ Valid dropdown value
+          break;
+        default:
+          apiCategory = 'other'; // ✅ Fallback to 'other'
+      }
+
+      // ✅ Create proper JSON metadata
+      final metaData = json.encode({
+        'document_type': documentType.toString().split('.').last,
+        'uploaded_at': DateTime.now().toIso8601String(),
+        'file_name': pickedFile.name,
+        'original_document_type': documentType.toString().split('.').last,
+        'user_id': user.id,
+        'purpose': 'profile_verification',
+      });
+
+      print('DEBUG: entityId = ${user.id}');
+      print('DEBUG: entityType = User');
+      print('DEBUG: category = $apiCategory');
+      print('DEBUG: storage = url');
+
+      // ✅ CORRECTED: Use API-compliant values
+      final attachmentModel = await AttachmentHelper.uploadAttachment(
+        entityType:
+            'User', // ✅ Must be 'User' (from dropdown: {LoanApplication, Loan, Asset, User, Ticket, DebtorRecord, Other})
+        entityId: user.id, // ✅ Actual user ID (MongoDB ObjectId)
+        category:
+            apiCategory, // ✅ Must be from dropdown: {other, national_id, loan_request_form, pawn_ticket, contract, proof_of_residence, asset_photos}
+        filename: fileName,
+        mimeType: 'image/jpeg',
+        storage:
+            'url', // ✅ Must be 'url' (from dropdown: {url, local, s3, gridfs})
+        url: publicUrl,
+        meta: metaData,
       );
 
-      // If you have the URL, call:
-      // final success = await ProfileMngmtHelper.uploadDocument(
-      //   type: documentType.toString().split('.').last,
-      //   url: fileUrl,
-      //   fileName: file.name,
-      //   mimeType: 'image/jpeg',
-      //   notes: 'Uploaded from mobile',
-      // );
+      if (attachmentModel != null) {
+        // Refresh user profile to show new document
+        await _loadProfile();
+
+        Get.snackbar(
+          'Success',
+          'Document uploaded successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.successColor,
+          colorText: Colors.white,
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to save attachment to database',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
     } catch (e) {
       Get.snackbar(
-        'Upload Failed',
-        'Error: $e',
+        'Error',
+        'Upload failed: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -397,7 +489,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> deleteDocument(String id) async {
+  Future<void> deleteDocument(Document document) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: Text(
@@ -433,8 +525,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) {
       setState(() => isLoading = true);
       try {
-        await ProfileMngmtHelper.deleteDocument(id);
-        // Controller will update the UI automatically
+        // Use AttachmentService for deletion (not ProfileMngmtHelper)
+        final response = await AttachmentService.deleteAttachment(document.id);
+
+        if (response.success) {
+          // Refresh the profile to update UI
+          await _loadProfile();
+          Get.snackbar(
+            'Success',
+            'Document deleted successfully',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.successColor,
+            colorText: Colors.white,
+          );
+        } else {
+          Get.snackbar(
+            'Error',
+            'Failed to delete document: ${response.message}',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
       } catch (e) {
         Get.snackbar(
           'Error',
@@ -773,6 +885,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _openDocument(Document document) async {
+    // Check if URL is valid
+    if (document.url.isEmpty || document.url == 'string') {
+      Get.snackbar(
+        'Error',
+        'Document URL not available',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(document.url);
+
+      // For images, open in PhotoView
+      if (document.mimeType.startsWith('image/')) {
+        Get.to(
+          () => Scaffold(
+            appBar: AppBar(title: Text(document.fileName)),
+            body: Center(
+              child: CachedNetworkImage(
+                imageUrl: document.url,
+                placeholder: (context, url) =>
+                    CircularProgressIndicator(color: AppColors.primaryColor),
+                errorWidget: (context, url, error) =>
+                    Icon(Icons.error_outline, color: Colors.red),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        );
+      } else {
+        // For other files, try to open in browser
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          Get.snackbar(
+            'Warning',
+            'Cannot open this file type',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+        }
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to open document: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
   Widget _buildInfoSection() {
     return Card(
       elevation: 0,
@@ -1002,12 +1172,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               )
+            // In _buildDocumentsSection() method
+            // In _buildDocumentsSection() method
             else
               Column(
                 children: user.documents.map((document) {
                   return DocumentItem(
                     document: document,
-                    onDelete: () => deleteDocument(document.id),
+                    onTap: () =>
+                        _openDocument(document), // ✅ Only onTap remains
                   );
                 }).toList(),
               ),

@@ -510,13 +510,30 @@ class ProfileMngmtServices {
     return DocumentType.other;
   }
 
+  // In profile_mngmt_services.dart, update the _parseDocuments method:
+
   static List<Document> _parseDocuments(List<dynamic> documents) {
     return documents.map((doc) {
       try {
+        // Handle mock data case where _id might be "string"
+        String id;
+        if (doc['_id'] != null) {
+          if (doc['_id'] is String && doc['_id'] != 'string') {
+            id = doc['_id'];
+          } else {
+            // Use uploaded_at or generate a new ID for mock data
+            id = doc['uploaded_at'] != null
+                ? DateTime.parse(
+                    doc['uploaded_at'].toString(),
+                  ).millisecondsSinceEpoch.toString()
+                : DateTime.now().millisecondsSinceEpoch.toString();
+          }
+        } else {
+          id = DateTime.now().millisecondsSinceEpoch.toString();
+        }
+
         return Document(
-          id:
-              doc['_id']?.toString() ??
-              DateTime.now().millisecondsSinceEpoch.toString(),
+          id: id,
           type: _parseDocumentType(doc['type']),
           url: doc['url']?.toString() ?? '',
           fileName: doc['file_name']?.toString() ?? '',
@@ -526,7 +543,6 @@ class ProfileMngmtServices {
         );
       } catch (e) {
         DevLogs.logError('Error parsing document: $e, document: $doc');
-        // Return a default document if parsing fails
         return Document(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           type: DocumentType.other,

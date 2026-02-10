@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:real_time_pawn/models/loan_application.model.dart' show LoanApplicationModel;
+import 'package:real_time_pawn/models/loan_application_model.dart'
+    show LoanApplicationModel;
 
 import '../../../core/utils/api_response.dart';
 import '../../../widgets/loading_widgets/circular_loader.dart';
@@ -39,8 +40,8 @@ class LoanApplicationHelper {
         barrierDismissible: false,
       );
 
-      final APIResponse<LoanApplicationModel> response = 
-          await _loanController.createLoanApplication(payload);
+      final APIResponse<LoanApplicationModel> response = await _loanController
+          .createLoanApplication(payload);
 
       if (Get.isDialogOpen ?? false) {
         Get.back();
@@ -64,26 +65,20 @@ class LoanApplicationHelper {
         _showErrorDialog(
           response.message ?? 'Failed to submit loan application',
         );
-        
-        return LoanApplicationResult(
-          success: false,
-          message: response.message,
-        );
+
+        return LoanApplicationResult(success: false, message: response.message);
       }
     } catch (e) {
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
-      
+
       final errorMessage =
           'An unexpected error occurred while submitting the loan application: ${e.toString()}';
-      
+
       _showErrorDialog(errorMessage);
-      
-      return LoanApplicationResult(
-        success: false,
-        message: errorMessage,
-      );
+
+      return LoanApplicationResult(success: false, message: errorMessage);
     }
   }
 

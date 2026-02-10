@@ -1,6 +1,9 @@
 // lib/features/profile_mngmt/controllers/profile_mngmt_controller.dart
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/api_response.dart';
+import 'package:real_time_pawn/features/attached_files_mngmt/services/attached_files_mngmt_service.dart';
 import 'package:real_time_pawn/features/profile_mngmt/services/profile_mngmt_services.dart';
 import 'package:real_time_pawn/models/profile_mngmt_model.dart';
 
@@ -268,4 +271,61 @@ class ProfileController extends GetxController {
   bool get isProfileLoading => isLoading.value;
   String get currentErrorMessage => errorMessage.value;
   String get currentSuccessMessage => successMessage.value;
+
+  /// Fetch user attachments from Attachments API
+  Future<void> fetchUserAttachments() async {
+    try {
+      final user = userProfile.value;
+      if (user == null) return;
+
+      final response = await AttachmentService.getAttachmentsByUserAndEntity(
+        userId: user.id,
+        entityType: 'User',
+        entityId: user.id,
+      );
+
+      if (response.success && response.data != null) {
+        // Convert attachments to Document objects
+        final attachmentsAsDocuments = response.data!.map((attachment) {
+          final meta = json.decode(attachment.meta ?? '{}');
+          return Document(
+            id: attachment.id!, // Use attachment ID
+            type: _parseDocumentTypeFromString(
+              meta['document_type'] ?? 'other',
+            ),
+            url: attachment.url ?? '',
+            fileName: attachment.filename ?? '',
+            mimeType: attachment.mimeType ?? 'image/jpeg',
+            uploadedAt: attachment.createdAt ?? DateTime.now(),
+            notes: meta['notes'] ?? '',
+          );
+        }).toList();
+
+        // Combine with existing documents
+        final allDocuments = [
+          ...user.documents, // Old documents (empty)
+          ...attachmentsAsDocuments, // New attachments
+        ];
+
+        userProfile.value = user.copyWith(documents: allDocuments);
+      }
+    } catch (e) {
+      print('Error fetching attachments: $e');
+    }
+  }
+
+  /// Helper method to parse document type from string
+  DocumentType _parseDocumentTypeFromString(String typeString) {
+    switch (typeString) {
+      case 'national_id':
+        return DocumentType.national_id;
+      case 'passport':
+        return DocumentType.passport;
+      case 'proof_of_address':
+      case 'proof_of_residence':
+        return DocumentType.proof_of_address;
+      default:
+        return DocumentType.other;
+    }
+  }
 }

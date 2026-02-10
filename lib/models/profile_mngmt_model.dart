@@ -166,4 +166,49 @@ class UserProfile {
         '${dateOfBirth!.month.toString().padLeft(2, '0')}-'
         '${dateOfBirth!.day.toString().padLeft(2, '0')}';
   }
+
+  // ✅ ADD THIS copyWith METHOD
+  UserProfile copyWith({
+    String? id,
+    String? email,
+    String? phone,
+    List<UserRole>? roles,
+    String? firstName,
+    String? lastName,
+    String? fullName,
+    UserStatus? status,
+    String? nationalIdNumber,
+    DateTime? dateOfBirth,
+    String? address,
+    String? location,
+    DateTime? termsAcceptedAt,
+    String? nationalIdImageUrl,
+    String? profilePicUrl,
+    List<Document>? documents,
+    bool? isEmailVerified,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      roles: roles ?? this.roles,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      fullName: fullName ?? this.fullName,
+      status: status ?? this.status,
+      nationalIdNumber: nationalIdNumber ?? this.nationalIdNumber,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      address: address ?? this.address,
+      location: location ?? this.location,
+      termsAcceptedAt: termsAcceptedAt ?? this.termsAcceptedAt,
+      nationalIdImageUrl: nationalIdImageUrl ?? this.nationalIdImageUrl,
+      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
+      documents: documents ?? this.documents,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:real_time_pawn/features/profile_mngmt/controllers/profile_mngmt_controller.dart';
+import 'package:real_time_pawn/models/profile_mngmt_model.dart';
 
 class ProfileMngmtHelper {
   /// Initialize controller if not already done
@@ -204,6 +205,18 @@ class ProfileMngmtHelper {
       margin: const EdgeInsets.all(16),
       borderRadius: 12,
     );
+  }
+
+  /// Get document ID for deletion (handles mock data)
+  static String? getDocumentIdForDeletion(Document document) {
+    // If the document ID is "string" (mock data), we can't delete it
+    if (document.id == 'string') {
+      showError(
+        'Cannot delete mock document. Please upload a real document first.',
+      );
+      return null;
+    }
+    return document.id;
   }
 
   static void showError(String message) {

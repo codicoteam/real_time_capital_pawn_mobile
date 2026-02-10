@@ -41,7 +41,7 @@ import 'features/auth_mngmt/screens/reset_password_screen.dart'
 import 'features/faq_mngmt/screens/faq_mngmt_screen.dart';
 import 'features/home_management/screens/home_screen.dart';
 import 'features/home_management/screens/main_screen.dart';
-import 'models/loan_application.model.dart';
+import 'models/loan_application_model.dart';
 // import 'package:mrpace/features/about_management/screens/about_screen.dart';
 // import 'package:mrpace/features/auth_management/Screens/account_verfication.dart';
 // import 'package:mrpace/features/auth_management/Screens/confirm_email.dart';

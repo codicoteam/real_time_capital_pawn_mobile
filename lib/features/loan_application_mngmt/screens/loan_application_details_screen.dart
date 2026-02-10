@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/models/loan_application.model.dart';
+import 'package:real_time_pawn/models/loan_application_model.dart';
 
 class LoanApplicationDetailsScreen extends StatefulWidget {
   final LoanApplicationModel application;

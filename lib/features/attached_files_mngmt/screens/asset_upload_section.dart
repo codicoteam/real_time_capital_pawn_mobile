@@ -231,6 +231,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
         category: widget.selectedLoanCategory ?? 'general',
         filename: fileName,
         mimeType: 'image/jpeg',
+        storage: 'url',
         url: publicUrl,
         meta: metaData,
       );
