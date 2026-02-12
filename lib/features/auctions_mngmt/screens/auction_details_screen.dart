@@ -22,7 +22,7 @@ class AuctionDetailsScreen extends StatefulWidget {
 }
 
 class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
-  final AuctionsController _auctionsController = Get.find<AuctionsController>();
+  final AuctionsController _auctionsController = Get.put(AuctionsController());
   int _currentImageIndex = 0;
   final PageController _pageController = PageController();
 

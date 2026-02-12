@@ -22,7 +22,9 @@ class SelectPaymentMethodScreen extends StatefulWidget {
 }
 
 class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
-  final BidPaymentController _controller = Get.find<BidPaymentController>();
+  // ✅ CHANGE THIS LINE
+  late final BidPaymentController _controller;
+
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   String? _selectedMethodId;
@@ -31,6 +33,8 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
   @override
   void initState() {
     super.initState();
+
+    _controller = Get.find<BidPaymentController>();
     _loadPaymentMethods();
   }
 

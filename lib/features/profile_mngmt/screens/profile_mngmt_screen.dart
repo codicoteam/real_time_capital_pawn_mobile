@@ -404,8 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         case DocumentType.proof_of_address:
           apiCategory = 'proof_of_residence'; // ✅ Valid dropdown value
           break;
-        default:
-          apiCategory = 'other'; // ✅ Fallback to 'other'
+        // ✅ Fallback to 'other'
       }
 
       // ✅ Create proper JSON metadata

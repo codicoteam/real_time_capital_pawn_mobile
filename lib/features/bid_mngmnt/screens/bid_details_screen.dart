@@ -563,6 +563,8 @@ class _BidDetailsScreenState extends State<BidDetailsScreen> {
                       // Dispute section
                       _buildDisputeSection(bid),
 
+                      // In BidDetailsScreen.dart - Replace the Action buttons section:
+
                       // Action buttons
                       Padding(
                         padding: const EdgeInsets.all(16),
@@ -591,6 +593,8 @@ class _BidDetailsScreenState extends State<BidDetailsScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
+
+                            // PAYMENT BUTTON - Only show for won bids that are not paid
                             if (bid.auction.status.toLowerCase() == 'closed' &&
                                 isWon &&
                                 !isPaid)
@@ -598,12 +602,11 @@ class _BidDetailsScreenState extends State<BidDetailsScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    // TODO: Implement payment
-                                    Get.snackbar(
-                                      'Coming Soon',
-                                      'Payment feature will be available soon',
-                                      backgroundColor: AppColors.primaryColor,
-                                      colorText: Colors.white,
+                                    // ✅ DIRECTLY CALL THE HELPER METHOD - NO _navigateToPayment needed
+                                    BidManagementHelper.navigateToBidPayment(
+                                      bidId: bid.id,
+                                      amount: bid.amount,
+                                      context: context,
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(

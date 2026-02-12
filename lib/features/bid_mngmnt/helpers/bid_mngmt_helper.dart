@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
+import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
 import 'package:real_time_pawn/features/bid_mngmnt/controllers/bid_mngmt_controller.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/controllers/bid_payment_mngmt_controller.dart';
 import 'package:real_time_pawn/widgets/loading_widgets/circular_loader.dart';
 
 class BidManagementHelper {
@@ -406,5 +409,28 @@ class BidManagementHelper {
           bid.auction.winnerUser?.id == bidderId;
     }
     return false;
+  }
+
+  /// NAVIGATE TO BID PAYMENT
+  static void navigateToBidPayment({
+    required String bidId,
+    required double amount,
+    required BuildContext context,
+  }) {
+    try {
+      // ✅ ADD THIS ONE LINE - Check if controller exists, if not create it
+      if (!Get.isRegistered<BidPaymentController>()) {
+        Get.put(BidPaymentController());
+      }
+
+      Get.toNamed(
+        RoutesHelper.selectPaymentMethodScreen,
+        arguments: {'bidId': bidId, 'amount': amount},
+      );
+      DevLogs.logInfo('Navigating to payment for bid: $bidId');
+    } catch (e) {
+      DevLogs.logError('Error navigating to payment: $e');
+      showError('Could not open payment screen');
+    }
   }
 }

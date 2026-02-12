@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
+import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/search_auctions_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_details_screen.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 import 'package:real_time_pawn/widgets/loading_widgets/circular_loader.dart';
 
 class AuctionsHelper {
-  static final AuctionsController _auctionsController =
-      Get.find<AuctionsController>();
+  static AuctionsController get _auctionsController {
+    if (!Get.isRegistered<AuctionsController>()) {
+      Get.put(AuctionsController());
+    }
+    return Get.find<AuctionsController>();
+  }
 
   /// LOAD AUCTIONS WITH FILTERS - FIXED VERSION
   static Future<bool> loadAuctions({
@@ -162,14 +167,20 @@ class AuctionsHelper {
     }
   }
 
-  /// NAVIGATE TO AUCTION DETAILS - FIXED VERSION
-  /// NAVIGATE TO AUCTION DETAILS - SIMPLE VERSION
   static void navigateToAuctionDetails({
     required String auctionId,
     required BuildContext context,
   }) {
-    // Just navigate directly - no loading, no checks
-    Get.to(() => AuctionDetailsScreen(auctionId: auctionId));
+    try {
+      // 🔴 FIX: Don't try to find controller - just navigate directly
+      Get.toNamed(
+        RoutesHelper.auctionDetailsScreen.replaceFirst(':id', auctionId),
+      );
+      DevLogs.logInfo('Navigating to auction details: $auctionId');
+    } catch (e) {
+      DevLogs.logError('Error navigating to auction details: $e');
+      showError('Could not open auction details');
+    }
   }
 
   /// NAVIGATE TO SEARCH SCREEN

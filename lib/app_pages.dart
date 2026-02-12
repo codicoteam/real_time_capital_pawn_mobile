@@ -15,6 +15,7 @@ import 'package:real_time_pawn/features/bid_mngmnt/screens/my_bids_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/confirm_bid_payment_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/my_bid_payments_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_details_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/select_payment_method_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/Loan%20application%20upload%20screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
@@ -489,15 +490,6 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
-    // My Bid Payments Screen (you already have this)
-    GetPage(
-      name: RoutesHelper.myBidPaymentsScreen,
-      page: () => const MyBidPaymentsScreen(),
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
     // =============================================
     // BID PAYMENT ROUTES
     // =============================================
@@ -506,6 +498,21 @@ class AppPages {
     GetPage(
       name: RoutesHelper.myBidPaymentsScreen,
       page: () => const MyBidPaymentsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // 🔴 ADD THIS MISSING ROUTE:
+    GetPage(
+      name: RoutesHelper.selectPaymentMethodScreen,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>;
+        return SelectPaymentMethodScreen(
+          bidId: args['bidId'] ?? '',
+          amount: args['amount'] ?? 0.0,
+        );
+      },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
