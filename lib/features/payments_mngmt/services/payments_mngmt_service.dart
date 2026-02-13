@@ -368,7 +368,7 @@ class PaymentService {
     }
   }
 
-  /// GET PAYMENT BY ID
+  /// GET PAYMENT BY ID - REPLACE YOUR EXISTING METHOD WITH THIS EXACT VERSION
   static Future<APIResponse<PaymentModel>> getPaymentById(
     String paymentId,
   ) async {
@@ -399,27 +399,21 @@ class PaymentService {
       DevLogs.logInfo('Payment by ID response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        if (responseData['success'] == true) {
-          final data = responseData['data'];
-
-          final payment = PaymentModel.fromMap(data);
-          DevLogs.logSuccess('Fetched payment details successfully');
+        // ✅ SIMPLE: Always try to parse, let the model handle the structure
+        try {
+          final payment = PaymentModel.fromMap(responseData);
+          DevLogs.logSuccess('✅ Fetched payment details successfully');
 
           return APIResponse<PaymentModel>(
             success: true,
             data: payment,
-            message:
-                responseData['message'] ??
-                'Payment details retrieved successfully',
+            message: 'Payment details retrieved successfully',
           );
-        } else {
-          final errorMessage =
-              responseData['message'] ?? 'Failed to fetch payment details';
-          DevLogs.logError('Payment fetch failed: $errorMessage');
-
+        } catch (e, stackTrace) {
+          DevLogs.logError('❌ Error parsing payment data: $e\n$stackTrace');
           return APIResponse<PaymentModel>(
             success: false,
-            message: errorMessage,
+            message: 'Error parsing payment data',
             data: null,
           );
         }
@@ -445,7 +439,6 @@ class PaymentService {
         final errorMessage =
             responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
         DevLogs.logError('Payment HTTP error: $errorMessage');
-
         return APIResponse<PaymentModel>(
           success: false,
           message: errorMessage,
@@ -456,7 +449,7 @@ class PaymentService {
       DevLogs.logError('Error fetching payment by ID: $e');
       return APIResponse<PaymentModel>(
         success: false,
-        message: 'An error occurred while fetching payment: ${e.toString()}',
+        message: 'An error occurred while fetching payment',
         data: null,
       );
     }

@@ -86,7 +86,7 @@ class _SelectPaymentMethodScreenState extends State<SelectPaymentMethodScreen> {
       Get.toNamed(
         '/confirm-payment',
         arguments: {
-          'bidId': widget.bidId,
+          'bidId': widget.bidId, // ← THIS IS FINE
           'amount': widget.amount,
           'methodId': _selectedMethodId!,
           'methodName': selectedMethod.name,

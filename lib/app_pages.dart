@@ -14,20 +14,20 @@ import 'package:real_time_pawn/features/bid_mngmnt/screens/bid_details_screen.da
 import 'package:real_time_pawn/features/bid_mngmnt/screens/my_bids_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/confirm_bid_payment_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/my_bid_payments_screen.dart';
-import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_details_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/bid_payment_details_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/select_payment_method_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/Loan%20application%20upload%20screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_applications_list_screen.dart';
 import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_charges_screen.dart';
 import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_details_screen.dart';
-import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_payment_screen.dart';
 import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_screen.dart';
 import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_term_mngmt_details_screen.dart';
 import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_term_mngmt_timeline_screen.dart';
 import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_terms_mngmt_screen.dart';
 import 'package:real_time_pawn/features/loan_terms_mngmt/screens/renew_loan_term_mngmt_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/create_payment_screen.dart';
+import 'package:real_time_pawn/features/payments_mngmt/screens/loan_payment_details_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/payment_list_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/create_ticket_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/ticket_detail_screen.dart';
@@ -286,21 +286,6 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
-    // Loan Payment Screen - Extract loanId and initialAmount from arguments
-    GetPage(
-      name: RoutesHelper.LoanPaymentScreen,
-      page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        return LoanPaymentScreen(
-          loanId: arguments['loanId'] ?? '',
-          initialAmount: (arguments['amount'] as num?)?.toDouble(),
-        );
-      },
-      transition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
-    ),
-
     // Loan Terms Pages
     GetPage(
       name: RoutesHelper.loanTermsScreen,
@@ -369,16 +354,20 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
-    // Payment Details Screen - requires paymentId
+    // ✅ LOAN PAYMENT DETAILS - CORRECT
     GetPage(
       name: RoutesHelper.PaymentDetailsScreen,
       page: () {
         final arguments = Get.arguments as Map<String, dynamic>;
-        return PaymentDetailsScreen(paymentId: arguments['paymentId'] ?? '');
+        print(
+          '🔍 Router - Navigating to PaymentDetailsScreen with paymentId: ${arguments['paymentId']}',
+        );
+        return LoanPaymentDetailsScreen(
+          paymentId: arguments['paymentId'] ?? '',
+        );
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
-      customTransition: CustomPageTransition(),
     ),
 
     // Create Payment Screen - requires loanId, optional amount and chargesData
@@ -441,6 +430,18 @@ class AppPages {
     ),
 
     // Auction Bids Screen - With parameter extraction
+    // ✅ BID PAYMENT DETAILS - CORRECT
+    GetPage(
+      name: RoutesHelper.bidPaymentDetailsScreen, // ← USE DIFFERENT ROUTE NAME
+      page: () {
+        final arguments = Get.arguments as Map<String, dynamic>;
+        return BidPaymentDetailsScreen(paymentId: arguments['paymentId'] ?? '');
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
     GetPage(
       name: RoutesHelper.auctionBidsScreen,
       page: () {

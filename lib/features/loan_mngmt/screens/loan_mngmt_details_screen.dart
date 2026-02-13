@@ -298,7 +298,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                               label: 'Make Payment',
                               onTap: () {
                                 Get.toNamed(
-                                  RoutesHelper.LoanPaymentScreen,
+                                  RoutesHelper.CreatePaymentScreen,
                                   arguments: {'loanId': widget.loanId},
                                 );
                               },
@@ -331,19 +331,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                         children: [
                           Expanded(
                             child: _buildActionButton(
-                              icon: Icons.history_outlined,
-                              label: 'Status Timeline',
-                              onTap: () {
-                                Get.toNamed(
-                                  RoutesHelper.LoanStatusScreen,
-                                  arguments: {'loanId': widget.loanId},
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildActionButton(
                               icon: Icons.list_alt_outlined,
                               label: 'Loan Terms',
                               onTap: () {
@@ -357,20 +344,22 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                               },
                             ),
                           ),
-
-                          // In LoanDetailsScreen.dart - Add a "View Payments" button
-                          _buildActionButton(
-                            icon: Icons.payment_outlined,
-                            label: 'View Payments',
-                            onTap: () {
-                              Get.toNamed(
-                                RoutesHelper.PaymentListScreen,
-                                arguments: {
-                                  'loanId': widget.loanId,
-                                  'isLoanPayments': true,
-                                },
-                              );
-                            },
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildActionButton(
+                              // ← This one is wrapped in Expanded
+                              icon: Icons.payment_outlined,
+                              label: 'View Payments',
+                              onTap: () {
+                                Get.toNamed(
+                                  RoutesHelper.PaymentListScreen,
+                                  arguments: {
+                                    'loanId': widget.loanId,
+                                    'isLoanPayments': true,
+                                  },
+                                );
+                              },
+                            ),
                           ),
                         ],
                       ),

@@ -7,16 +7,16 @@ import 'package:real_time_pawn/features/bid_payment_mngmt/controllers/bid_paymen
 import 'package:real_time_pawn/features/bid_payment_mngmt/helpers/bid_payment_mngmt_helper.dart';
 import 'package:real_time_pawn/models/bid_payment_model.dart';
 
-class PaymentDetailsScreen extends StatefulWidget {
+class BidPaymentDetailsScreen extends StatefulWidget {
   final String paymentId;
 
-  const PaymentDetailsScreen({super.key, required this.paymentId});
+  const BidPaymentDetailsScreen({super.key, required this.paymentId});
 
   @override
-  State<PaymentDetailsScreen> createState() => _PaymentDetailsScreenState();
+  State<BidPaymentDetailsScreen> createState() => _PaymentDetailsScreenState();
 }
 
-class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
+class _PaymentDetailsScreenState extends State<BidPaymentDetailsScreen> {
   final BidPaymentController _controller = Get.find<BidPaymentController>();
 
   @override

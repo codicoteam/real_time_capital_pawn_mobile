@@ -48,34 +48,69 @@ class PaymentModel {
 
   String toJson() => json.encode(toMap());
 
-  factory PaymentModel.fromMap(Map<String, dynamic> json) => PaymentModel(
-    id: json["_id"] ?? '',
-    reference: json["reference"] ?? '',
-    loan: json["loan"] is Map
-        ? (json["loan"]["_id"] ?? json["loan"]["loan_no"] ?? '')
-        : (json["loan"]?.toString() ?? ''),
-    loanTerm: json["loan_term"],
-    amount: (json["amount"] as num?)?.toDouble() ?? 0.0,
-    currency: json["currency"] ?? 'USD',
-    provider: json["provider"],
-    method: json["method"],
-    paymentStatus: json["payment_status"] ?? 'pending',
-    interestComponent: (json["interest_component"] as num?)?.toDouble() ?? 0.0,
-    principalComponent:
-        (json["principal_component"] as num?)?.toDouble() ?? 0.0,
-    storageComponent: (json["storage_component"] as num?)?.toDouble() ?? 0.0,
-    penaltyComponent: (json["penalty_component"] as num?)?.toDouble() ?? 0.0,
-    notes: json["notes"],
-    pollUrl: json["pollUrl"],
-    receiptNo: json["receipt_no"],
-    createdAt: json["created_at"] != null
-        ? DateTime.parse(json["created_at"])
-        : DateTime.now(),
-    updatedAt: json["updated_at"] != null
-        ? DateTime.parse(json["updated_at"])
-        : DateTime.now(),
-    paymentDate: json["payment_date"],
-  );
+  // 🔴 THIS IS THE ONLY METHOD YOU NEED TO REPLACE - COPY THIS EXACTLY
+  factory PaymentModel.fromMap(Map<String, dynamic> json) {
+    // STEP 1: Get the actual payment data regardless of wrapper
+    Map<String, dynamic> data;
+
+    if (json.containsKey('data') && json['data'] != null) {
+      data = json['data'] is Map ? Map<String, dynamic>.from(json['data']) : {};
+    } else if (json.containsKey('payment') && json['payment'] != null) {
+      data = json['payment'] is Map
+          ? Map<String, dynamic>.from(json['payment'])
+          : {};
+    } else {
+      data = json;
+    }
+
+    // STEP 2: Extract loan ID
+    String loanId = '';
+    if (data['loan'] != null) {
+      if (data['loan'] is Map) {
+        loanId =
+            data['loan']['_id']?.toString() ??
+            data['loan']['loan_no']?.toString() ??
+            '';
+      } else {
+        loanId = data['loan'].toString();
+      }
+    }
+
+    // STEP 3: Parse dates safely
+    DateTime parseDate(dynamic dateValue) {
+      if (dateValue == null) return DateTime.now();
+      try {
+        return DateTime.parse(dateValue.toString());
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+
+    return PaymentModel(
+      id: data["_id"]?.toString() ?? '',
+      reference: data["reference"]?.toString() ?? '',
+      loan: loanId,
+      loanTerm: data["loan_term"]?.toString(),
+      amount: (data["amount"] as num?)?.toDouble() ?? 0.0,
+      currency: data["currency"]?.toString() ?? 'USD',
+      provider: data["provider"]?.toString(),
+      method: data["method"]?.toString(),
+      paymentStatus:
+          data["payment_status"]?.toString().toLowerCase() ?? 'pending',
+      interestComponent:
+          (data["interest_component"] as num?)?.toDouble() ?? 0.0,
+      principalComponent:
+          (data["principal_component"] as num?)?.toDouble() ?? 0.0,
+      storageComponent: (data["storage_component"] as num?)?.toDouble() ?? 0.0,
+      penaltyComponent: (data["penalty_component"] as num?)?.toDouble() ?? 0.0,
+      notes: data["notes"]?.toString(),
+      pollUrl: data["pollUrl"]?.toString(),
+      receiptNo: data["receipt_no"]?.toString(),
+      createdAt: parseDate(data["created_at"]),
+      updatedAt: parseDate(data["updated_at"]),
+      paymentDate: data["payment_date"]?.toString(),
+    );
+  }
 
   Map<String, dynamic> toMap() => {
     "loan": loan,
@@ -93,7 +128,7 @@ class PaymentModel {
   };
 
   // Helper getters
-  String get formattedAmount => '$currency ${amount.toStringAsFixed(2)}';
+  String get formattedAmount => '\$${amount.toStringAsFixed(2)}';
   String get formattedDate => paymentDate ?? createdAt.toString();
   bool get isPending => paymentStatus.toLowerCase() == 'pending';
   bool get isPaid => paymentStatus.toLowerCase() == 'paid';
@@ -108,12 +143,11 @@ class PaymentModel {
 
   Map<String, double> get componentPercentages {
     if (amount == 0) return {};
-
     return {
-      'interest': interestComponent / amount * 100,
-      'principal': principalComponent / amount * 100,
-      'storage': storageComponent / amount * 100,
-      'penalty': penaltyComponent / amount * 100,
+      'interest': (interestComponent / amount * 100),
+      'principal': (principalComponent / amount * 100),
+      'storage': (storageComponent / amount * 100),
+      'penalty': (penaltyComponent / amount * 100),
     };
   }
 }
@@ -129,14 +163,21 @@ class PaymentListResponse {
 
   String toJson() => json.encode(toMap());
 
-  factory PaymentListResponse.fromMap(Map<String, dynamic> json) =>
-      PaymentListResponse(
-        payments: List<PaymentModel>.from(
-          (json["payments"] as List?)?.map((x) => PaymentModel.fromMap(x)) ??
-              [],
-        ),
-        pagination: Pagination.fromMap(json["pagination"] ?? {}),
-      );
+  factory PaymentListResponse.fromMap(Map<String, dynamic> json) {
+    Map<String, dynamic> data;
+    if (json.containsKey('data') && json['data'] != null) {
+      data = json['data'] is Map ? Map<String, dynamic>.from(json['data']) : {};
+    } else {
+      data = json;
+    }
+
+    return PaymentListResponse(
+      payments: List<PaymentModel>.from(
+        (data["payments"] as List?)?.map((x) => PaymentModel.fromMap(x)) ?? [],
+      ),
+      pagination: Pagination.fromMap(data["pagination"] ?? {}),
+    );
+  }
 
   Map<String, dynamic> toMap() => {
     "payments": List<dynamic>.from(payments.map((x) => x.toMap())),
@@ -144,7 +185,6 @@ class PaymentListResponse {
   };
 }
 
-// Reuse existing Pagination class or create new one
 class Pagination {
   final int total;
   final int page;

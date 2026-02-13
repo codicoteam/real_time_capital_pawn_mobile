@@ -72,7 +72,7 @@ class PaymentController extends GetxController {
         .length;
   }
 
-  // Fetch payments by loan
+  // Fetch payments by loan - UPDATED to set pagination correctly
   Future<void> fetchPaymentsByLoan({
     required String loanId,
     bool refresh = false,
@@ -88,7 +88,9 @@ class PaymentController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      print('DEBUG: Payment Controller - Fetching payments for loan: $loanId');
+      print(
+        '📄 Fetching payments for loan: $loanId, page: ${currentPage.value}',
+      );
 
       final response = await PaymentService.getPaymentsByLoan(
         loanId: loanId,
@@ -98,7 +100,7 @@ class PaymentController extends GetxController {
 
       if (response.success && response.data != null) {
         print(
-          'DEBUG: Payment Controller - Successfully fetched ${response.data!.payments.length} payments',
+          '✅ Successfully fetched ${response.data!.payments.length} payments',
         );
 
         final List<PaymentModel> fetchedPayments = response.data!.payments;
@@ -109,25 +111,27 @@ class PaymentController extends GetxController {
           loanPayments[loanId] = fetchedPayments;
         }
 
-        // Also update main payments list
+        // ✅ CRITICAL: Update the main payments list
         payments.value = fetchedPayments;
 
+        // ✅ CRITICAL: Update pagination values
         totalPayments.value = response.data!.pagination.total;
         totalPages.value = response.data!.pagination.totalPages;
         hasNextPage.value = response.data!.pagination.hasNextPage;
         hasPrevPage.value = response.data!.pagination.hasPrevPage;
+
+        print(
+          '📊 Pagination - Page: ${currentPage.value}, HasNext: $hasNextPage, Total: $totalPayments',
+        );
       } else {
         errorMessage.value = response.message ?? 'Failed to load payments';
-        print('DEBUG: Payment Controller - Error: $errorMessage');
-        Get.snackbar('Error', errorMessage.value);
+        print('❌ Error: $errorMessage');
       }
     } catch (e) {
       errorMessage.value = 'Failed to load payments: ${e.toString()}';
-      print('DEBUG: Payment Controller - Exception: $errorMessage');
-      Get.snackbar('Error', errorMessage.value);
+      print('❌ Exception: $e');
     } finally {
       isLoading.value = false;
-      print('DEBUG: Payment Controller - Loading completed');
     }
   }
 
@@ -187,8 +191,11 @@ class PaymentController extends GetxController {
     }
   }
 
-  // Load more payments
-  Future<void> loadMorePayments({bool isCustomerPayments = true}) async {
+  // Load more payments - WORKS FOR BOTH CUSTOMER AND LOAN PAYMENTS
+  Future<void> loadMorePayments({
+    required bool isCustomerPayments,
+    String? loanId, // ← Add this parameter
+  }) async {
     if (isLoadingMore.value || !hasNextPage.value) return;
 
     try {
@@ -196,8 +203,8 @@ class PaymentController extends GetxController {
       currentPage.value++;
 
       if (isCustomerPayments) {
+        // ✅ LOAD MORE CUSTOMER PAYMENTS
         final customerId = await CacheUtils.getUserId();
-
         if (customerId == null || customerId.isEmpty) {
           isLoadingMore.value = false;
           return;
@@ -212,19 +219,42 @@ class PaymentController extends GetxController {
         if (response.success && response.data != null) {
           payments.addAll(response.data!.payments);
           hasNextPage.value = response.data!.pagination.hasNextPage;
-          hasPrevPage.value = response.data!.pagination.hasPrevPage;
+          totalPages.value = response.data!.pagination.totalPages;
         } else {
           currentPage.value--;
-          Get.snackbar('Error', 'Failed to load more payments');
         }
       } else {
-        // For loan payments, we need the loan ID
-        // This would need to be implemented differently based on your needs
-        Get.snackbar('Info', 'Load more for loan payments not implemented');
+        // ✅ LOAD MORE LOAN PAYMENTS - THIS NOW WORKS!
+        if (loanId == null) {
+          print('❌ Cannot load more loan payments: loanId is null');
+          currentPage.value--;
+          isLoadingMore.value = false;
+          return;
+        }
+
+        print(
+          '📄 Loading more payments for loan: $loanId, page: ${currentPage.value}',
+        );
+
+        final response = await PaymentService.getPaymentsByLoan(
+          loanId: loanId,
+          page: currentPage.value,
+          limit: 10,
+        );
+
+        if (response.success && response.data != null) {
+          payments.addAll(response.data!.payments);
+          hasNextPage.value = response.data!.pagination.hasNextPage;
+          totalPages.value = response.data!.pagination.totalPages;
+          print('✅ Loaded ${response.data!.payments.length} more payments');
+        } else {
+          print('❌ Failed to load more payments: ${response.message}');
+          currentPage.value--;
+        }
       }
     } catch (e) {
+      print('❌ Error loading more payments: $e');
       currentPage.value--;
-      Get.snackbar('Error', 'Failed to load more payments');
     } finally {
       isLoadingMore.value = false;
     }
@@ -299,26 +329,29 @@ class PaymentController extends GetxController {
     }
   }
 
-  // Get payment details
+  /// Get payment details - REPLACE YOUR EXISTING METHOD WITH THIS EXACT VERSION
   Future<PaymentModel?> getPaymentDetails(String paymentId) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
 
+      print('🔍 Getting payment details for ID: $paymentId');
+
       final response = await PaymentService.getPaymentById(paymentId);
 
       if (response.success && response.data != null) {
+        print('✅ Payment details loaded successfully');
         selectedPayment.value = response.data;
         return response.data;
       } else {
         errorMessage.value =
             response.message ?? 'Failed to load payment details';
-        Get.snackbar('Error', errorMessage.value);
+        print('❌ Payment details failed: ${errorMessage.value}');
         return null;
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load payment details: ${e.toString()}';
-      Get.snackbar('Error', errorMessage.value);
+      errorMessage.value = 'Failed to load payment details';
+      print('❌ Exception in getPaymentDetails: $e');
       return null;
     } finally {
       isLoading.value = false;

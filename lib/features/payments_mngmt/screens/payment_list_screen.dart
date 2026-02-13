@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/payments_mngmt/controllers/payments_mngmt_controller.dart';
-import 'package:real_time_pawn/features/payments_mngmt/screens/payment_details_screen.dart';
 import 'package:real_time_pawn/models/payment_mngmt_model.dart';
 
 class PaymentListScreen extends StatefulWidget {
@@ -55,6 +55,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
       if (!_controller.isLoadingMore.value && _controller.hasNextPage.value) {
         _controller.loadMorePayments(
           isCustomerPayments: !widget.isLoanPayments,
+          loanId: widget.loanId,
         );
       }
     }
@@ -104,232 +105,30 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header - FIXED HEIGHT
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceColor,
-                border: Border(
-                  bottom: BorderSide(color: AppColors.borderColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back),
-                    color: AppColors.textColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.isLoanPayments
-                              ? 'Loan Payments'
-                              : 'My Payments',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                        if (widget.isLoanPayments && widget.loanId != null)
-                          Text(
-                            'Loan ${widget.loanId!.substring(0, 8)}...',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: AppColors.subtextColor,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () async {
-                      setState(() {
-                        _isRefreshing = true;
-                      });
-                      await _loadPayments();
-                      setState(() {
-                        _isRefreshing = false;
-                      });
-                    },
-                    icon: _isRefreshing
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primaryColor,
-                            ),
-                          )
-                        : const Icon(Icons.refresh_outlined),
-                    color: AppColors.textColor,
-                  ),
-                ],
-              ),
-            ),
+            // SIMPLE HEADER - NO COMPLEX SIZING
+            _buildHeader(),
 
-            // Statistics Summary - FIXED HEIGHT
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceColor,
-                border: Border(
-                  bottom: BorderSide(color: AppColors.borderColor),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatItem(
-                    label: 'Total Paid',
-                    value:
-                        '\$${_controller.totalPaidAmount.toStringAsFixed(2)}',
-                    color: RealTimeColors.success,
-                  ),
-                  Container(height: 40, width: 1, color: AppColors.borderColor),
-                  _buildStatItem(
-                    label: 'Pending',
-                    value:
-                        '\$${_controller.totalPendingAmount.toStringAsFixed(2)}',
-                    color: RealTimeColors.warning,
-                  ),
-                  Container(height: 40, width: 1, color: AppColors.borderColor),
-                  _buildStatItem(
-                    label: 'Transactions',
-                    value: _controller.payments.length.toString(),
-                    color: AppColors.primaryColor,
-                  ),
-                ],
-              ),
-            ),
-
-            // Payments List - TAKES ALL REMAINING SPACE
+            // CONTENT AREA - TAKES REMAINING SPACE
             Expanded(
               child: Obx(() {
+                // LOADING STATE
                 if (_controller.isLoading.value &&
                     _controller.payments.isEmpty) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primaryColor,
-                    ),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
+                // ERROR STATE
                 if (_controller.errorMessage.value.isNotEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: RealTimeColors.error,
-                          ),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              _controller.errorMessage.value,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: AppColors.textColor,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _loadPayments,
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: AppColors.primaryColor,
-                              minimumSize: const Size(120, 44),
-                            ),
-                            child: Text(
-                              'Retry',
-                              style: GoogleFonts.poppins(fontSize: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildErrorState();
                 }
 
+                // EMPTY STATE - SIMPLE, NO OVERFLOW
                 if (_controller.payments.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.payments_outlined,
-                            size: 64,
-                            color: RealTimeColors.grey400,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No payments found',
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.subtextColor,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(
-                              widget.isLoanPayments
-                                  ? 'No payments have been made for this loan yet'
-                                  : 'You haven\'t made any payments yet',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: AppColors.subtextColor,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildEmptyState();
                 }
 
-                return RefreshIndicator(
-                  onRefresh: _loadPayments,
-                  color: AppColors.primaryColor,
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount:
-                        _controller.payments.length +
-                        (_controller.isLoadingMore.value ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= _controller.payments.length) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        );
-                      }
-
-                      final payment = _controller.payments[index];
-                      return _buildPaymentCard(payment);
-                    },
-                  ),
-                );
+                // PAYMENTS LIST
+                return _buildPaymentsList();
               }),
             ),
           ],
@@ -338,18 +137,239 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
     );
   }
 
-  Widget _buildStatItem({
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildHeader() {
+    final isSmall = MediaQuery.of(context).size.width < 360;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmall ? 12 : 16,
+        vertical: isSmall ? 8 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        border: Border(bottom: BorderSide(color: AppColors.borderColor)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Get.back(),
+            icon: const Icon(Icons.arrow_back),
+            color: AppColors.textColor,
+            iconSize: isSmall ? 20 : 24,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.isLoanPayments ? 'Loan Payments' : 'My Payments',
+                  style: GoogleFonts.poppins(
+                    fontSize: isSmall ? 16 : 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textColor,
+                  ),
+                ),
+                if (widget.isLoanPayments && widget.loanId != null)
+                  Text(
+                    'ID: ${widget.loanId!.substring(0, 6)}...',
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmall ? 10 : 12,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () async {
+              setState(() => _isRefreshing = true);
+              await _loadPayments();
+              setState(() => _isRefreshing = false);
+            },
+            icon: _isRefreshing
+                ? SizedBox(
+                    height: isSmall ? 18 : 20,
+                    width: isSmall ? 18 : 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primaryColor,
+                    ),
+                  )
+                : const Icon(Icons.refresh_outlined),
+            color: AppColors.textColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: RealTimeColors.error),
+            const SizedBox(height: 16),
+            Text(
+              _controller.errorMessage.value,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: AppColors.textColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadPayments,
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: AppColors.primaryColor,
+                minimumSize: const Size(120, 40),
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🔴 SIMPLE EMPTY STATE - NO OVERFLOW POSSIBLE
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min, // THIS PREVENTS OVERFLOW
+          children: [
+            Icon(
+              Icons.payments_outlined,
+              size: 64,
+              color: RealTimeColors.grey400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No payments found',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.subtextColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                widget.isLoanPayments
+                    ? 'No payments have been made for this loan yet'
+                    : 'You haven\'t made any payments yet',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppColors.subtextColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (!widget.isLoanPayments)
+              ElevatedButton(
+                onPressed: () => Get.back(),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primaryColor,
+                  minimumSize: const Size(160, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Make a Payment'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentsList() {
+    return Column(
+      children: [
+        // STATS BAR - ONLY SHOW WHEN THERE ARE PAYMENTS
+        if (!_controller.isLoading.value && _controller.payments.isNotEmpty)
+          _buildStatsBar(),
+
+        // LIST VIEW
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadPayments,
+            color: AppColors.primaryColor,
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount:
+                  _controller.payments.length +
+                  (_controller.isLoadingMore.value ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index >= _controller.payments.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                return _buildPaymentCard(_controller.payments[index]);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        border: Border(bottom: BorderSide(color: AppColors.borderColor)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem(
+            'Total Paid',
+            '\$${_controller.totalPaidAmount.toStringAsFixed(2)}',
+            RealTimeColors.success,
+          ),
+          Container(height: 30, width: 1, color: AppColors.borderColor),
+          _buildStatItem(
+            'Pending',
+            '\$${_controller.totalPendingAmount.toStringAsFixed(2)}',
+            RealTimeColors.warning,
+          ),
+          Container(height: 30, width: 1, color: AppColors.borderColor),
+          _buildStatItem(
+            'Transactions',
+            _controller.payments.length.toString(),
+            AppColors.primaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
           style: GoogleFonts.poppins(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -376,10 +396,13 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
       color: AppColors.surfaceColor,
       child: InkWell(
         onTap: () {
-          Get.to(
-            () => PaymentDetailsScreen(paymentId: payment.id),
-            transition: Transition.rightToLeft,
-          );
+          // 🔴 FIX: Use addPostFrameCallback to navigate AFTER build is complete
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Get.toNamed(
+              RoutesHelper.PaymentDetailsScreen,
+              arguments: {'paymentId': payment.id},
+            );
+          });
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -417,7 +440,6 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -441,59 +463,55 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              Divider(color: AppColors.borderColor),
+              const Divider(height: 1),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Amount',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: AppColors.subtextColor,
+                        ),
+                      ),
+                      Text(
+                        payment.formattedAmount,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (payment.method != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Amount',
+                          'Method',
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             color: AppColors.subtextColor,
                           ),
                         ),
                         Text(
-                          payment.formattedAmount,
+                          payment.method!.toUpperCase(),
                           style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                             color: AppColors.textColor,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                    ),
-                  ),
-                  if (payment.method != null)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Method',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: AppColors.subtextColor,
-                            ),
-                          ),
-                          Text(
-                            payment.method!.toUpperCase(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textColor,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
                     ),
                 ],
               ),

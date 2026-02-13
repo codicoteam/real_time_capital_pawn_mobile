@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/payments_mngmt/controllers/payments_mngmt_controller.dart';
-import 'package:real_time_pawn/features/payments_mngmt/screens/payment_details_screen.dart';
 
 class CreatePaymentScreen extends StatefulWidget {
   final String loanId;
@@ -361,8 +361,10 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
           ElevatedButton(
             onPressed: () {
               Get.back(); // Close dialog
-              Get.offAll(
-                () => PaymentDetailsScreen(paymentId: paymentData['_id']),
+              // 🔴 FIX THIS LINE - Use correct route and class name
+              Get.toNamed(
+                RoutesHelper.PaymentDetailsScreen,
+                arguments: {'paymentId': paymentData['_id']},
               );
             },
             child: const Text('Track Payment'),

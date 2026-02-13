@@ -68,6 +68,7 @@ class RoutesHelper {
   static String myBidsScreen = "/my-bids";
   static String bidDetailsScreen = "/bid-details/:id";
   static const String bidPaymentScreen = "/bid-payment";
+  static const String bidPaymentDetailsScreen = "/bid-payment-details/:id";
 
   // Add these to RoutesHelper
   static String myBidPaymentsScreen = "/my-bid-payments";
