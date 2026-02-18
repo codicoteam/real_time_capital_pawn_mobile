@@ -55,15 +55,11 @@ class PaymentService {
       if (notes != null && notes.isNotEmpty) 'notes': notes,
     };
 
-    // Only add phoneNumber for mobile money providers
-    if (provider == 'ecocash' ||
-        provider == 'onemoney' ||
-        provider == 'telecash') {
+    // ✅ FIX: Use 'payer_phone' for mobile money providers - DO NOT MODIFY THE NUMBER
+    if (provider == 'ecocash') {
       if (phoneNumber != null && phoneNumber.isNotEmpty) {
-        // Try camelCase first since it's more common in APIs
-        requestBody['phoneNumber'] = phoneNumber;
-        // Also add snake_case as backup
-        requestBody['phone_number'] = phoneNumber;
+        // ✅ Just use the number as passed from the screen (should be in 263 format)
+        requestBody['payer_phone'] = phoneNumber;
       }
     }
 
@@ -273,7 +269,7 @@ class PaymentService {
       'Authorization': 'Bearer $token',
     };
 
-    // Remove any spaces from customerId (issue from API example)
+    // Remove any spaces from customerId
     final cleanCustomerId = customerId.trim();
 
     final uri =
@@ -368,7 +364,7 @@ class PaymentService {
     }
   }
 
-  /// GET PAYMENT BY ID - REPLACE YOUR EXISTING METHOD WITH THIS EXACT VERSION
+  /// GET PAYMENT BY ID
   static Future<APIResponse<PaymentModel>> getPaymentById(
     String paymentId,
   ) async {
@@ -399,7 +395,6 @@ class PaymentService {
       DevLogs.logInfo('Payment by ID response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        // ✅ SIMPLE: Always try to parse, let the model handle the structure
         try {
           final payment = PaymentModel.fromMap(responseData);
           DevLogs.logSuccess('✅ Fetched payment details successfully');

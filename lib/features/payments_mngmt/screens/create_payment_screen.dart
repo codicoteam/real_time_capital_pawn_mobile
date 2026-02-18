@@ -4,12 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/payments_mngmt/controllers/payments_mngmt_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CreatePaymentScreen extends StatefulWidget {
   final String loanId;
   final double? initialAmount;
-  final Map<String, dynamic>?
-  chargesData; // Add this to get actual allocation from loan charges
+  final Map<String, dynamic>? chargesData;
 
   const CreatePaymentScreen({
     super.key,
@@ -27,40 +27,17 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _accountController = TextEditingController();
 
-  String _selectedProvider = 'ecocash'; // Default to EcoCash for Zimbabwe
-  // Default method for mobile money
+  String _selectedProvider = 'ecocash';
   double _paymentAmount = 0.0;
 
-  // Zimbabwe-specific payment providers
+  // Simplified providers - only EcoCash and PayNow
   final List<Map<String, dynamic>> _providers = [
     {'id': 'ecocash', 'name': 'EcoCash', 'icon': Icons.phone_android},
-    {'id': 'onemoney', 'name': 'OneMoney', 'icon': Icons.phone_android},
-    {'id': 'telecash', 'name': 'Telecash', 'icon': Icons.phone_android},
-    {'id': 'bank', 'name': 'Bank Transfer', 'icon': Icons.account_balance},
-    {'id': 'paynow', 'name': 'PayNow (Card)', 'icon': Icons.credit_card},
-    {'id': 'cash', 'name': 'Cash', 'icon': Icons.money},
+    {'id': 'paynow', 'name': 'PayNow', 'icon': Icons.credit_card},
   ];
 
-  // For bank transfers
-  final List<Map<String, dynamic>> _bankMethods = [
-    {'id': 'rtgs', 'name': 'RTGS Transfer'},
-    {'id': 'zipit', 'name': 'ZIPIT'},
-    {'id': 'direct', 'name': 'Direct Deposit'},
-  ];
-
-  // For EcoCash methods
-  final List<Map<String, dynamic>> _ecocashMethods = [
-    {'id': 'mobile', 'name': 'Mobile Wallet'},
-    {'id': 'ussd', 'name': 'USSD *151#'},
-    {'id': 'agent', 'name': 'EcoCash Agent'},
-  ];
-
-  String? _selectedBankMethod;
-  String? _selectedEcocashMethod = 'mobile'; // Default to mobile wallet
-
-  // Phone validation for Zimbabwe numbers - SIMPLIFIED
+  // Phone validation for Zimbabwe numbers
   bool _isValidZimbabwePhone(String phone) {
     // Remove any non-digit characters
     final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
@@ -70,18 +47,10 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
       return false;
     }
 
-    // Additional check for valid network prefixes
+    // Check for valid network prefixes
     final prefix = cleaned.substring(0, 2);
     final validPrefixes = ['77', '78', '79', '71', '73'];
     return validPrefixes.contains(prefix);
-  }
-
-  String _formatZimbabwePhone(String phone) {
-    // Remove any non-digit characters
-    String cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
-
-    // Always return in +263 format
-    return '+263 $cleaned';
   }
 
   @override
@@ -98,7 +67,6 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
     _amountController.dispose();
     _notesController.dispose();
     _phoneController.dispose();
-    _accountController.dispose();
     super.dispose();
   }
 
@@ -113,10 +81,8 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
       return;
     }
 
-    // Validate phone number for mobile money
-    if (_selectedProvider == 'ecocash' ||
-        _selectedProvider == 'onemoney' ||
-        _selectedProvider == 'telecash') {
+    // Validate phone number for EcoCash
+    if (_selectedProvider == 'ecocash') {
       if (_phoneController.text.isEmpty) {
         Get.snackbar(
           'Error',
@@ -130,7 +96,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
       if (!_isValidZimbabwePhone(_phoneController.text)) {
         Get.snackbar(
           'Error',
-          'Please enter a valid Zimbabwe mobile number (e.g., 077 123 4567 or +263 77 123 4567)',
+          'Please enter a valid Zimbabwe mobile number (e.g., 0771234567)',
           backgroundColor: RealTimeColors.error,
           colorText: Colors.white,
         );
@@ -168,7 +134,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
         });
       }
     } else {
-      // Default allocation (should be overridden by actual charges)
+      // Default allocation
       final totalAmount = _paymentAmount;
       components = {
         'principalComponent': totalAmount * 0.7,
@@ -178,51 +144,45 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
       };
     }
 
-    // Format phone number for API - send JUST 9 digits
+    // Format phone number for API - send in 263 format (12 digits)
     String? formattedPhone;
-    if (_phoneController.text.isNotEmpty) {
-      // Extract just the 9 digits (remove +263, spaces, etc.)
+    if (_selectedProvider == 'ecocash' && _phoneController.text.isNotEmpty) {
+      // Extract just the 9 digits
       final cleanedPhone = _phoneController.text.replaceAll(
         RegExp(r'[^\d]'),
         '',
       );
 
-      // Validate it's exactly 9 digits starting with 7
       if (cleanedPhone.length == 9 && cleanedPhone.startsWith('7')) {
-        formattedPhone = cleanedPhone; // Send as-is (just 9 digits)
+        // ✅ FIX: Send as 263 + 9 digits (12 digits total)
+        formattedPhone = '263$cleanedPhone'; // e.g., "263780197542"
       } else {
-        // Show error to user and stop the payment
         Get.snackbar(
           'Invalid Phone Number',
           'Please enter a valid 9-digit Zimbabwe mobile number starting with 7 (e.g., 780197542)',
           backgroundColor: RealTimeColors.error,
           colorText: Colors.white,
         );
-        return; // Exit the function, don't proceed with payment
+        return;
       }
     }
 
-    // FIX 1: Get the correct method based on provider
+    // Set payment method based on provider
     String paymentMethod;
     if (_selectedProvider == 'ecocash') {
-      paymentMethod = _selectedEcocashMethod ?? 'mobile';
-    } else if (_selectedProvider == 'bank') {
-      paymentMethod = _selectedBankMethod ?? 'rtgs';
+      paymentMethod = 'ecocash';
     } else if (_selectedProvider == 'paynow') {
-      paymentMethod = 'card'; // PayNow always uses 'card' method
-    } else if (_selectedProvider == 'cash') {
-      paymentMethod = 'cash';
+      paymentMethod = 'card';
     } else {
-      paymentMethod = 'mobile'; // Default for other providers
+      paymentMethod = _selectedProvider;
     }
 
     final result = await _controller.createPayment(
       loanId: widget.loanId,
-      loanTermId:
-          widget.loanId, // ← FIX 2: Use loan ID as loan_term (not "regular")
+      loanTermId: widget.loanId,
       amount: _paymentAmount,
       provider: _selectedProvider,
-      method: paymentMethod, // ← FIX 3: Use the corrected method
+      method: paymentMethod,
       interestComponent: components['interestComponent'],
       principalComponent: components['principalComponent'],
       storageComponent: components['storageComponent'],
@@ -237,18 +197,27 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   }
 
   void _showPaymentSuccess(Map<String, dynamic> paymentResult) {
-    // Extract the actual payment data
+    // Extract payment data
     final paymentData = paymentResult['payment'] ?? paymentResult;
+    final isPayNow = _selectedProvider == 'paynow';
+
+    // Get the redirect URL for PayNow
+    final String? redirectUrl =
+        paymentResult['redirect_url'] ?? paymentData['meta']?['redirect_url'];
 
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [
-            Icon(Icons.check_circle, color: RealTimeColors.success, size: 48),
+            Icon(
+              isPayNow ? Icons.launch : Icons.check_circle,
+              color: isPayNow ? Colors.orange : RealTimeColors.success,
+              size: 48,
+            ),
             const SizedBox(height: 12),
             Text(
-              'Payment Initiated!',
+              isPayNow ? 'Complete Payment' : 'Payment Initiated!',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -261,7 +230,9 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Your payment has been initiated successfully.',
+              isPayNow
+                  ? 'Click the button below to complete your payment on the PayNow secure page.'
+                  : 'Please check your EcoCash wallet and approve the payment request.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -281,7 +252,6 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                     'Receipt No:',
                     paymentData['receipt_no'] ??
                         paymentData['paynow_invoice_id'] ??
-                        paymentData['reference'] ??
                         'N/A',
                   ),
                   _buildReceiptRow(
@@ -297,51 +267,8 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                       _phoneController.text.isNotEmpty)
                     _buildReceiptRow(
                       'Mobile:',
-                      _formatZimbabwePhone(_phoneController.text),
+                      '+263 ${_phoneController.text}',
                     ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: RealTimeColors.primaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: RealTimeColors.primaryGreen),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: RealTimeColors.primaryGreen,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Important:',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: RealTimeColors.primaryGreen,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _selectedProvider == 'paynow'
-                        ? 'You will be redirected to PayNow to complete your payment.'
-                        : _selectedProvider == 'ecocash'
-                        ? 'Please check your EcoCash wallet for a payment request and approve it to complete the transaction.'
-                        : 'Your payment is being processed. You will receive a confirmation once completed.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: AppColors.textColor,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -351,27 +278,52 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
           TextButton(
             onPressed: () {
               Get.back(); // Close dialog
-              Get.back(); // Go back to previous screen
+              Get.back(); // Go back
             },
-            child: Text(
-              'Done',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            child: Text('Cancel', style: GoogleFonts.poppins()),
+          ),
+          if (isPayNow && redirectUrl != null)
+            ElevatedButton(
+              onPressed: () {
+                Get.back(); // Close dialog
+                _openPayNowUrl(redirectUrl, paymentData['_id']);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Pay Now'),
+            )
+          else
+            ElevatedButton(
+              onPressed: () {
+                Get.back(); // Close dialog
+                Get.toNamed(
+                  RoutesHelper.PaymentDetailsScreen,
+                  arguments: {'paymentId': paymentData['_id']},
+                );
+              },
+              child: const Text('Track Payment'),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back(); // Close dialog
-              // 🔴 FIX THIS LINE - Use correct route and class name
-              Get.toNamed(
-                RoutesHelper.PaymentDetailsScreen,
-                arguments: {'paymentId': paymentData['_id']},
-              );
-            },
-            child: const Text('Track Payment'),
-          ),
         ],
       ),
     );
+  }
+
+  // Add this new method RIGHT AFTER _showPaymentSuccess (around line 270)
+  void _openPayNowUrl(String url, String paymentId) async {
+    final Uri uri = Uri.parse(url);
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // After returning from browser, go to payment details
+      Get.toNamed(
+        RoutesHelper.PaymentDetailsScreen,
+        arguments: {'paymentId': paymentId},
+      );
+    } else {
+      Get.snackbar('Error', 'Could not open payment page');
+    }
   }
 
   @override
@@ -571,68 +523,8 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
 
                     const SizedBox(height: 24),
 
-                    // EcoCash Methods
+                    // Mobile Number Input (only for EcoCash)
                     if (_selectedProvider == 'ecocash') ...[
-                      Text(
-                        'EcoCash Payment Method',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _ecocashMethods.map((method) {
-                            return _buildEcocashMethodButton(method);
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Bank Transfer Methods
-                    if (_selectedProvider == 'bank') ...[
-                      Text(
-                        'Bank Transfer Method',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _bankMethods.map((method) {
-                            return _buildBankMethodButton(method);
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Mobile Number Input (for mobile money)
-                    if (_selectedProvider == 'ecocash' ||
-                        _selectedProvider == 'onemoney' ||
-                        _selectedProvider == 'telecash') ...[
                       Text(
                         'Mobile Number',
                         style: GoogleFonts.poppins(
@@ -685,14 +577,14 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                                     : null,
                               ),
                               keyboardType: TextInputType.number,
-                              maxLength: 9, // Only 9 digits after +263
+                              maxLength: 9,
                               buildCounter:
                                   (
                                     context, {
                                     required currentLength,
                                     required isFocused,
                                     maxLength,
-                                  }) => null, // Hide counter
+                                  }) => null,
                               onChanged: (value) {
                                 // Remove any spaces or non-digits
                                 final cleaned = value.replaceAll(
@@ -729,40 +621,6 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                                 ),
                               ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Account Number Input (for bank transfers)
-                    if (_selectedProvider == 'bank' &&
-                        (_selectedBankMethod == 'rtgs' ||
-                            _selectedBankMethod == 'direct')) ...[
-                      Text(
-                        'Account Details',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
-                        child: TextField(
-                          controller: _accountController,
-                          decoration: InputDecoration(
-                            labelText: 'Account Number',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          keyboardType: TextInputType.text,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -879,19 +737,11 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                 // Validate button state
                 bool isValid = _paymentAmount > 0;
 
-                if (_selectedProvider == 'ecocash' ||
-                    _selectedProvider == 'onemoney' ||
-                    _selectedProvider == 'telecash') {
+                if (_selectedProvider == 'ecocash') {
                   isValid =
                       isValid &&
                       _phoneController.text.isNotEmpty &&
                       _isValidZimbabwePhone(_phoneController.text);
-                }
-
-                if (_selectedProvider == 'bank' &&
-                    (_selectedBankMethod == 'rtgs' ||
-                        _selectedBankMethod == 'direct')) {
-                  isValid = isValid && _accountController.text.isNotEmpty;
                 }
 
                 return ElevatedButton(
@@ -977,10 +827,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
       onTap: () {
         setState(() {
           _selectedProvider = provider['id'];
-          _selectedEcocashMethod = 'mobile'; // Reset to default
-          _selectedBankMethod = null;
           _phoneController.clear();
-          _accountController.clear();
         });
       },
       borderRadius: BorderRadius.circular(12),
@@ -1019,70 +866,6 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
             if (isSelected)
               Icon(Icons.check_circle, color: AppColors.primaryColor, size: 16),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEcocashMethodButton(Map<String, dynamic> method) {
-    final isSelected = _selectedEcocashMethod == method['id'];
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedEcocashMethod = method['id'];
-        });
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryColor.withOpacity(0.1)
-              : AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryColor : AppColors.borderColor,
-          ),
-        ),
-        child: Text(
-          method['name'],
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? AppColors.primaryColor : AppColors.textColor,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBankMethodButton(Map<String, dynamic> method) {
-    final isSelected = _selectedBankMethod == method['id'];
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedBankMethod = method['id'];
-        });
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryColor.withOpacity(0.1)
-              : AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryColor : AppColors.borderColor,
-          ),
-        ),
-        child: Text(
-          method['name'],
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? AppColors.primaryColor : AppColors.textColor,
-          ),
         ),
       ),
     );
