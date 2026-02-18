@@ -484,9 +484,7 @@ class BidPaymentController extends GetxController {
       case PaymentStatus.refunded:
         return '#9E9E9E'; // Grey
       case PaymentStatus.cancelled:
-        return '#607D8B'; // Blue Grey
-      default:
-        return '#757575'; // Grey
+        return '#607D8B'; // Grey
     }
   }
 

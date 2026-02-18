@@ -112,16 +112,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
   }
 
   // CLIENT-SIDE SEARCH METHOD
-  void _searchPaymentsLocally(String query) {
-    final results = _searchPaymentsLocallyImpl(query);
-    if (results.isNotEmpty) {
-      _controller.bidPayments.value = results;
-      BidPaymentHelper.showSuccess('Found ${results.length} payments');
-    } else {
-      BidPaymentHelper.showError('No payments found matching "$query"');
-      _refreshPayments(); // Reset to show all
-    }
-  }
 
   // IMPLEMENTATION: Client-side search
   List<BidPayment> _searchPaymentsLocallyImpl(String query) {

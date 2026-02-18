@@ -15,6 +15,7 @@ import 'package:real_time_pawn/features/bid_mngmnt/screens/my_bids_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/confirm_bid_payment_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/my_bid_payments_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/bid_payment_details_screen.dart';
+import 'package:real_time_pawn/features/bid_payment_mngmt/screens/payment_processing_screen.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/screens/select_payment_method_screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/Loan%20application%20upload%20screen.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
@@ -564,6 +565,15 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
+    GetPage(
+      name: RoutesHelper.paymentProcessingScreen,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>;
+        return PaymentProcessingScreen(payment: args['payment']);
+      },
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
     // Select Payment Method Screen - You need to create this
     // GetPage(
     //   name: RoutesHelper.selectPaymentMethodScreen,

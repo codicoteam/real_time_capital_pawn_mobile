@@ -134,7 +134,16 @@ class BidPaymentHelper {
       });
 
       if (success) {
-        showSuccess(_paymentController.successMessage.value);
+        // 🔴 FIX: Navigate to payment processing screen
+        final payment = _paymentController.selectedPayment.value;
+        if (payment != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Use Get.off() instead of Get.offAllNamed() to keep back stack
+            Get.offNamed(RoutesHelper.paymentProcessingScreen, arguments: {'payment': payment});
+          });
+        } else {
+          showSuccess(_paymentController.successMessage.value);
+        }
         return true;
       } else {
         showError(_paymentController.errorMessage.value);
@@ -546,26 +555,6 @@ class BidPaymentHelper {
     return false;
   }
 
-  /// HELPER: Get payment status from string
-  static PaymentStatus _getPaymentStatusFromString(String status) {
-    switch (status.toLowerCase()) {
-      case 'success':
-        return PaymentStatus.success;
-      case 'failed':
-        return PaymentStatus.failed;
-      case 'refunded':
-        return PaymentStatus.refunded;
-      case 'initiated':
-        return PaymentStatus.initiated;
-      case 'processing':
-        return PaymentStatus.processing;
-      case 'cancelled':
-        return PaymentStatus.cancelled;
-      default:
-        return PaymentStatus.pending;
-    }
-  }
-
   /// HELPER: Get payment status text from string
   static String _getPaymentStatusTextFromString(String status) {
     switch (status.toLowerCase()) {
@@ -619,8 +608,6 @@ class BidPaymentHelper {
       case PaymentStatus.initiated:
       case PaymentStatus.processing:
         return RealTimeColors.warning;
-      default:
-        return RealTimeColors.grey400;
     }
   }
 
@@ -639,8 +626,6 @@ class BidPaymentHelper {
       case PaymentStatus.initiated:
       case PaymentStatus.processing:
         return Icons.pending;
-      default:
-        return Icons.info;
     }
   }
 

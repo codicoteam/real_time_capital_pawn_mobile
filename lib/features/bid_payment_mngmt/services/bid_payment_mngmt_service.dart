@@ -123,18 +123,17 @@ class BidPaymentService {
       'Content-Type': 'application/json',
     };
 
-    // ✅ FIXED: Changed 'bid_id' to 'bid'
+    // ✅ CRITICAL FIX: Change from 'bid' to 'bid_id' to match API expectations
     final body = json.encode({
-      'bid': bidId, // ← CHANGED FROM 'bid_id' TO 'bid'
+      'bid_id': bidId, // ← CHANGED FROM 'bid' TO 'bid_id'
       'amount': amount,
       'method': method,
       'provider': provider,
       'payer_phone': payerPhone,
       'redirect_url': redirectUrl ?? '',
       'notes': notes ?? '',
-      // ✅ ADDED missing required fields
+      // Optional fields - API might accept these
       'currency': 'USD',
-      'status': 'initiated',
     });
 
     final uri = Uri.parse('${ApiKeys.baseUrl}/bid-payments');

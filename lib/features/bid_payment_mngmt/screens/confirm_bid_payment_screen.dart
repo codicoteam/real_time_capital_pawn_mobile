@@ -39,25 +39,28 @@ class _ConfirmBidPaymentScreenState extends State<ConfirmBidPaymentScreen> {
       final success = await BidPaymentHelper.createPayment(
         bidId: _paymentArgs!['bidId'],
         amount: _paymentArgs!['amount'],
-        method: _paymentArgs!['methodName'],
+        method: _paymentArgs!['method'], // This should be 'ecocash' or 'paynow'
         provider: _paymentArgs!['provider'],
         payerPhone: _paymentArgs!['payerPhone'],
         notes: _paymentArgs!['notes'],
       );
 
       if (success) {
-        // Show success message
+        // 🔴 DON'T NAVIGATE AWAY - The helper will handle navigation
+        // The BidPaymentHelper.createPayment already navigates to payment processing
         BidPaymentHelper.showSuccess('Payment initiated successfully!');
 
-        // Navigate back to payments list
-        await Future.delayed(const Duration(seconds: 2));
-        Get.offAllNamed('/my-bid-payments');
+        // 🔴 REMOVE THIS LINE:
+        // await Future.delayed(const Duration(seconds: 2));
+        // Get.offAllNamed('/my-bid-payments');
       } else {
         BidPaymentHelper.showError('Failed to create payment');
+        setState(() {
+          _isProcessing = false;
+        });
       }
     } catch (e) {
       BidPaymentHelper.showError('Error: ${e.toString()}');
-    } finally {
       setState(() {
         _isProcessing = false;
       });

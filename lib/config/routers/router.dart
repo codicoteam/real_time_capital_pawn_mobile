@@ -75,6 +75,7 @@ class RoutesHelper {
   static String selectPaymentMethodScreen = "/select-payment-method";
   static String confirmBidPaymentScreen = "/confirm-payment";
   static String paymentDetailsScreen = "/payment-details/:id";
+  static const String paymentProcessingScreen = "/payment-processing";
 
   // Loan Management Routes
   static String LoansScreen = "/loans";
