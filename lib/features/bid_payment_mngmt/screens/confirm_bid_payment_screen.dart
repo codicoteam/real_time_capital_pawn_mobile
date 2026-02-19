@@ -24,6 +24,8 @@ class _ConfirmBidPaymentScreenState extends State<ConfirmBidPaymentScreen> {
     _paymentArgs = Get.arguments as Map<String, dynamic>?;
   }
 
+  // In confirm_bid_payment_screen.dart - Update _confirmPayment method
+
   Future<void> _confirmPayment() async {
     if (_paymentArgs == null) {
       BidPaymentHelper.showError('Payment information not found');
@@ -36,23 +38,19 @@ class _ConfirmBidPaymentScreenState extends State<ConfirmBidPaymentScreen> {
     });
 
     try {
+      // 🔴 FIX: Get the payment ID from controller after creation
       final success = await BidPaymentHelper.createPayment(
         bidId: _paymentArgs!['bidId'],
         amount: _paymentArgs!['amount'],
-        method: _paymentArgs!['method'], // This should be 'ecocash' or 'paynow'
+        method: _paymentArgs!['method'], // 'paynow' or 'ecocash'
         provider: _paymentArgs!['provider'],
         payerPhone: _paymentArgs!['payerPhone'],
         notes: _paymentArgs!['notes'],
       );
 
       if (success) {
-        // 🔴 DON'T NAVIGATE AWAY - The helper will handle navigation
-        // The BidPaymentHelper.createPayment already navigates to payment processing
+        // The helper will handle navigation
         BidPaymentHelper.showSuccess('Payment initiated successfully!');
-
-        // 🔴 REMOVE THIS LINE:
-        // await Future.delayed(const Duration(seconds: 2));
-        // Get.offAllNamed('/my-bid-payments');
       } else {
         BidPaymentHelper.showError('Failed to create payment');
         setState(() {

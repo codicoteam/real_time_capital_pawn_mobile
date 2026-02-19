@@ -13,7 +13,9 @@ class UserBidsController extends GetxController {
   var errorMessage = ''.obs;
 
   var userBids = <UserBid>[].obs;
-  var pagination = Pagination(page: 1, limit: 10, total: 0, pages: 1).obs;
+  var pagination = Rx<Pagination>(
+    Pagination(page: 1, limit: 10, total: 0, pages: 1),
+  );
   var currentPage = 1.obs;
 
   var selectedStatus = 'All'.obs;

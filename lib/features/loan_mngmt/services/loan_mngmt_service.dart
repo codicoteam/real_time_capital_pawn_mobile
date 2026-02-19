@@ -90,7 +90,6 @@ class LoanService {
         final data = responseData['data'] as Map<String, dynamic>;
         DevLogs.logInfo('Data keys: ${data.keys.toList()}');
         DevLogs.logInfo('Loans type: ${data['loans'].runtimeType}');
-        DevLogs.logInfo('Pagination type: ${data['pagination'].runtimeType}');
       }
 
       if (response.statusCode == 401) {

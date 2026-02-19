@@ -45,12 +45,21 @@ class BidPaymentService {
           List<PaymentMethod> methods = [];
 
           if (data is List) {
-            methods = List<Map<String, dynamic>>.from(
+            // 🔴 FILTER: Only keep EcoCash and PayNow
+            final allMethods = List<Map<String, dynamic>>.from(
               data,
             ).map((methodJson) => PaymentMethod.fromJson(methodJson)).toList();
+
+            // Filter to only EcoCash and PayNow
+            methods = allMethods.where((method) {
+              final name = method.name.toLowerCase();
+              return name.contains('ecocash') || name.contains('paynow');
+            }).toList();
           }
 
-          DevLogs.logSuccess('Fetched ${methods.length} payment methods');
+          DevLogs.logSuccess(
+            'Fetched ${methods.length} payment methods (EcoCash & PayNow only)',
+          );
 
           return APIResponse<List<PaymentMethod>>(
             success: true,
@@ -151,8 +160,29 @@ class BidPaymentService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (responseData['success'] == true) {
-          final paymentData = responseData['data'];
+          // 🔴 CRITICAL FIX: Extract the nested payment object
+          final data = responseData['data'];
+
+          Map<String, dynamic> paymentData;
+          if (data is Map && data['payment'] != null) {
+            // Extract the nested payment object
+            paymentData = Map<String, dynamic>.from(data['payment']);
+            DevLogs.logInfo(
+              '🔴 Extracted nested payment object with ID: ${paymentData['_id']}',
+            );
+          } else {
+            // Use the data as is (fallback)
+            paymentData = Map<String, dynamic>.from(data);
+          }
+
           final payment = BidPayment.fromJson(paymentData);
+
+          // 🔴 DEBUG: Log the payment ID
+          DevLogs.logInfo('🔴 Payment created with ID: ${payment.id}');
+
+          if (payment.id.isEmpty) {
+            DevLogs.logError('⚠️ WARNING: Payment ID is empty!');
+          }
 
           DevLogs.logSuccess('Payment created successfully');
 
@@ -424,6 +454,16 @@ class BidPaymentService {
   static Future<APIResponse<Map<String, dynamic>>> checkPaymentStatus({
     required String paymentId,
   }) async {
+    // 🔴 FIX: Validate paymentId first
+    if (paymentId.isEmpty) {
+      DevLogs.logError('checkPaymentStatus called with empty paymentId');
+      return APIResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Payment ID is required',
+        data: null,
+      );
+    }
+
     final token = await CacheUtils.checkToken();
 
     if (token == null || token.isEmpty) {
@@ -439,20 +479,38 @@ class BidPaymentService {
       'Authorization': 'Bearer $token',
     };
 
-    final uri = Uri.parse(
-      '${ApiKeys.baseUrl}/bid-payments/$paymentId/check-status',
-    );
+    // 🔴 FIX: Ensure proper URL construction
+    final baseUrl = ApiKeys.baseUrl;
+    // Remove trailing slash from baseUrl if it exists
+    final cleanBaseUrl = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+
+    final uri = Uri.parse('$cleanBaseUrl/bid-payments/$paymentId/check-status');
 
     DevLogs.logInfo('Checking payment status: $uri');
+    DevLogs.logInfo('Payment ID: $paymentId');
 
     try {
       final response = await http.get(uri, headers: headers);
       final responseBody = response.body;
-      final responseData = json.decode(responseBody);
 
       DevLogs.logInfo(
         'Payment status check response status: ${response.statusCode}',
       );
+
+      // Check if response is HTML (like an error page) instead of JSON
+      if (responseBody.trim().startsWith('<!DOCTYPE') ||
+          responseBody.trim().startsWith('<html')) {
+        DevLogs.logError('Received HTML response instead of JSON');
+        return APIResponse<Map<String, dynamic>>(
+          success: false,
+          message: 'Payment gateway returned an error page',
+          data: null,
+        );
+      }
+
+      final responseData = json.decode(responseBody);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (responseData['success'] == true) {
@@ -491,7 +549,7 @@ class BidPaymentService {
       } else if (response.statusCode == 404) {
         return APIResponse<Map<String, dynamic>>(
           success: false,
-          message: 'Payment not found',
+          message: 'Payment not found with ID: $paymentId',
           data: null,
         );
       } else {
@@ -657,7 +715,6 @@ class BidPaymentService {
       // If we have other filters, empty or short query is OK
     }
 
-    // ... rest of the method stays the same
     var headers = {
       'accept': 'application/json',
       'Authorization': 'Bearer $token',
@@ -754,12 +811,17 @@ class BidPaymentService {
   }
 
   /// Helper method to poll payment status continuously
-  /// Useful for PayNow and mobile payments that require polling
   static Future<Map<String, dynamic>?> pollPaymentStatus({
     required String paymentId,
-    int maxAttempts = 30, // 30 attempts
-    int intervalSeconds = 2, // 2 seconds between attempts
+    int maxAttempts = 30,
+    int intervalSeconds = 2,
   }) async {
+    // 🔴 FIX: Validate paymentId
+    if (paymentId.isEmpty) {
+      DevLogs.logError('pollPaymentStatus called with empty paymentId');
+      return null;
+    }
+
     int attempts = 0;
 
     while (attempts < maxAttempts) {
@@ -783,7 +845,6 @@ class BidPaymentService {
           'Payment status: gateway=$gatewayStatus, status=$paymentStatus, paid=$paid',
         );
 
-        // Check if payment is completed
         if (paid ||
             gatewayStatus == 'paid' ||
             gatewayStatus == 'success' ||
@@ -793,7 +854,6 @@ class BidPaymentService {
           return statusData;
         }
 
-        // Check if payment failed
         if (gatewayStatus == 'failed' ||
             gatewayStatus == 'cancelled' ||
             paymentStatus == 'failed' ||
@@ -802,13 +862,15 @@ class BidPaymentService {
           return statusData;
         }
 
-        // Payment still pending, continue polling
         if (attempts < maxAttempts) {
           await Future.delayed(Duration(seconds: intervalSeconds));
         }
       } else {
         DevLogs.logError('Failed to check payment status: ${result.message}');
-        break;
+        // Don't break on error, continue polling
+        if (attempts < maxAttempts) {
+          await Future.delayed(Duration(seconds: intervalSeconds));
+        }
       }
     }
 
@@ -837,21 +899,15 @@ class BidPaymentService {
     return '\$${amount.toStringAsFixed(2)}';
   }
 
-  /// Get payment method icon
+  /// Get payment method icon - ONLY ECOCASH AND PAYNOW
   static String getPaymentMethodIcon(String method) {
     switch (method.toLowerCase()) {
       case 'ecocash':
         return 'assets/icons/ecocash.png';
-      case 'onemoney':
-        return 'assets/icons/onemoney.png';
-      case 'telecash':
-        return 'assets/icons/telecash.png';
-      case 'cash':
-        return 'assets/icons/cash.png';
-      case 'bank_transfer':
-        return 'assets/icons/bank.png';
+      case 'paynow':
+        return 'assets/icons/paynow.png';
       default:
-        return 'assets/icons/payment.png';
+        return 'assets/icons/paynow.png'; // Default to paynow icon for any other method
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 
 class PaymentMethod {
@@ -96,73 +97,125 @@ class BidPayment {
   });
 
   factory BidPayment.fromJson(Map<String, dynamic> json) {
+    // Extract ID
+    final id = json['_id']?.toString() ?? json['id']?.toString() ?? '';
+
+    if (id.isEmpty) {
+      debugPrint('⚠️ BidPayment.fromJson: ID is empty!');
+      debugPrint('JSON keys: ${json.keys.join(', ')}');
+    }
+
     // Safely parse nested objects
     final bidData = json['bid'];
     final auctionData = json['auction'];
     final payerUserData = json['payer_user'];
 
+    // Handle bid data with proper error handling
+    UserBid parsedBid;
+    try {
+      if (bidData is Map<String, dynamic>) {
+        parsedBid = UserBid.fromJson(bidData);
+      } else {
+        parsedBid = UserBid.fromJson({});
+      }
+    } catch (e) {
+      debugPrint('Error parsing bid: $e');
+      parsedBid = UserBid.fromJson({});
+    }
+
+    // Handle auction data
+    UserBidAuction parsedAuction;
+    try {
+      if (auctionData is Map<String, dynamic>) {
+        parsedAuction = UserBidAuction.fromJson(auctionData);
+      } else {
+        parsedAuction = UserBidAuction.fromJson({});
+      }
+    } catch (e) {
+      debugPrint('Error parsing auction: $e');
+      parsedAuction = UserBidAuction.fromJson({});
+    }
+
+    // Handle payer user data
+    UserBidder parsedPayerUser;
+    try {
+      if (payerUserData is Map<String, dynamic>) {
+        parsedPayerUser = UserBidder.fromJson(payerUserData);
+      } else if (payerUserData is String) {
+        // If it's just a string ID, create minimal object
+        parsedPayerUser = UserBidder(
+          id: payerUserData,
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'User',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      } else {
+        parsedPayerUser = UserBidder(
+          id: '',
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Unknown',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error parsing payer user: $e');
+      parsedPayerUser = UserBidder(
+        id: '',
+        email: '',
+        phone: '',
+        roles: [],
+        firstName: '',
+        lastName: '',
+        fullName: 'Unknown',
+        status: 'active',
+        emailVerified: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
     return BidPayment(
-      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
-
-      // Handle bid data safely
-      bid: bidData is Map<String, dynamic>
-          ? UserBid.fromJson(bidData)
-          : UserBid.fromJson({}),
-
-      // Handle auction data safely
-      auction: auctionData is Map<String, dynamic>
-          ? UserBidAuction.fromJson(auctionData)
-          : UserBidAuction.fromJson({}),
-
-      // Handle payer user data safely
-      payerUser: payerUserData is Map<String, dynamic>
-          ? UserBidder.fromJson(payerUserData)
-          : UserBidder.fromJson({}),
-
+      id: id,
+      bid: parsedBid,
+      auction: parsedAuction,
+      payerUser: parsedPayerUser,
       amount: (json['amount'] is num)
           ? (json['amount'] as num).toDouble()
           : 0.0,
-
       currency: json['currency']?.toString() ?? 'USD',
-
       status: json['status'] != null
           ? _parsePaymentStatus(json['status'].toString())
           : PaymentStatus.pending,
-
       method: json['method']?.toString() ?? '',
       provider: json['provider']?.toString() ?? '',
-
-      // ✅ CRITICAL FIX: Handle null values properly with toString() conversion
-      providerTxnId: json['provider_txn_id'] != null
-          ? json['provider_txn_id'].toString()
-          : null,
-
-      receiptNo: json['receipt_no'] != null
-          ? json['receipt_no'].toString()
-          : null,
-
-      notes: json['notes'] != null ? json['notes'].toString() : null,
-
-      payerPhone: json['payer_phone'] != null
-          ? json['payer_phone'].toString()
-          : null,
-
-      redirectUrl: json['redirect_url'] != null
-          ? json['redirect_url'].toString()
-          : null,
-
+      providerTxnId: json['provider_txn_id']?.toString(),
+      receiptNo: json['receipt_no']?.toString(),
+      notes: json['notes']?.toString(),
+      payerPhone: json['payer_phone']?.toString(),
+      redirectUrl: json['redirect_url']?.toString(),
       paidAt: json['paid_at'] != null
           ? DateTime.tryParse(json['paid_at'].toString())
           : null,
-
       meta: json['meta'] is Map<String, dynamic>
           ? Map<String, dynamic>.from(json['meta'])
           : null,
-
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
-
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -191,39 +244,33 @@ class BidPayment {
     }
   }
 
-  // SIMPLE toJson - just basic data for API calls
+  // SAFE toJson - with null checks
   Map<String, dynamic> toSimpleJson() {
     return {
       'id': id,
-      'bid_id': bid.id,
+      'bid_id': bid.id.isNotEmpty ? bid.id : '',
       'amount': amount,
       'currency': currency,
       'status': status.toString().split('.').last,
       'method': method,
       'provider': provider,
-      'payer_phone': payerPhone,
-      'notes': notes,
+      'payer_phone': payerPhone ?? '',
+      'notes': notes ?? '',
     };
   }
 
-  /// ✅ NEW HELPER: Get the PayNow poll URL for checking payment status
+  /// Get the PayNow poll URL for checking payment status
   String? get pollUrl {
-    // Check multiple possible locations in the response structure
     if (meta != null) {
-      // Direct poll_url in meta (from your API response)
       if (meta!['poll_url'] != null) {
         return meta!['poll_url'].toString();
       }
-
-      // Nested in paynow_response (from your API response)
       if (meta!['paynow_response'] is Map) {
         final paynowResponse = meta!['paynow_response'] as Map;
         if (paynowResponse['poll_url'] != null) {
           return paynowResponse['poll_url'].toString();
         }
       }
-
-      // Check for any URL-like field
       if (meta!['url'] != null) {
         return meta!['url'].toString();
       }
@@ -231,15 +278,12 @@ class BidPayment {
     return null;
   }
 
-  /// ✅ NEW HELPER: Get payment instructions for the user
+  /// Get payment instructions for the user
   String? get paymentInstructions {
     if (meta != null) {
-      // Direct instructions in meta
       if (meta!['instructions'] != null) {
         return meta!['instructions'].toString();
       }
-
-      // Nested in paynow_response
       if (meta!['paynow_response'] is Map) {
         final paynowResponse = meta!['paynow_response'] as Map;
         if (paynowResponse['instructions'] != null) {
@@ -250,25 +294,23 @@ class BidPayment {
     return null;
   }
 
-  /// ✅ NEW HELPER: Get the USSD code from instructions (extract *151*2*7# pattern)
+  /// Get the USSD code from instructions
   String? get ussdCode {
     final instructions = paymentInstructions;
     if (instructions == null) return null;
-
-    // Try to extract USSD code pattern like *151*2*7#
     final RegExp ussdRegex = RegExp(r'\*[0-9\*]+\#');
     final match = ussdRegex.firstMatch(instructions);
     return match?.group(0);
   }
 
-  /// ✅ NEW HELPER: Check if payment requires user action (like dialing USSD)
+  /// Check if payment requires user action
   bool get requiresUserAction {
     return method.toLowerCase() == 'ecocash' ||
         provider.toLowerCase() == 'ecocash' ||
         (paymentInstructions?.contains('*151') ?? false);
   }
 
-  /// ✅ NEW HELPER: Get the full PayNow response object
+  /// Get the full PayNow response object
   Map<String, dynamic>? get paynowResponse {
     if (meta != null && meta!['paynow_response'] is Map) {
       return Map<String, dynamic>.from(meta!['paynow_response']);
@@ -276,7 +318,7 @@ class BidPayment {
     return null;
   }
 
-  /// ✅ NEW HELPER: Check if payment was successful from gateway
+  /// Check if payment was successful from gateway
   bool get isGatewaySuccess {
     if (paynowResponse != null) {
       return paynowResponse!['success'] == true;
@@ -311,9 +353,59 @@ class BidPayment {
   bool get isCancelled => status == PaymentStatus.cancelled;
   bool get isRefunded => status == PaymentStatus.refunded;
 
-  /// Check if payment can be checked for status (has poll URL)
   bool get canCheckStatus => pollUrl != null && !isSuccessful && !isFailed;
 
-  /// Get formatted amount with currency
   String get formattedAmount => '\$${amount.toStringAsFixed(2)} $currency';
+
+  /// Get the PayNow redirect URL from the response
+  String? get paynowRedirectUrl {
+    if (redirectUrl != null && redirectUrl!.isNotEmpty) {
+      return redirectUrl;
+    }
+
+    if (meta != null) {
+      if (meta!['redirect_url'] != null) {
+        return meta!['redirect_url'].toString();
+      }
+
+      if (meta!['paynow_response'] is Map) {
+        final paynowResponse = meta!['paynow_response'] as Map;
+        if (paynowResponse['redirectUrl'] != null) {
+          return paynowResponse['redirectUrl'].toString();
+        }
+        if (paynowResponse['payment_url'] != null) {
+          return paynowResponse['payment_url'].toString();
+        }
+      }
+
+      if (meta!['data'] is Map) {
+        final data = meta!['data'] as Map;
+        if (data['redirect_url'] != null) {
+          return data['redirect_url'].toString();
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Get poll URL for checking payment status
+  String? get paynowPollUrl {
+    if (pollUrl != null && pollUrl!.isNotEmpty) {
+      return pollUrl;
+    }
+
+    if (meta != null) {
+      if (meta!['poll_url'] != null) {
+        return meta!['poll_url'].toString();
+      }
+
+      if (meta!['paynow_response'] is Map) {
+        final paynowResponse = meta!['paynow_response'] as Map;
+        if (paynowResponse['pollUrl'] != null) {
+          return paynowResponse['pollUrl'].toString();
+        }
+      }
+    }
+    return null;
+  }
 }

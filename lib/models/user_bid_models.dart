@@ -1,6 +1,7 @@
-// bid_mngmt/models/user_bid_models.dart
-import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
+import 'package:flutter/material.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
+// Import Pagination from auctions service
+import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
 
 enum BidPaymentStatus { unpaid, paid, partially_paid, refunded, failed }
 
@@ -39,33 +40,45 @@ class UserBid {
     required this.updatedAt,
   });
 
-  // Replace the current UserBid.fromJson factory constructor with this:
-
   factory UserBid.fromJson(Map<String, dynamic> json) {
     // Handle bidder_user which might be a string ID or an object
     dynamic bidderUserData = json['bidder_user'];
     UserBidder bidder;
 
-    if (bidderUserData is String) {
-      // If it's just a string ID, create a minimal UserBidder
-      bidder = UserBidder(
-        id: bidderUserData,
-        email: '',
-        phone: '',
-        roles: [],
-        firstName: '',
-        lastName: '',
-        fullName: 'Unknown Bidder',
-        status: 'active',
-        emailVerified: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    } else if (bidderUserData is Map<String, dynamic>) {
-      // If it's already an object, parse it normally
-      bidder = UserBidder.fromJson(bidderUserData);
-    } else {
-      // Fallback if data is null or invalid
+    try {
+      if (bidderUserData is String) {
+        bidder = UserBidder(
+          id: bidderUserData,
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Unknown Bidder',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      } else if (bidderUserData is Map<String, dynamic>) {
+        bidder = UserBidder.fromJson(bidderUserData);
+      } else {
+        bidder = UserBidder(
+          id: '',
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Unknown Bidder',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error parsing bidder: $e');
       bidder = UserBidder(
         id: '',
         email: '',
@@ -82,27 +95,43 @@ class UserBid {
     }
 
     return UserBid(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       auction: UserBidAuction.fromJson(json['auction'] ?? {}),
       bidder: bidder,
-      amount: (json['amount'] ?? 0.0).toDouble(),
+      amount: (json['amount'] is num)
+          ? (json['amount'] as num).toDouble()
+          : 0.0,
       currency: json['currency'] ?? 'USD',
-      placedAt: DateTime.parse(
-        json['placed_at'] ?? DateTime.now().toIso8601String(),
-      ),
+      placedAt: _parseDate(json['placed_at']),
       dispute: BidDispute.fromJson(json['dispute'] ?? {}),
       paymentStatus: _parsePaymentStatus(json['payment_status'] ?? 'unpaid'),
-      paidAmount: (json['paid_amount'] ?? 0.0).toDouble(),
-      paidAt: json['paid_at'] != null ? DateTime.parse(json['paid_at']) : null,
-      paymentReference: json['payment_reference'],
+      paidAmount: (json['paid_amount'] is num)
+          ? (json['paid_amount'] as num).toDouble()
+          : 0.0,
+      paidAt: _parseNullableDate(json['paid_at']),
+      paymentReference: json['payment_reference']?.toString(),
       meta: Map<String, dynamic>.from(json['meta'] ?? {}),
-      createdAt: DateTime.parse(
-        json['created_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      updatedAt: DateTime.parse(
-        json['updated_at'] ?? DateTime.now().toIso8601String(),
-      ),
+      createdAt: _parseDate(json['created_at']),
+      updatedAt: _parseDate(json['updated_at']),
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    try {
+      return DateTime.parse(date.toString());
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
+
+  static DateTime? _parseNullableDate(dynamic date) {
+    if (date == null) return null;
+    try {
+      return DateTime.parse(date.toString());
+    } catch (e) {
+      return null;
+    }
   }
 
   static BidPaymentStatus _parsePaymentStatus(String status) {
@@ -154,31 +183,46 @@ class UserBidAuction {
     required this.createdAt,
     required this.updatedAt,
   });
+
   factory UserBidAuction.fromJson(Map<String, dynamic> json) {
     // Handle created_by which might be a string ID or an object
     dynamic createdByData = json['created_by'];
     UserBidder createdBy;
 
-    if (createdByData is String) {
-      // If it's just a string ID, create a minimal UserBidder
-      createdBy = UserBidder(
-        id: createdByData,
-        email: '',
-        phone: '',
-        roles: [],
-        firstName: '',
-        lastName: '',
-        fullName: 'Unknown User',
-        status: 'active',
-        emailVerified: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    } else if (createdByData is Map<String, dynamic>) {
-      // If it's already an object, parse it normally
-      createdBy = UserBidder.fromJson(createdByData);
-    } else {
-      // Fallback if data is null or invalid
+    try {
+      if (createdByData is String) {
+        createdBy = UserBidder(
+          id: createdByData,
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Unknown User',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      } else if (createdByData is Map<String, dynamic>) {
+        createdBy = UserBidder.fromJson(createdByData);
+      } else {
+        createdBy = UserBidder(
+          id: '',
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Unknown User',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error parsing created_by: $e');
       createdBy = UserBidder(
         id: '',
         email: '',
@@ -194,36 +238,62 @@ class UserBidAuction {
       );
     }
 
+    // Handle winner_user
+    UserBidder? winnerUser;
+    try {
+      dynamic winnerData = json['winner_user'];
+      if (winnerData is Map<String, dynamic>) {
+        winnerUser = UserBidder.fromJson(winnerData);
+      } else if (winnerData is String) {
+        winnerUser = UserBidder(
+          id: winnerData,
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Winner',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error parsing winner_user: $e');
+    }
+
     return UserBidAuction(
-      id: json['_id'] ?? json['id'] ?? '',
-      auctionNo: json['auction_no'] ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      auctionNo: json['auction_no']?.toString() ?? '',
       asset: Asset.fromJson(json['asset'] ?? {}),
-      startingBidAmount: (json['starting_bid_amount'] ?? 0.0).toDouble(),
+      startingBidAmount: (json['starting_bid_amount'] is num)
+          ? (json['starting_bid_amount'] as num).toDouble()
+          : 0.0,
       reservePrice: json['reserve_price'] != null
-          ? (json['reserve_price']).toDouble()
+          ? (json['reserve_price'] as num).toDouble()
           : null,
-      auctionType: json['auction_type'] ?? 'online',
-      startsAt: DateTime.parse(
-        json['starts_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      endsAt: DateTime.parse(
-        json['ends_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      status: json['status'] ?? 'draft',
-      winnerUser: json['winner_user'] != null
-          ? UserBidder.fromJson(json['winner_user'])
-          : null,
+      auctionType: json['auction_type']?.toString() ?? 'online',
+      startsAt: _parseDate(json['starts_at']),
+      endsAt: _parseDate(json['ends_at']),
+      status: json['status']?.toString() ?? 'draft',
+      winnerUser: winnerUser,
       winningBidAmount: json['winning_bid_amount'] != null
-          ? (json['winning_bid_amount']).toDouble()
+          ? (json['winning_bid_amount'] as num).toDouble()
           : null,
-      createdBy: createdBy, // Use the handled created_by
-      createdAt: DateTime.parse(
-        json['created_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      updatedAt: DateTime.parse(
-        json['updated_at'] ?? DateTime.now().toIso8601String(),
-      ),
+      createdBy: createdBy,
+      createdAt: _parseDate(json['created_at']),
+      updatedAt: _parseDate(json['updated_at']),
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    try {
+      return DateTime.parse(date.toString());
+    } catch (e) {
+      return DateTime.now();
+    }
   }
 }
 
@@ -268,30 +338,35 @@ class UserBidder {
 
   factory UserBidder.fromJson(Map<String, dynamic> json) {
     return UserBidder(
-      id: json['_id'] ?? json['id'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
       roles: List<String>.from(json['roles'] ?? []),
-      firstName: json['first_name'] ?? '',
-      lastName: json['last_name'] ?? '',
-      fullName: json['full_name'] ?? '',
-      status: json['status'] ?? 'pending',
-      nationalIdNumber: json['national_id_number'],
+      firstName: json['first_name']?.toString() ?? '',
+      lastName: json['last_name']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'pending',
+      nationalIdNumber: json['national_id_number']?.toString(),
       dateOfBirth: json['date_of_birth'] != null
-          ? DateTime.parse(json['date_of_birth'])
+          ? DateTime.tryParse(json['date_of_birth'].toString())
           : null,
-      address: json['address'],
-      location: json['location'],
-      nationalIdImageUrl: json['national_id_image_url'],
-      profilePicUrl: json['profile_pic_url'],
-      emailVerified: json['email_verified'] ?? false,
-      createdAt: DateTime.parse(
-        json['created_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      updatedAt: DateTime.parse(
-        json['updated_at'] ?? DateTime.now().toIso8601String(),
-      ),
+      address: json['address']?.toString(),
+      location: json['location']?.toString(),
+      nationalIdImageUrl: json['national_id_image_url']?.toString(),
+      profilePicUrl: json['profile_pic_url']?.toString(),
+      emailVerified: json['email_verified'] == true,
+      createdAt: _parseDate(json['created_at']),
+      updatedAt: _parseDate(json['updated_at']),
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    try {
+      return DateTime.parse(date.toString());
+    } catch (e) {
+      return DateTime.now();
+    }
   }
 }
 
@@ -314,65 +389,75 @@ class BidDispute {
     this.resolutionNotes,
   });
 
-  // In BidDispute.fromJson():
   factory BidDispute.fromJson(Map<String, dynamic> json) {
-    // Handle raised_by which might be string or object
-    dynamic raisedByData = json['raised_by'];
+    // Handle raised_by
     UserBidder? raisedBy;
-
-    if (raisedByData is String && raisedByData.isNotEmpty) {
-      raisedBy = UserBidder(
-        id: raisedByData,
-        email: '',
-        phone: '',
-        roles: [],
-        firstName: '',
-        lastName: '',
-        fullName: 'Unknown User',
-        status: 'active',
-        emailVerified: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    } else if (raisedByData is Map<String, dynamic>) {
-      raisedBy = UserBidder.fromJson(raisedByData);
+    try {
+      dynamic raisedByData = json['raised_by'];
+      if (raisedByData is Map<String, dynamic>) {
+        raisedBy = UserBidder.fromJson(raisedByData);
+      } else if (raisedByData is String && raisedByData.isNotEmpty) {
+        raisedBy = UserBidder(
+          id: raisedByData,
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Unknown User',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error parsing raised_by: $e');
     }
 
-    // Similar logic for resolved_by
-    dynamic resolvedByData = json['resolved_by'];
+    // Handle resolved_by
     UserBidder? resolvedBy;
-
-    if (resolvedByData is String && resolvedByData.isNotEmpty) {
-      resolvedBy = UserBidder(
-        id: resolvedByData,
-        email: '',
-        phone: '',
-        roles: [],
-        firstName: '',
-        lastName: '',
-        fullName: 'Unknown User',
-        status: 'active',
-        emailVerified: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    } else if (resolvedByData is Map<String, dynamic>) {
-      resolvedBy = UserBidder.fromJson(resolvedByData);
+    try {
+      dynamic resolvedByData = json['resolved_by'];
+      if (resolvedByData is Map<String, dynamic>) {
+        resolvedBy = UserBidder.fromJson(resolvedByData);
+      } else if (resolvedByData is String && resolvedByData.isNotEmpty) {
+        resolvedBy = UserBidder(
+          id: resolvedByData,
+          email: '',
+          phone: '',
+          roles: [],
+          firstName: '',
+          lastName: '',
+          fullName: 'Unknown User',
+          status: 'active',
+          emailVerified: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error parsing resolved_by: $e');
     }
 
     return BidDispute(
-      status: _parseDisputeStatus(json['status'] ?? 'none'),
-      reason: json['reason'],
+      status: _parseDisputeStatus(json['status']?.toString() ?? 'none'),
+      reason: json['reason']?.toString(),
       raisedBy: raisedBy,
-      raisedAt: json['raised_at'] != null
-          ? DateTime.parse(json['raised_at'])
-          : null,
+      raisedAt: _parseNullableDate(json['raised_at']),
       resolvedBy: resolvedBy,
-      resolvedAt: json['resolved_at'] != null
-          ? DateTime.parse(json['resolved_at'])
-          : null,
-      resolutionNotes: json['resolution_notes'],
+      resolvedAt: _parseNullableDate(json['resolved_at']),
+      resolutionNotes: json['resolution_notes']?.toString(),
     );
+  }
+
+  static DateTime? _parseNullableDate(dynamic date) {
+    if (date == null) return null;
+    try {
+      return DateTime.parse(date.toString());
+    } catch (e) {
+      return null;
+    }
   }
 
   static BidDisputeStatus _parseDisputeStatus(String status) {
@@ -397,4 +482,18 @@ class UserBidsResponse {
   final Pagination pagination;
 
   UserBidsResponse({required this.bids, required this.pagination});
+
+  factory UserBidsResponse.fromJson(Map<String, dynamic> json) {
+    return UserBidsResponse(
+      bids:
+          (json['data'] as List?)
+              ?.map((e) => UserBid.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      pagination: Pagination.fromJson(json['pagination'] ?? {}),
+    );
+  }
 }
+
+// REMOVED: The duplicate Pagination class from here
+// It is now imported from auctions_mngmt_service.dart

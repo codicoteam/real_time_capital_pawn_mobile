@@ -117,7 +117,10 @@ class BidPaymentController extends GetxController {
     return await getPayerPaymentsRequest(page: nextPage);
   }
 
-  /// CREATE PAYMENT
+  // In bid_payment_mngmt_controller.dart - Update createPaymentRequest
+
+  // In bid_payment_mngmt_controller.dart - Update createPaymentRequest method
+
   Future<bool> createPaymentRequest({
     required String bidId,
     required double amount,
@@ -143,7 +146,16 @@ class BidPaymentController extends GetxController {
       );
 
       if (response.success && response.data != null) {
+        // Set the selected payment
         selectedPayment.value = response.data!;
+
+        // Debug: Verify payment has ID
+        DevLogs.logInfo('🔴 Payment created with ID: ${response.data!.id}');
+        if (response.data!.id.isEmpty) {
+          DevLogs.logError('⚠️ WARNING: Payment ID is empty!');
+        } else {
+          DevLogs.logInfo('✅ Payment has valid ID: ${response.data!.id}');
+        }
 
         // Add to payments list
         bidPayments.insert(0, response.data!);

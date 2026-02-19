@@ -1,5 +1,4 @@
-// bid_mngmt_service.dart
-// lib/features/user_bids/services/user_bids_service.dart
+// bid_mngmt_service.dart / user_bids_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:real_time_pawn/core/utils/logs.dart';
@@ -7,8 +6,8 @@ import 'package:real_time_pawn/config/api_config/api_keys.dart';
 import 'package:real_time_pawn/core/utils/api_response.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
-
-import 'auctions_mngmt_service.dart';
+// Import Pagination from auctions service
+import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
 
 class UserBidsService {
   /// GET USER'S BIDDING HISTORY
@@ -82,6 +81,7 @@ class UserBidsService {
             data['bids'] ?? [],
           ).map((bidJson) => UserBid.fromJson(bidJson)).toList();
 
+          // Use Pagination.fromJson from the imported auctions service
           final pagination = Pagination.fromJson(data['pagination'] ?? {});
 
           final responseObj = UserBidsResponse(

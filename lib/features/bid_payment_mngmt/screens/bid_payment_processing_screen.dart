@@ -25,10 +25,32 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   Timer? _pollingTimer;
   int _pollingAttempts = 0;
   final int _maxPollingAttempts = 30;
+  // In PaymentProcessingScreen initState
+
+  // In payment_processing_screen.dart - Add validation in initState
 
   @override
   void initState() {
     super.initState();
+
+    // 🔴 CRITICAL: Validate payment object
+    if (widget.payment.id.isEmpty) {
+      debugPrint('🔴 CRITICAL ERROR: Payment ID is empty!');
+      debugPrint('🔴 Payment object: ${widget.payment.toSimpleJson()}');
+
+      // Show error and go back
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        BidPaymentHelper.showError('Invalid payment: Missing ID');
+        Future.delayed(const Duration(seconds: 2), () {
+          Get.offAllNamed('/my-bid-payments');
+        });
+      });
+      return;
+    }
+
+    debugPrint(
+      '🔴 PaymentProcessingScreen initialized with ID: ${widget.payment.id}',
+    );
     _startAutoPolling();
   }
 
@@ -54,8 +76,19 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     });
   }
 
+  // In payment_processing_screen.dart - Update _checkPaymentStatus
+
   Future<void> _checkPaymentStatus() async {
     if (_isCheckingStatus) return;
+
+    // 🔴 FIX: Ensure we have a valid payment ID
+    if (widget.payment.id.isEmpty) {
+      debugPrint('Error: Payment ID is empty');
+      setState(() {
+        _statusMessage = 'Invalid payment ID';
+      });
+      return;
+    }
 
     setState(() {
       _isCheckingStatus = true;
@@ -87,10 +120,16 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           setState(() {
             _statusMessage = 'Payment failed. Please try again.';
           });
+        } else {
+          // Still pending - continue polling
+          debugPrint('Payment still pending...');
         }
       }
     } catch (e) {
       debugPrint('Error checking payment status: $e');
+      setState(() {
+        _statusMessage = 'Error checking status: ${e.toString()}';
+      });
     } finally {
       if (mounted) {
         setState(() {
@@ -100,21 +139,21 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     }
   }
 
-  Future<void> _launchRedirectUrl() async {
-    final redirectUrl =
-        widget.payment.redirectUrl ??
-        widget.payment.meta?['redirect_url']?.toString();
-
-    if (redirectUrl != null && redirectUrl.isNotEmpty) {
-      final Uri url = Uri.parse(redirectUrl);
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
+  /// Launch PayNow redirect URL
+  Future<void> _launchRedirectUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         BidPaymentHelper.showError('Could not open payment page');
       }
+    } catch (e) {
+      BidPaymentHelper.showError('Invalid URL: $e');
     }
   }
 
+  /// Copy text to clipboard
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
     BidPaymentHelper.showSuccess('Copied to clipboard');
@@ -125,11 +164,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     final isEcoCash = widget.payment.method.toLowerCase() == 'ecocash';
     final isPayNow = widget.payment.method.toLowerCase() == 'paynow';
 
-    final redirectUrl =
-        widget.payment.redirectUrl ??
-        widget.payment.meta?['redirect_url']?.toString();
-
-    final pollUrl = widget.payment.pollUrl;
+    // Use the getters from BidPayment model
+    final redirectUrl = widget.payment.paynowRedirectUrl;
+    final pollUrl = widget.payment.paynowPollUrl;
     final instructions = widget.payment.paymentInstructions;
 
     return Scaffold(
@@ -215,7 +252,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
 
                     const SizedBox(height: 20),
 
-                    // 🔴 PAYNOW SPECIFIC: Show redirect button
+                    // PAYNOW REDIRECT BUTTON - ALWAYS SHOW IF URL EXISTS
                     if (isPayNow &&
                         redirectUrl != null &&
                         redirectUrl.isNotEmpty)
@@ -226,20 +263,21 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: RealTimeColors.primaryGreen,
+                            width: 2,
                           ),
                         ),
                         child: Column(
                           children: [
                             const Icon(
                               Icons.open_in_browser,
-                              size: 48,
+                              size: 64,
                               color: RealTimeColors.primaryGreen,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               'Complete Payment Online',
                               style: GoogleFonts.poppins(
-                                fontSize: 18,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textColor,
                               ),
@@ -255,7 +293,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                             ),
                             const SizedBox(height: 20),
                             ElevatedButton.icon(
-                              onPressed: _launchRedirectUrl,
+                              onPressed: () => _launchRedirectUrl(redirectUrl),
                               icon: const Icon(Icons.launch),
                               label: const Text('Open PayNow Payment Page'),
                               style: ElevatedButton.styleFrom(
@@ -263,6 +301,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                                 backgroundColor: RealTimeColors.primaryGreen,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
+                                  horizontal: 24,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -270,37 +309,52 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            InkWell(
-                              onTap: () => _copyToClipboard(redirectUrl),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        redirectUrl,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          color: RealTimeColors.primaryGreen,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceColor,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Payment URL:',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.subtextColor,
                                     ),
-                                    const Icon(Icons.copy, size: 16),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  InkWell(
+                                    onTap: () => _copyToClipboard(redirectUrl),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            redirectUrl,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              color:
+                                                  RealTimeColors.primaryGreen,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const Icon(Icons.copy, size: 16),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                    // 🔴 ECOCASH SPECIFIC: Show USSD instructions
+                    // ECOCASH INSTRUCTIONS
                     if (isEcoCash && instructions != null)
                       Container(
                         padding: const EdgeInsets.all(20),

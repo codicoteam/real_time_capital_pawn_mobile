@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/controllers/bid_payment_mngmt_controller.dart';
@@ -97,7 +98,8 @@ class BidPaymentHelper {
     }
   }
 
-  /// CREATE PAYMENT
+  // In bid_payment_mngmt_helper.dart - FIX THE CREATE PAYMENT METHOD
+
   static Future<bool> createPayment({
     required String bidId,
     required double amount,
@@ -134,15 +136,31 @@ class BidPaymentHelper {
       });
 
       if (success) {
-        // 🔴 FIX: Navigate to payment processing screen
         final payment = _paymentController.selectedPayment.value;
+
+        // 🔴 CRITICAL FIX: Validate payment object has ID
         if (payment != null) {
+          if (payment.id.isEmpty) {
+            DevLogs.logError('Payment created but has empty ID!');
+            showError('Payment created but ID is missing');
+            return false;
+          }
+
+          DevLogs.logInfo(
+            '🔴 Navigating to payment processing with payment ID: ${payment.id}',
+          );
+          DevLogs.logInfo('🔴 Payment object: ${payment.toSimpleJson()}');
+
+          // Use Get.to() instead of Get.offNamed to keep in stack
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            // Use Get.off() instead of Get.offAllNamed() to keep back stack
-            Get.offNamed(RoutesHelper.paymentProcessingScreen, arguments: {'payment': payment});
+            Get.toNamed(
+              RoutesHelper.paymentProcessingScreen,
+              arguments: {'payment': payment},
+            );
           });
         } else {
-          showSuccess(_paymentController.successMessage.value);
+          showError('Payment object is null after creation');
+          return false;
         }
         return true;
       } else {
@@ -199,10 +217,17 @@ class BidPaymentHelper {
     }
   }
 
-  /// CHECK PAYMENT STATUS
+  // In bid_payment_mngmt_helper.dart - Update checkPaymentStatus
+
   static Future<Map<String, dynamic>?> checkPaymentStatus({
     required String paymentId,
   }) async {
+    // 🔴 FIX: Validate paymentId
+    if (paymentId.isEmpty) {
+      showError('Payment ID is required');
+      return null;
+    }
+
     try {
       final response = await BidPaymentService.checkPaymentStatus(
         paymentId: paymentId,
