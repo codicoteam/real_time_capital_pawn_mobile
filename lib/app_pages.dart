@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
+import 'package:real_time_pawn/features/about_mngmt/screens/about_mngmt_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/search_auctions_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_details_screen.dart';
@@ -574,6 +575,25 @@ class AppPages {
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
     ),
+
+    // File: lib/config/routers/app_pages.dart - Add this GetPage
+    GetPage(
+      name: RoutesHelper.aboutScreen,
+      page: () => const AboutScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // File: lib/config/routers/app_pages.dart - Add this GetPage
+    GetPage(
+      name: '/faq',
+      page: () => const FaqScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
     // Select Payment Method Screen - You need to create this
     // GetPage(
     //   name: RoutesHelper.selectPaymentMethodScreen,

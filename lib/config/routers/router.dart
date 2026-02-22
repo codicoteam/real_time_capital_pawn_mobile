@@ -43,8 +43,7 @@ class RoutesHelper {
   static String trainingProgramDetailsScreen =
       "/training_program_details_screen";
   static String allRaceExperienceScreen = "/all_race_experience_screen";
-  static String faqScreen = "/faq_screen";
-  static String aboutScreen = "/about_screen";
+
   static String helpAndSupportScreen = "/help_and_support_screen";
 
   static String loanApplicationsScreen = '/loan-applications';
@@ -107,6 +106,10 @@ class RoutesHelper {
 
   // Ticket Details (with parameter)
   static String ticketDetailsScreen = "/ticket-details/:id";
+
+  static String aboutScreen = "/about";
+
+  static String faqScreen = "/faq";
 
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

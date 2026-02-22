@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:real_time_pawn/features/loan_mngmt/services/loan_mngmt_service.dart';
 import 'package:real_time_pawn/models/loan_mngmt_model.dart';
@@ -21,7 +22,7 @@ class LoanController extends GetxController {
 
   // Statistics
   double get totalOutstandingBalance {
-    return loans.fold(0, (sum, loan) => sum + loan.currentBalance);
+    return loans.fold(0.0, (sum, loan) => sum + loan.currentBalance);
   }
 
   int get activeLoansCount {
@@ -59,7 +60,6 @@ class LoanController extends GetxController {
   }
 
   // Fetch customer loans
-  // Fetch customer loans
   Future<void> fetchCustomerLoans({bool refresh = false}) async {
     try {
       if (refresh) {
@@ -80,13 +80,20 @@ class LoanController extends GetxController {
       );
 
       if (response.success && response.data != null) {
-        // Access loans and pagination from LoanListData
         print(
           'DEBUG: Controller - Response success, loans count: ${response.data!.loans.length}',
         );
-        print(
-          'DEBUG: Controller - First loan: ${response.data!.loans.isNotEmpty ? response.data!.loans.first.loanNo : "No loans"}',
-        );
+
+        if (response.data!.loans.isNotEmpty) {
+          print(
+            'DEBUG: Controller - First loan: ${response.data!.loans.first.loanNo}',
+          );
+          print(
+            'DEBUG: Controller - First loan customer: ${response.data!.loans.first.customerName}',
+          );
+        } else {
+          print('DEBUG: Controller - No loans in response');
+        }
 
         loans.value = response.data!.loans;
         totalLoans.value = response.data!.pagination.total;
@@ -98,13 +105,21 @@ class LoanController extends GetxController {
         print('DEBUG: Controller - Total loans: ${totalLoans.value}');
       } else {
         errorMessage.value = response.message ?? 'Failed to load loans';
-        print('DEBUG: Controller - Error: $errorMessage');
-        Get.snackbar('Error', errorMessage.value);
+        print('DEBUG: Controller - Error: ${errorMessage.value}');
+        Get.snackbar(
+          'Error',
+          errorMessage.value,
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     } catch (e) {
       errorMessage.value = 'Failed to load loans: ${e.toString()}';
-      print('DEBUG: Controller - Exception: $errorMessage');
-      Get.snackbar('Error', errorMessage.value);
+      print('DEBUG: Controller - Exception: ${errorMessage.value}');
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
       print('DEBUG: Controller - Loading completed');
@@ -131,11 +146,19 @@ class LoanController extends GetxController {
         hasPrevPage.value = response.data!.pagination.hasPrevPage;
       } else {
         currentPage.value--;
-        Get.snackbar('Error', 'Failed to load more loans');
+        Get.snackbar(
+          'Error',
+          'Failed to load more loans',
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     } catch (e) {
       currentPage.value--;
-      Get.snackbar('Error', 'Failed to load more loans');
+      Get.snackbar(
+        'Error',
+        'Failed to load more loans',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoadingMore.value = false;
     }
@@ -144,40 +167,63 @@ class LoanController extends GetxController {
   // Get loan details by ID
   Future<LoanModel?> getLoanDetails(String loanId) async {
     try {
+      isLoading.value = true;
+
       final response = await LoanService.getLoanById(loanId);
 
       if (response.success && response.data != null) {
-        // FIX: response.data is already LoanModel, not LoanData
-        selectedLoan.value = response.data; // Not response.data!.loan
-        return response.data; // Not response.data!.loan
+        selectedLoan.value = response.data;
+        return response.data;
       } else {
         errorMessage.value = response.message ?? 'Failed to load loan details';
-        Get.snackbar('Error', errorMessage.value);
+        Get.snackbar(
+          'Error',
+          errorMessage.value,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return null;
       }
     } catch (e) {
       errorMessage.value = 'Failed to load loan details: ${e.toString()}';
-      Get.snackbar('Error', errorMessage.value);
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return null;
+    } finally {
+      isLoading.value = false;
     }
   }
 
   // Calculate loan charges
   Future<Map<String, dynamic>?> calculateLoanCharges(String loanId) async {
     try {
+      isLoading.value = true;
+
       final response = await LoanService.calculateLoanCharges(loanId);
 
       if (response.success && response.data != null) {
         return response.data;
       } else {
         errorMessage.value = response.message ?? 'Failed to calculate charges';
-        Get.snackbar('Error', errorMessage.value);
+        Get.snackbar(
+          'Error',
+          errorMessage.value,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return null;
       }
     } catch (e) {
       errorMessage.value = 'Failed to calculate charges: ${e.toString()}';
-      Get.snackbar('Error', errorMessage.value);
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return null;
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -191,6 +237,8 @@ class LoanController extends GetxController {
     String? accountNumber,
   }) async {
     try {
+      isLoading.value = true;
+
       final response = await LoanService.processLoanPayment(
         loanId: loanId,
         amount: amount,
@@ -207,16 +255,34 @@ class LoanController extends GetxController {
           await getLoanDetails(loanId);
         }
 
+        Get.snackbar(
+          'Success',
+          'Payment processed successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Get.theme.primaryColor,
+          colorText: Colors.white,
+        );
+
         return response.data;
       } else {
         errorMessage.value = response.message ?? 'Payment failed';
-        Get.snackbar('Payment Error', errorMessage.value);
+        Get.snackbar(
+          'Payment Error',
+          errorMessage.value,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return null;
       }
     } catch (e) {
       errorMessage.value = 'Payment failed: ${e.toString()}';
-      Get.snackbar('Payment Error', errorMessage.value);
+      Get.snackbar(
+        'Payment Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return null;
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -227,6 +293,8 @@ class LoanController extends GetxController {
     String? notes,
   }) async {
     try {
+      isLoading.value = true;
+
       final response = await LoanService.updateLoanStatus(
         loanId: loanId,
         status: status,
@@ -240,17 +308,33 @@ class LoanController extends GetxController {
           await getLoanDetails(loanId);
         }
 
-        Get.snackbar('Success', 'Loan status updated successfully');
+        Get.snackbar(
+          'Success',
+          'Loan status updated successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Get.theme.primaryColor,
+          colorText: Colors.white,
+        );
         return true;
       } else {
         errorMessage.value = response.message ?? 'Failed to update status';
-        Get.snackbar('Error', errorMessage.value);
+        Get.snackbar(
+          'Error',
+          errorMessage.value,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Failed to update status: ${e.toString()}';
-      Get.snackbar('Error', errorMessage.value);
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return false;
+    } finally {
+      isLoading.value = false;
     }
   }
 

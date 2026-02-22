@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lottie/lottie.dart'; // Add this to pubspec.yaml: lottie: ^2.7.0
-
-import '../../../core/utils/pallete.dart' show AppColors;
+import 'package:lottie/lottie.dart';
+import '../../../core/utils/pallete.dart' show AppColors, RealTimeColors;
 
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -26,7 +25,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'We offer three specialized collateral loans: 1) Electric Gadget Collateral Loan (smartphones, laptops, tablets), 2) Motor Vehicle Loan (cars, motorcycles), and 3) Jewellery Loan (gold, diamonds, watches). Simply bring your item to our nearest office for valuation.',
       icon: Icons.credit_card,
-      iconColor: Colors.blue,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Loan Application',
@@ -34,7 +33,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           '1. Download the Real Time Capital app\n2. Complete registration with your details\n3. Select "Apply for Loan" and choose loan type\n4. Book an appointment at your nearest branch\n5. Bring your collateral item for valuation\n6. Receive instant approval & funds transfer',
       icon: Icons.app_registration,
-      iconColor: Colors.green,
+      iconColor: RealTimeColors.success,
     ),
     FaqItem(
       category: 'Collateral Process',
@@ -42,7 +41,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Your collateral is securely stored in our insured vault facilities. We provide you with a detailed receipt and storage certificate. You can track your item status in the app. All items are professionally maintained and insured for their full value during the loan period.',
       icon: Icons.security,
-      iconColor: Colors.orange,
+      iconColor: RealTimeColors.warning,
     ),
     FaqItem(
       category: 'Loan Repayment',
@@ -50,7 +49,16 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Repayments are seamless in our app! Go to "My Loans" → Select active loan → Tap "Make Payment" → Choose payment method (Mobile Money, Bank Transfer, or Card) → Enter amount → Confirm. You\'ll receive instant confirmation and updated loan statement. Early payments are welcomed with no penalties!',
       icon: Icons.payment,
-      iconColor: Colors.purple,
+      iconColor: RealTimeColors.darkGreen,
+    ),
+    // NEW ITEM ADDED HERE
+    FaqItem(
+      category: 'Loan Repayment',
+      question: 'Can I pay off my loan early?',
+      answer:
+          'Yes, you can settle your loan early. Please contact customer support for any early settlement terms that may apply.',
+      icon: Icons.payment,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Asset Auctions',
@@ -58,7 +66,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Our live auctions let you buy quality items at great prices! Browse available assets → View detailed photos & descriptions → Place your bid → Get notified if outbid → Win the auction → Collect item from our office. Auctions refresh daily with new collateral items.',
       icon: Icons.gavel,
-      iconColor: Colors.red,
+      iconColor: RealTimeColors.error,
     ),
     FaqItem(
       category: 'Valuation Process',
@@ -66,7 +74,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Our certified valuers use market data and condition assessment:\n• Gadgets: Brand, model, condition, market demand\n• Vehicles: Year, mileage, condition, service history\n• Jewellery: Karat purity, weight, gem quality, craftsmanship\nYou receive a transparent valuation report in the app.',
       icon: Icons.assessment,
-      iconColor: Colors.teal,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Loan Amounts',
@@ -74,7 +82,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Loan amounts vary by collateral type:\n• Electronics: 40-60% of current market value\n• Vehicles: 50-70% of valuation\n• Jewellery: 60-80% of gold/metal value\nExample: A Ksh 100,000 smartphone can secure Ksh 40,000-60,000 instantly.',
       icon: Icons.attach_money,
-      iconColor: Colors.amber,
+      iconColor: RealTimeColors.success,
     ),
     FaqItem(
       category: 'Interest & Fees',
@@ -82,7 +90,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'We offer competitive rates:\n• Monthly interest: 3-5% depending on loan type\n• Processing fee: 2% of loan amount (one-time)\n• Storage fee: 1% monthly for physical storage\n• No hidden charges! All fees displayed upfront in app.\nEarly repayment discounts available!',
       icon: Icons.account_balance_wallet,
-      iconColor: Colors.indigo,
+      iconColor: RealTimeColors.darkGreen,
     ),
     FaqItem(
       category: 'Auction Participation',
@@ -90,7 +98,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Absolutely! Our "Sell via Auction" feature lets you:\n1. List items for auction (we handle valuation)\n2. Set minimum reserve price\n3. Items displayed to thousands of buyers\n4. We handle payments & security\n5. Receive proceeds minus 10% commission\nGreat for quick cash without loans!',
       icon: Icons.storefront,
-      iconColor: Colors.deepOrange,
+      iconColor: RealTimeColors.warning,
     ),
     FaqItem(
       category: 'Loan Duration',
@@ -98,7 +106,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Flexible terms tailored to your needs:\n• Short-term: 1-3 months (electronics)\n• Medium-term: 3-12 months (vehicles)\n• Long-term: 6-24 months (jewellery)\nYou can extend the period in-app with a simple fee. Automatic reminders before due dates.',
       icon: Icons.calendar_today,
-      iconColor: Colors.blueGrey,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Security',
@@ -106,7 +114,16 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'MAXIMUM SECURITY GUARANTEED:\n• 24/7 armed security at all storage facilities\n• Fireproof, climate-controlled vaults\n• Comprehensive insurance coverage\n• Digital tracking with tamper-proof seals\n• Live CCTV accessible in your app\n• Regular audit reports shared with clients',
       icon: Icons.verified_user,
-      iconColor: Colors.green,
+      iconColor: RealTimeColors.success,
+    ),
+    // NEW ITEM ADDED HERE
+    FaqItem(
+      category: 'Security',
+      question: 'Is my item safe while pawned?',
+      answer:
+          'Yes, all pawned items are securely stored in our insured facilities. We track each item\'s location and status to ensure its safety throughout the loan period.',
+      icon: Icons.verified_user,
+      iconColor: RealTimeColors.success,
     ),
     FaqItem(
       category: 'Default & Recovery',
@@ -114,7 +131,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'We work with you! Options include:\n1. Loan restructuring (extend period)\n2. Partial payment arrangements\n3. Additional collateral top-up\n4. Voluntary surrender of collateral\nIf no arrangement, collateral goes to auction. Any surplus after loan clearance is returned to you!',
       icon: Icons.help_outline,
-      iconColor: Colors.brown,
+      iconColor: RealTimeColors.error,
     ),
     FaqItem(
       category: 'Mobile Features',
@@ -122,7 +139,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'FULL-SERVICE FINANCE APP:\n✓ Apply for loans & track progress\n✓ Make payments & view statements\n✓ Browse & bid in live auctions\n✓ Sell items via auction\n✓ Track collateral status\n✓ Schedule branch visits\n✓ Chat with loan officers\n✓ Get market value alerts\nAll in one secure platform!',
       icon: Icons.phone_iphone,
-      iconColor: Colors.deepPurple,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Contact & Support',
@@ -130,7 +147,7 @@ class _FaqScreenState extends State<FaqScreen>
       answer:
           'Multiple support channels:\n• IN-APP CHAT: 24/7 with loan officers\n• CALL: 0700 000 000 / 0722 000 000\n• WHATSAPP: +254 700 000 000\n• EMAIL: support@realtimecapital.co.ke\n• BRANCHES: Nairobi, Mombasa, Kisumu, Nakuru\n• SOCIAL: @RealTimeCapitalKE\nAverage response time: 15 minutes!',
       icon: Icons.headset_mic,
-      iconColor: Colors.cyan,
+      iconColor: RealTimeColors.warning,
     ),
   ];
 
@@ -190,7 +207,7 @@ class _FaqScreenState extends State<FaqScreen>
       expandedHeight: 250,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF1A237E), // Deep blue for finance
+      backgroundColor: RealTimeColors.primaryGreen, // CHANGED THIS
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           'Real Time Capital FAQ',
@@ -201,14 +218,14 @@ class _FaqScreenState extends State<FaqScreen>
           ),
         ),
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF1A237E), // Dark blue
-                Color(0xFF283593), // Medium blue
-                Color(0xFF5C6BC0), // Light blue
+                RealTimeColors.primaryGreen, // CHANGED THIS
+                RealTimeColors.darkGreen, // CHANGED THIS
+                RealTimeColors.primaryGreen.withOpacity(0.7), // CHANGED THIS
               ],
             ),
           ),
@@ -220,7 +237,7 @@ class _FaqScreenState extends State<FaqScreen>
                 child: Opacity(
                   opacity: 0.1,
                   child: Lottie.asset(
-                    'assets/animations/finance.json', // Add finance animation
+                    'assets/animations/finance.json',
                     width: 200,
                     height: 200,
                   ),
@@ -291,17 +308,26 @@ class _FaqScreenState extends State<FaqScreen>
             borderRadius: BorderRadius.circular(15),
             boxShadow: [
               BoxShadow(
-                color: Colors.blue.withOpacity(0.1),
+                color: RealTimeColors.primaryGreen.withOpacity(
+                  0.1,
+                ), // CHANGED THIS
                 blurRadius: 15,
                 offset: const Offset(0, 4),
                 spreadRadius: 1,
               ),
             ],
-            border: Border.all(color: Colors.blue.shade100, width: 1.5),
+            border: Border.all(
+              color: RealTimeColors.primaryGreen.withOpacity(0.3),
+              width: 1.5,
+            ), // CHANGED THIS
           ),
           child: Row(
             children: [
-              Icon(Icons.search, color: Colors.blue.shade600, size: 24),
+              Icon(
+                Icons.search,
+                color: RealTimeColors.primaryGreen,
+                size: 24,
+              ), // CHANGED THIS
               const SizedBox(width: 12),
               Expanded(
                 child: TextField(
@@ -327,7 +353,7 @@ class _FaqScreenState extends State<FaqScreen>
                 IconButton(
                   icon: Icon(
                     Icons.clear,
-                    color: Colors.blue.shade600,
+                    color: RealTimeColors.primaryGreen, // CHANGED THIS
                     size: 22,
                   ),
                   onPressed: () {
@@ -350,13 +376,29 @@ class _FaqScreenState extends State<FaqScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          _buildStatCard('3 Loan Types', Icons.diversity_3, Colors.blue),
+          _buildStatCard(
+            '3 Loan Types',
+            Icons.diversity_3,
+            RealTimeColors.primaryGreen,
+          ), // CHANGED THIS
           const SizedBox(width: 10),
-          _buildStatCard('Instant Approval', Icons.bolt, Colors.amber),
+          _buildStatCard(
+            'Instant Approval',
+            Icons.bolt,
+            RealTimeColors.success,
+          ), // CHANGED THIS
           const SizedBox(width: 10),
-          _buildStatCard('Live Auctions', Icons.gavel, Colors.red),
+          _buildStatCard(
+            'Live Auctions',
+            Icons.gavel,
+            RealTimeColors.error,
+          ), // CHANGED THIS
           const SizedBox(width: 10),
-          _buildStatCard('App Payments', Icons.payment, Colors.green),
+          _buildStatCard(
+            'App Payments',
+            Icons.payment,
+            RealTimeColors.primaryGreen,
+          ), // CHANGED THIS
         ],
       ),
     ).animate(delay: 100.ms).fadeIn(duration: 300.ms);
@@ -477,17 +519,19 @@ class _FaqScreenState extends State<FaqScreen>
   Color _getCategoryColor(String category) {
     switch (category) {
       case 'Loan Products':
-        return Colors.blue;
+        return RealTimeColors.primaryGreen; // CHANGED THIS
       case 'Loan Application':
-        return Colors.green;
+        return RealTimeColors.success; // CHANGED THIS
       case 'Collateral Process':
-        return Colors.orange;
+        return RealTimeColors.warning; // CHANGED THIS
       case 'Loan Repayment':
-        return Colors.purple;
+        return RealTimeColors.darkGreen; // CHANGED THIS
       case 'Asset Auctions':
-        return Colors.red;
+        return RealTimeColors.error; // CHANGED THIS
+      case 'Security':
+        return RealTimeColors.success; // CHANGED THIS
       default:
-        return Colors.blue.shade600;
+        return RealTimeColors.primaryGreen; // CHANGED THIS
     }
   }
 
@@ -644,15 +688,24 @@ class _FaqScreenState extends State<FaqScreen>
       children: [
         Expanded(
           child: OutlinedButton.icon(
-            icon: Icon(Icons.chat, size: 18, color: Colors.blue),
+            icon: Icon(
+              Icons.chat,
+              size: 18,
+              color: RealTimeColors.primaryGreen,
+            ), // CHANGED THIS
             label: Text(
               'Live Chat',
-              style: TextStyle(fontSize: 13, color: Colors.blue),
+              style: TextStyle(
+                fontSize: 13,
+                color: RealTimeColors.primaryGreen,
+              ), // CHANGED THIS
             ),
             onPressed: () {},
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 10),
-              side: BorderSide(color: Colors.blue.shade300),
+              side: BorderSide(
+                color: RealTimeColors.primaryGreen.withOpacity(0.5),
+              ), // CHANGED THIS
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -666,7 +719,7 @@ class _FaqScreenState extends State<FaqScreen>
             label: Text('Call Now', style: TextStyle(fontSize: 13)),
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: RealTimeColors.success, // CHANGED THIS
               padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -687,14 +740,21 @@ class _FaqScreenState extends State<FaqScreen>
                 width: 150,
                 height: 150,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: RealTimeColors.primaryGreen.withOpacity(
+                    0.1,
+                  ), // CHANGED THIS
                   borderRadius: BorderRadius.circular(75),
-                  border: Border.all(color: Colors.blue.shade100, width: 2),
+                  border: Border.all(
+                    color: RealTimeColors.primaryGreen.withOpacity(0.2),
+                    width: 2,
+                  ), // CHANGED THIS
                 ),
                 child: Icon(
                   Icons.search_off_rounded,
                   size: 80,
-                  color: Colors.blue.shade300,
+                  color: RealTimeColors.primaryGreen.withOpacity(
+                    0.5,
+                  ), // CHANGED THIS
                 ),
               )
               .animate()
@@ -732,7 +792,7 @@ class _FaqScreenState extends State<FaqScreen>
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
+                  backgroundColor: RealTimeColors.primaryGreen, // CHANGED THIS
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 14,
@@ -763,6 +823,6 @@ class FaqItem {
     required this.question,
     required this.answer,
     required this.icon,
-    this.iconColor = Colors.blue,
+    this.iconColor = RealTimeColors.primaryGreen,
   });
 }

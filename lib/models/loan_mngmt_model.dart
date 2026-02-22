@@ -51,42 +51,61 @@ class LoanModel {
 
   String toJson() => json.encode(toMap());
 
-  factory LoanModel.fromMap(Map<String, dynamic> json) => LoanModel(
-    id: json["_id"] ?? '',
-    loanNo: json["loan_no"] ?? '',
-    customerUser: CustomerUser.fromMap(json["customer_user"] ?? {}),
-    application: json["application"],
-    asset: json["asset"],
-    collateralCategory: json["collateral_category"] ?? '',
-    principalAmount: (json["principal_amount"] as num?)?.toDouble() ?? 0.0,
-    currentBalance: (json["current_balance"] as num?)?.toDouble() ?? 0.0,
-    currency: json["currency"] ?? 'USD',
-    interestRatePercent:
-        (json["interest_rate_percent"] as num?)?.toDouble() ?? 0.0,
-    interestPeriodDays: json["interest_period_days"] ?? 0,
-    storageChargePercent:
-        (json["storage_charge_percent"] as num?)?.toDouble() ?? 0.0,
-    penaltyPercent: (json["penalty_percent"] as num?)?.toDouble() ?? 0.0,
-    graceDays: json["grace_days"] ?? 0,
-    startDate: json["start_date"] != null
-        ? DateTime.parse(json["start_date"])
-        : DateTime.now(),
-    dueDate: json["due_date"] != null
-        ? DateTime.parse(json["due_date"])
-        : DateTime.now(),
-    status: json["status"] ?? 'active',
-    attachments: json["attachments"] ?? [],
-    // FIX: created_by is an object, not a string. Extract the email or convert to string
-    createdBy: json["created_by"] is Map
-        ? (json["created_by"]["email"] ?? json["created_by"]["_id"] ?? '')
-        : (json["created_by"]?.toString() ?? ''),
-    createdAt: json["created_at"] != null
-        ? DateTime.parse(json["created_at"])
-        : DateTime.now(),
-    updatedAt: json["updated_at"] != null
-        ? DateTime.parse(json["updated_at"])
-        : DateTime.now(),
-  );
+  factory LoanModel.fromMap(Map<String, dynamic> json) {
+    // Handle customer_user - it could be a String (ID) or a Map (populated)
+    CustomerUser parsedCustomerUser;
+
+    if (json["customer_user"] is Map) {
+      // If it's a Map, parse it normally
+      parsedCustomerUser = CustomerUser.fromMap(json["customer_user"]);
+    } else {
+      // If it's just a String ID, create a minimal CustomerUser with just the ID
+      parsedCustomerUser = CustomerUser(
+        id: json["customer_user"]?.toString() ?? '',
+        email: '',
+        phone: '',
+        firstName: '',
+        lastName: '',
+      );
+    }
+
+    return LoanModel(
+      id: json["_id"] ?? '',
+      loanNo: json["loan_no"] ?? '',
+      customerUser: parsedCustomerUser,
+      application: json["application"],
+      asset: json["asset"],
+      collateralCategory: json["collateral_category"] ?? '',
+      principalAmount: (json["principal_amount"] as num?)?.toDouble() ?? 0.0,
+      currentBalance: (json["current_balance"] as num?)?.toDouble() ?? 0.0,
+      currency: json["currency"] ?? 'USD',
+      interestRatePercent:
+          (json["interest_rate_percent"] as num?)?.toDouble() ?? 0.0,
+      interestPeriodDays: json["interest_period_days"] ?? 0,
+      storageChargePercent:
+          (json["storage_charge_percent"] as num?)?.toDouble() ?? 0.0,
+      penaltyPercent: (json["penalty_percent"] as num?)?.toDouble() ?? 0.0,
+      graceDays: json["grace_days"] ?? 0,
+      startDate: json["start_date"] != null
+          ? DateTime.parse(json["start_date"])
+          : DateTime.now(),
+      dueDate: json["due_date"] != null
+          ? DateTime.parse(json["due_date"])
+          : DateTime.now(),
+      status: json["status"] ?? 'active',
+      attachments: json["attachments"] ?? [],
+      // Handle created_by - it could be a Map or a String
+      createdBy: json["created_by"] is Map
+          ? (json["created_by"]["email"] ?? json["created_by"]["_id"] ?? '')
+          : (json["created_by"]?.toString() ?? ''),
+      createdAt: json["created_at"] != null
+          ? DateTime.parse(json["created_at"])
+          : DateTime.now(),
+      updatedAt: json["updated_at"] != null
+          ? DateTime.parse(json["updated_at"])
+          : DateTime.now(),
+    );
+  }
 
   Map<String, dynamic> toMap() => {
     "_id": id,
@@ -113,10 +132,19 @@ class LoanModel {
   };
 
   // Helper getters
-  String get customerName =>
-      '${customerUser.firstName} ${customerUser.lastName}';
-  String get customerEmail => customerUser.email;
-  String get customerPhone => customerUser.phone;
+  String get customerName {
+    if (customerUser.firstName.isNotEmpty || customerUser.lastName.isNotEmpty) {
+      return '${customerUser.firstName} ${customerUser.lastName}'.trim();
+    }
+    return 'Customer ${customerUser.id.substring(0, 8)}...';
+  }
+
+  String get customerEmail =>
+      customerUser.email.isNotEmpty ? customerUser.email : 'No email';
+
+  String get customerPhone =>
+      customerUser.phone.isNotEmpty ? customerUser.phone : 'No phone';
+
   String get formattedPrincipalAmount =>
       '$currency ${principalAmount.toStringAsFixed(2)}';
   String get formattedCurrentBalance =>

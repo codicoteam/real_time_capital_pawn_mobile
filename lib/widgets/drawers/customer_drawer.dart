@@ -126,7 +126,6 @@ class CustomDrawer extends StatelessWidget {
                     color: RealTimeColors.primaryGreen,
                     onTap: () => _navigateAndClose(context, '/about'),
                   ).animate().fadeIn(delay: 300.ms),
-
                   // Loans
                   _buildDrawerItem(
                     icon: Icons.account_balance_wallet_outlined,
