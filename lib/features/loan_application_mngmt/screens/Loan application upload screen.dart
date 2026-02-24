@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/screens/asset_upload_section.dart'
     show UploadedAsset, AssetUploadSection;
@@ -376,7 +378,7 @@ class _LoanApplicationUploadScreenState
                     },
                   ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
 
                   // Refresh Button
                   if (_uploadedAssets.isNotEmpty)
@@ -384,7 +386,7 @@ class _LoanApplicationUploadScreenState
                       child: CustomButton(
                         btnColor: AppColors.surfaceColor,
                         borderRadius: 12,
-                        width: 200, // ✅ ADDED width parameter
+                        width: 250, // ✅ ADDED width parameter
                         onTap: _fetchExistingAttachments,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -748,8 +750,7 @@ class _LoanApplicationUploadScreenState
             borderRadius: 12,
             width: double.infinity,
             onTap: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to main screen
+              Get.offAllNamed(RoutesHelper.main_home_page);
             },
             child: Text(
               'Done',

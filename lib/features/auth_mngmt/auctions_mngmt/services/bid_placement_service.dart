@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
-import '../../../../config/api_config/api_keys.dart';
-import '../../../../core/utils/api_response.dart';
-import '../../../../core/utils/shared_pref_methods.dart';
+import '../../../../../config/api_config/api_keys.dart';
+import '../../../../../core/utils/api_response.dart';
+import '../../../../../core/utils/shared_pref_methods.dart';
 
 class BidPlacementService {
   /// PLACE A BID ON AN AUCTION

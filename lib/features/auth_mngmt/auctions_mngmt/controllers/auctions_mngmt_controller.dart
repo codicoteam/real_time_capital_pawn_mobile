@@ -1,9 +1,9 @@
 // auctions_mngmt_controller.dart
 import 'package:get/get.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
+import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/services/auctions_mngmt_service.dart';
 
 import 'package:real_time_pawn/models/auction_models.dart';
-import '../../../core/utils/logs.dart';
+import '../../../../core/utils/logs.dart';
 
 class AuctionsController extends GetxController {
   var isLoading = false.obs;

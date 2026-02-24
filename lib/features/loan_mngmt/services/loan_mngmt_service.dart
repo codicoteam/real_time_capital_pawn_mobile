@@ -382,7 +382,7 @@ class LoanService {
       'paymentMethod': paymentMethod,
       if (provider != null && provider.isNotEmpty) 'provider': provider,
       if (phoneNumber != null && phoneNumber.isNotEmpty)
-        'phoneNumber': phoneNumber,
+        'payer_phone': "263"+phoneNumber,
       if (accountNumber != null && accountNumber.isNotEmpty)
         'accountNumber': accountNumber,
     });

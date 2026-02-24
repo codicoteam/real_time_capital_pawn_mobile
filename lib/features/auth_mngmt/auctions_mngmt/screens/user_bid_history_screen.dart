@@ -6,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/controllers/user_bid_history_controller.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_history_helper.dart';
+import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/controllers/user_bid_history_controller.dart';
+import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/helpers/user_bid_history_helper.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 
 class UserBiddingHistoryScreen extends StatefulWidget {

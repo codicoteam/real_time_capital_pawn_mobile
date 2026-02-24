@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
+import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 
 class AuctionBidsScreen extends StatefulWidget {
   final String auctionId;

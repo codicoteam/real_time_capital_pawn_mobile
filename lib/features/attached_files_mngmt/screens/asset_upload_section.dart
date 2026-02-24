@@ -227,7 +227,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
       final attachmentModel = await AttachmentHelper.uploadAttachment(
         entityType: widget.entityType,
         entityId: widget.entityId,
-        category: widget.selectedLoanCategory ?? 'general',
+        category:  'asset_photos',
         filename: fileName,
         mimeType: 'image/jpeg',
         storage: 'url',
