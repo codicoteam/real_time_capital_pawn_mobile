@@ -1,6 +1,6 @@
 // bid_mngmt/models/user_bid_models.dart
 import 'package:flutter/foundation.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/services/auctions_mngmt_service.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 // Import Pagination from auctions service
 

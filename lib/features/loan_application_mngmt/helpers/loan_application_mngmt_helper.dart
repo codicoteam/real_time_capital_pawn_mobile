@@ -42,7 +42,7 @@ class LoanApplicationHelper {
 
       final APIResponse<LoanApplicationModel> response = await _loanController
           .createLoanApplication(payload);
-
+      Get.back();
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }

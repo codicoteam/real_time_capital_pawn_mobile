@@ -1,8 +1,8 @@
 // lib/features/user_bids/controllers/user_bids_controller.dart
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/services/auctions_mngmt_service.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/services/user_bid_history_service.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/services/user_bid_history_service.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 
 class UserBidsController extends GetxController {

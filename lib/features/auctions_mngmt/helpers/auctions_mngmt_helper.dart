@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/helpers/search_auctions_screen.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/screens/auction_bids_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/search_auctions_screen.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 import 'package:real_time_pawn/widgets/loading_widgets/circular_loader.dart';
 

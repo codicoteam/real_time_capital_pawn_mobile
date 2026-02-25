@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
 import 'package:real_time_pawn/features/bid_mngmnt/controllers/bid_mngmt_controller.dart';
 import 'package:real_time_pawn/features/bid_mngmnt/helpers/bid_mngmt_helper.dart';
 import 'package:real_time_pawn/models/auction_models.dart';

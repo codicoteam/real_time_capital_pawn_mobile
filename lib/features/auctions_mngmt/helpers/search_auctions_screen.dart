@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
-import 'package:real_time_pawn/features/auth_mngmt/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
+import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 
 class SearchAuctionsScreen extends StatefulWidget {
