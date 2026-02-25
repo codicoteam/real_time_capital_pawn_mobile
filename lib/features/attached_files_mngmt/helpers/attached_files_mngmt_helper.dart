@@ -168,6 +168,7 @@ class AttachmentHelper {
     required String category,
     required String filename,
     required String mimeType,
+    required String storage, // ✅ ADD THIS PARAMETER
     required String url,
     required String meta,
   }) async {
@@ -183,10 +184,10 @@ class AttachmentHelper {
           .uploadAttachment(
             entityType: entityType,
             entityId: entityId,
-            category: "other",
+            category: category,
             filename: filename,
             mimeType: mimeType,
-            storage: 'url',
+            storage: storage, // ✅ PASS THE STORAGE PARAMETER
             url: url,
             signed: false,
             meta: meta,

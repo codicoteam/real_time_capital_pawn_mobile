@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lottie/lottie.dart'; // Add this to pubspec.yaml: lottie: ^2.7.0
-
-import '../../../core/utils/pallete.dart' show AppColors;
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/utils/pallete.dart' show AppColors, RealTimeColors;
 
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -14,376 +13,746 @@ class FaqScreen extends StatefulWidget {
 
 class _FaqScreenState extends State<FaqScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
+  late TabController _tabController;
   int? expandedIndex;
   String searchQuery = '';
+  String selectedCategory = 'All';
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
 
   final List<FaqItem> _faqItems = [
     FaqItem(
       category: 'Loan Products',
       question: 'What types of collateral-based loans do you offer?',
       answer:
-          'We offer three specialized collateral loans: 1) Electric Gadget Collateral Loan (smartphones, laptops, tablets), 2) Motor Vehicle Loan (cars, motorcycles), and 3) Jewellery Loan (gold, diamonds, watches). Simply bring your item to our nearest office for valuation.',
-      icon: Icons.credit_card,
-      iconColor: Colors.blue,
+          'We offer three specialized collateral loans:\n\n• Electric Gadget Loan — smartphones, laptops, tablets\n• Motor Vehicle Loan — cars, motorcycles\n• Jewellery Loan — gold, diamonds, watches\n\nSimply bring your item to our nearest office for valuation.',
+      icon: Icons.credit_card_rounded,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Loan Application',
       question: 'How do I apply for a loan through the app?',
       answer:
           '1. Download the Real Time Capital app\n2. Complete registration with your details\n3. Select "Apply for Loan" and choose loan type\n4. Book an appointment at your nearest branch\n5. Bring your collateral item for valuation\n6. Receive instant approval & funds transfer',
-      icon: Icons.app_registration,
-      iconColor: Colors.green,
+      icon: Icons.app_registration_rounded,
+      iconColor: RealTimeColors.success,
     ),
     FaqItem(
       category: 'Collateral Process',
       question: 'What happens to my collateral item?',
       answer:
           'Your collateral is securely stored in our insured vault facilities. We provide you with a detailed receipt and storage certificate. You can track your item status in the app. All items are professionally maintained and insured for their full value during the loan period.',
-      icon: Icons.security,
-      iconColor: Colors.orange,
+      icon: Icons.security_rounded,
+      iconColor: RealTimeColors.warning,
     ),
     FaqItem(
       category: 'Loan Repayment',
       question: 'How do I repay my loan through the app?',
       answer:
-          'Repayments are seamless in our app! Go to "My Loans" → Select active loan → Tap "Make Payment" → Choose payment method (Mobile Money, Bank Transfer, or Card) → Enter amount → Confirm. You\'ll receive instant confirmation and updated loan statement. Early payments are welcomed with no penalties!',
-      icon: Icons.payment,
-      iconColor: Colors.purple,
+          'Repayments are seamless in our app!\n\nGo to "My Loans" → Select active loan → Tap "Make Payment" → Choose payment method (Mobile Money, Bank Transfer, or Card) → Enter amount → Confirm.\n\nYou\'ll receive instant confirmation and an updated loan statement. Early payments are welcomed with no penalties!',
+      icon: Icons.payment_rounded,
+      iconColor: RealTimeColors.darkGreen,
+    ),
+    FaqItem(
+      category: 'Loan Repayment',
+      question: 'Can I pay off my loan early?',
+      answer:
+          'Yes, you can settle your loan early. Please contact customer support for any early settlement terms that may apply.',
+      icon: Icons.paid_rounded,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Asset Auctions',
       question: 'How do auctions work in the app?',
       answer:
-          'Our live auctions let you buy quality items at great prices! Browse available assets → View detailed photos & descriptions → Place your bid → Get notified if outbid → Win the auction → Collect item from our office. Auctions refresh daily with new collateral items.',
-      icon: Icons.gavel,
-      iconColor: Colors.red,
+          'Our live auctions let you buy quality items at great prices!\n\nBrowse available assets → View detailed photos & descriptions → Place your bid → Get notified if outbid → Win the auction → Collect item from our office.\n\nAuctions refresh daily with new collateral items.',
+      icon: Icons.gavel_rounded,
+      iconColor: RealTimeColors.error,
     ),
     FaqItem(
       category: 'Valuation Process',
       question: 'How is my collateral valued?',
       answer:
-          'Our certified valuers use market data and condition assessment:\n• Gadgets: Brand, model, condition, market demand\n• Vehicles: Year, mileage, condition, service history\n• Jewellery: Karat purity, weight, gem quality, craftsmanship\nYou receive a transparent valuation report in the app.',
-      icon: Icons.assessment,
-      iconColor: Colors.teal,
+          'Our certified valuers use market data and condition assessment:\n\n• Gadgets: Brand, model, condition, market demand\n• Vehicles: Year, mileage, condition, service history\n• Jewellery: Karat purity, weight, gem quality, craftsmanship\n\nYou receive a transparent valuation report in the app.',
+      icon: Icons.assessment_rounded,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Loan Amounts',
       question: 'How much can I borrow against my collateral?',
       answer:
-          'Loan amounts vary by collateral type:\n• Electronics: 40-60% of current market value\n• Vehicles: 50-70% of valuation\n• Jewellery: 60-80% of gold/metal value\nExample: A Ksh 100,000 smartphone can secure Ksh 40,000-60,000 instantly.',
-      icon: Icons.attach_money,
-      iconColor: Colors.amber,
+          'Loan amounts vary by collateral type:\n\n• Electronics: 40–60% of current market value\n• Vehicles: 50–70% of valuation\n• Jewellery: 60–80% of gold/metal value\n\nExample: A \$100,000 smartphone can secure \$40,000–\$60,000 instantly.',
+      icon: Icons.attach_money_rounded,
+      iconColor: RealTimeColors.success,
     ),
     FaqItem(
       category: 'Interest & Fees',
       question: 'What are the interest rates and fees?',
       answer:
-          'We offer competitive rates:\n• Monthly interest: 3-5% depending on loan type\n• Processing fee: 2% of loan amount (one-time)\n• Storage fee: 1% monthly for physical storage\n• No hidden charges! All fees displayed upfront in app.\nEarly repayment discounts available!',
-      icon: Icons.account_balance_wallet,
-      iconColor: Colors.indigo,
+          'We offer competitive rates:\n\n• Monthly interest: 3–5% depending on loan type\n• Processing fee: 2% of loan amount (one-time)\n• Storage fee: 1% monthly for physical storage\n• No hidden charges! All fees displayed upfront in app.\n\nEarly repayment discounts available!',
+      icon: Icons.account_balance_wallet_rounded,
+      iconColor: RealTimeColors.darkGreen,
     ),
     FaqItem(
-      category: 'Auction Participation',
+      category: 'Asset Auctions',
       question: 'Can I auction items without taking a loan?',
       answer:
-          'Absolutely! Our "Sell via Auction" feature lets you:\n1. List items for auction (we handle valuation)\n2. Set minimum reserve price\n3. Items displayed to thousands of buyers\n4. We handle payments & security\n5. Receive proceeds minus 10% commission\nGreat for quick cash without loans!',
-      icon: Icons.storefront,
-      iconColor: Colors.deepOrange,
+          'Absolutely! Our "Sell via Auction" feature lets you:\n\n1. List items for auction (we handle valuation)\n2. Set minimum reserve price\n3. Items displayed to thousands of buyers\n4. We handle payments & security\n5. Receive proceeds minus 10% commission\n\nGreat for quick cash without loans!',
+      icon: Icons.storefront_rounded,
+      iconColor: RealTimeColors.warning,
     ),
     FaqItem(
-      category: 'Loan Duration',
+      category: 'Loan Amounts',
       question: 'How long are the loan repayment periods?',
       answer:
-          'Flexible terms tailored to your needs:\n• Short-term: 1-3 months (electronics)\n• Medium-term: 3-12 months (vehicles)\n• Long-term: 6-24 months (jewellery)\nYou can extend the period in-app with a simple fee. Automatic reminders before due dates.',
-      icon: Icons.calendar_today,
-      iconColor: Colors.blueGrey,
+          'Flexible terms tailored to your needs:\n\n• Short-term: 1–3 months (electronics)\n• Medium-term: 3–12 months (vehicles)\n• Long-term: 6–24 months (jewellery)\n\nYou can extend the period in-app with a simple fee. Automatic reminders before due dates.',
+      icon: Icons.calendar_today_rounded,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Security',
       question: 'Is my collateral safe with Real Time Capital?',
       answer:
-          'MAXIMUM SECURITY GUARANTEED:\n• 24/7 armed security at all storage facilities\n• Fireproof, climate-controlled vaults\n• Comprehensive insurance coverage\n• Digital tracking with tamper-proof seals\n• Live CCTV accessible in your app\n• Regular audit reports shared with clients',
-      icon: Icons.verified_user,
-      iconColor: Colors.green,
+          'Maximum security guaranteed:\n\n• 24/7 armed security at all storage facilities\n• Fireproof, climate-controlled vaults\n• Comprehensive insurance coverage\n• Digital tracking with tamper-proof seals\n• Regular audit reports shared with clients',
+      icon: Icons.verified_user_rounded,
+      iconColor: RealTimeColors.success,
+    ),
+    FaqItem(
+      category: 'Security',
+      question: 'Is my item safe while pawned?',
+      answer:
+          'Yes, all pawned items are securely stored in our insured facilities. We track each item\'s location and status to ensure its safety throughout the loan period.',
+      icon: Icons.lock_rounded,
+      iconColor: RealTimeColors.success,
     ),
     FaqItem(
       category: 'Default & Recovery',
       question: 'What happens if I cannot repay my loan?',
       answer:
-          'We work with you! Options include:\n1. Loan restructuring (extend period)\n2. Partial payment arrangements\n3. Additional collateral top-up\n4. Voluntary surrender of collateral\nIf no arrangement, collateral goes to auction. Any surplus after loan clearance is returned to you!',
-      icon: Icons.help_outline,
-      iconColor: Colors.brown,
+          'We work with you! Options include:\n\n1. Loan restructuring (extend period)\n2. Partial payment arrangements\n3. Additional collateral top-up\n4. Voluntary surrender of collateral\n\nIf no arrangement is reached, collateral goes to auction. Any surplus after loan clearance is returned to you!',
+      icon: Icons.help_outline_rounded,
+      iconColor: RealTimeColors.error,
     ),
     FaqItem(
       category: 'Mobile Features',
       question: 'What can I do in the Real Time Capital app?',
       answer:
-          'FULL-SERVICE FINANCE APP:\n✓ Apply for loans & track progress\n✓ Make payments & view statements\n✓ Browse & bid in live auctions\n✓ Sell items via auction\n✓ Track collateral status\n✓ Schedule branch visits\n✓ Chat with loan officers\n✓ Get market value alerts\nAll in one secure platform!',
-      icon: Icons.phone_iphone,
-      iconColor: Colors.deepPurple,
+          'Full-service finance app:\n\n✓ Apply for loans & track progress\n✓ Make payments & view statements\n✓ Browse & bid in live auctions\n✓ Sell items via auction\n✓ Track collateral status\n✓ Schedule branch visits\n✓ Chat with loan officers\n✓ Get market value alerts',
+      icon: Icons.phone_iphone_rounded,
+      iconColor: RealTimeColors.primaryGreen,
     ),
     FaqItem(
       category: 'Contact & Support',
       question: 'How do I contact customer support?',
       answer:
-          'Multiple support channels:\n• IN-APP CHAT: 24/7 with loan officers\n• CALL: 0700 000 000 / 0722 000 000\n• WHATSAPP: +254 700 000 000\n• EMAIL: support@realtimecapital.co.ke\n• BRANCHES: Nairobi, Mombasa, Kisumu, Nakuru\n• SOCIAL: @RealTimeCapitalKE\nAverage response time: 15 minutes!',
-      icon: Icons.headset_mic,
-      iconColor: Colors.cyan,
+          'Multiple support channels available:\n\n• IN-APP CHAT: 24/7 with loan officers\n• CALL: 0700 000 000 / 0722 000 000\n• WHATSAPP: +254 700 000 000\n• EMAIL: support@realtimecapital.co.zw\n• BRANCHES: Harare, Bulawayo, Mutare\n• SOCIAL: @RealTimeCapitalZW\n\nAverage response time: 15 minutes!',
+      icon: Icons.headset_mic_rounded,
+      iconColor: RealTimeColors.warning,
     ),
   ];
 
-  List<FaqItem> get filteredFaqItems {
-    if (searchQuery.isEmpty) return _faqItems;
-    return _faqItems
-        .where(
-          (item) =>
-              item.question.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              item.answer.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              item.category.toLowerCase().contains(searchQuery.toLowerCase()),
-        )
-        .toList();
+  List<String> get _categories {
+    final cats = ['All', ..._faqItems.map((e) => e.category).toSet().toList()];
+    return cats;
   }
 
-  Map<String, List<FaqItem>> get groupedFaqItems {
-    final Map<String, List<FaqItem>> grouped = {};
-    for (final item in filteredFaqItems) {
-      grouped.putIfAbsent(item.category, () => []).add(item);
+  List<FaqItem> get filteredItems {
+    var items = selectedCategory == 'All'
+        ? _faqItems
+        : _faqItems.where((e) => e.category == selectedCategory).toList();
+    if (searchQuery.isNotEmpty) {
+      items = items
+          .where(
+            (e) =>
+                e.question.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                e.answer.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                e.category.toLowerCase().contains(searchQuery.toLowerCase()),
+          )
+          .toList();
     }
-    return grouped;
+    return items;
+  }
+
+  Color _categoryColor(String category) {
+    switch (category) {
+      case 'Loan Products':
+        return RealTimeColors.primaryGreen;
+      case 'Loan Application':
+        return RealTimeColors.success;
+      case 'Collateral Process':
+        return RealTimeColors.warning;
+      case 'Loan Repayment':
+        return RealTimeColors.darkGreen;
+      case 'Asset Auctions':
+        return RealTimeColors.error;
+      case 'Security':
+        return RealTimeColors.success;
+      case 'Valuation Process':
+        return RealTimeColors.primaryGreen;
+      case 'Loan Amounts':
+        return RealTimeColors.darkGreen;
+      case 'Interest & Fees':
+        return RealTimeColors.warning;
+      case 'Default & Recovery':
+        return RealTimeColors.error;
+      case 'Mobile Features':
+        return RealTimeColors.primaryGreen;
+      case 'Contact & Support':
+        return RealTimeColors.warning;
+      default:
+        return RealTimeColors.primaryGreen;
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
+    _tabController = TabController(length: _categories.length, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {
+          selectedCategory = _categories[_tabController.index];
+          expandedIndex = null;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _tabController.dispose();
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildQuickStats()),
-          _buildFaqContent(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSliverAppBar() {
-    return SliverAppBar(
-      expandedHeight: 250,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF1A237E), // Deep blue for finance
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          'Real Time Capital FAQ',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1A237E), // Dark blue
-                Color(0xFF283593), // Medium blue
-                Color(0xFF5C6BC0), // Light blue
-              ],
-            ),
-          ),
-          child: Stack(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundColor,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            _buildSliverAppBar(innerBoxIsScrolled),
+          ],
+          body: Column(
             children: [
-              Positioned(
-                right: 20,
-                top: 60,
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Lottie.asset(
-                    'assets/animations/finance.json', // Add finance animation
-                    width: 200,
-                    height: 200,
-                  ),
-                ),
-              ),
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(color: Colors.white30, width: 2),
-                          ),
-                          child: Icon(
-                            Icons.quiz_rounded,
-                            size: 60,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        )
-                        .animate()
-                        .scale(duration: 600.ms, curve: Curves.elasticOut)
-                        .fadeIn(duration: 400.ms),
-                    const SizedBox(height: 16),
-                    Text(
-                          'Instant Collateral Loans & Auctions',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        )
-                        .animate(delay: 200.ms)
-                        .slideY(
-                          begin: 0.5,
-                          duration: 500.ms,
-                          curve: Curves.easeOut,
-                        )
-                        .fadeIn(duration: 400.ms),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Your assets. Your money. Real time.',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                      ),
-                    ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
-                  ],
-                ),
-              ),
+              _buildSearchBar(),
+              _buildCategoryTabs(),
+              Expanded(child: _buildFaqList()),
             ],
           ),
         ),
       ),
     );
   }
+
+  // ─── SLIVER APP BAR ──────────────────────────────────────────────────────────
+
+  Widget _buildSliverAppBar(bool innerBoxIsScrolled) {
+    return SliverAppBar(
+      expandedHeight: 220,
+      floating: false,
+      pinned: true,
+      forceElevated: innerBoxIsScrolled,
+      backgroundColor: RealTimeColors.primaryGreen,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
+      ),
+      actions: [
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          onPressed: () {},
+          tooltip: 'Live Chat',
+        ),
+        const SizedBox(width: 8),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        title: Text(
+          'Help & FAQ',
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        background: _buildHeroBg(),
+      ),
+    );
+  }
+
+  Widget _buildHeroBg() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [RealTimeColors.primaryGreen, RealTimeColors.darkGreen],
+          stops: [0.2, 1.0],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Decorative blobs
+          Positioned(
+            right: -40,
+            top: -20,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -30,
+            bottom: 10,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 50,
+            bottom: 40,
+            child: Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.07),
+              ),
+            ),
+          ),
+          // Hero content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 60),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Icon badge
+                  Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.quiz_rounded,
+                          size: 38,
+                          color: Colors.white.withOpacity(0.95),
+                        ),
+                      )
+                      .animate()
+                      .scale(duration: 600.ms, curve: Curves.elasticOut)
+                      .fadeIn(duration: 400.ms),
+                  const SizedBox(width: 18),
+                  // Text column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                              'How can we help?',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
+                              ),
+                            )
+                            .animate(delay: 150.ms)
+                            .slideX(
+                              begin: 0.2,
+                              duration: 500.ms,
+                              curve: Curves.easeOut,
+                            )
+                            .fadeIn(duration: 400.ms),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${_faqItems.length} answers to your questions',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ).animate(delay: 250.ms).fadeIn(duration: 400.ms),
+                        const SizedBox(height: 10),
+                        // Quick stat pills
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            _heroPill(Icons.bolt_rounded, 'Instant Approval'),
+                            _heroPill(Icons.gavel_rounded, 'Live Auctions'),
+                          ],
+                        ).animate(delay: 350.ms).fadeIn(duration: 400.ms),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroPill(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: Colors.white.withOpacity(0.9)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── SEARCH BAR ──────────────────────────────────────────────────────────────
 
   Widget _buildSearchBar() {
     return Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 4),
-                spreadRadius: 1,
-              ),
-            ],
-            border: Border.all(color: Colors.blue.shade100, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.search, color: Colors.blue.shade600, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
+      color: AppColors.backgroundColor,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child:
+          Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _searchFocus.hasFocus
+                        ? RealTimeColors.primaryGreen
+                        : AppColors.borderColor,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: RealTimeColors.primaryGreen.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: TextField(
                   controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search loans, auctions, payments...',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  focusNode: _searchFocus,
+                  onChanged: (v) => setState(() {
+                    searchQuery = v;
+                    expandedIndex = null;
+                  }),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.textColor,
                   ),
-                  style: TextStyle(
-                    color: Colors.grey.shade800,
-                    fontWeight: FontWeight.w500,
+                  decoration: InputDecoration(
+                    hintText: 'Search questions, topics…',
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: AppColors.subtextColor.withOpacity(0.6),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: RealTimeColors.primaryGreen,
+                    ),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: AppColors.subtextColor,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                searchQuery = '';
+                                expandedIndex = null;
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 4,
+                    ),
+                  ),
+                ),
+              )
+              .animate()
+              .slideY(begin: -0.15, duration: 400.ms, curve: Curves.easeOut)
+              .fadeIn(duration: 300.ms),
+    );
+  }
+
+  // ─── CATEGORY TABS ───────────────────────────────────────────────────────────
+
+  Widget _buildCategoryTabs() {
+    return Container(
+      color: AppColors.backgroundColor,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _categories.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, i) {
+            final cat = _categories[i];
+            final isSelected = selectedCategory == cat;
+            final color = cat == 'All'
+                ? RealTimeColors.primaryGreen
+                : _categoryColor(cat);
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  selectedCategory = cat;
+                  expandedIndex = null;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? color : AppColors.surfaceColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? color : AppColors.borderColor,
+                    width: 1.2,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: color.withOpacity(0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Text(
+                  cat,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? Colors.white : AppColors.subtextColor,
                   ),
                 ),
               ),
-              if (searchQuery.isNotEmpty)
-                IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: Colors.blue.shade600,
-                    size: 22,
-                  ),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      searchQuery = '';
-                    });
-                  },
-                ),
-            ],
-          ),
-        )
-        .animate()
-        .slideY(begin: -0.2, duration: 400.ms, curve: Curves.easeOut)
-        .fadeIn(duration: 300.ms);
+            );
+          },
+        ),
+      ),
+    );
   }
 
-  Widget _buildQuickStats() {
+  // ─── FAQ LIST ────────────────────────────────────────────────────────────────
+
+  Widget _buildFaqList() {
+    final items = filteredItems;
+
+    if (items.isEmpty) return _buildEmptyState();
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        final globalIndex = _faqItems.indexOf(item);
+        return _buildFaqCard(item, globalIndex, index)
+            .animate(delay: Duration(milliseconds: index * 50))
+            .fadeIn(duration: 300.ms)
+            .slideY(begin: 0.08);
+      },
+    );
+  }
+
+  Widget _buildFaqCard(FaqItem item, int globalIndex, int listIndex) {
+    final isExpanded = expandedIndex == globalIndex;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          _buildStatCard('3 Loan Types', Icons.diversity_3, Colors.blue),
-          const SizedBox(width: 10),
-          _buildStatCard('Instant Approval', Icons.bolt, Colors.amber),
-          const SizedBox(width: 10),
-          _buildStatCard('Live Auctions', Icons.gavel, Colors.red),
-          const SizedBox(width: 10),
-          _buildStatCard('App Payments', Icons.payment, Colors.green),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isExpanded
+              ? item.iconColor.withOpacity(0.5)
+              : AppColors.borderColor,
+          width: isExpanded ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isExpanded
+                ? item.iconColor.withOpacity(0.08)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: isExpanded ? 20 : 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
-    ).animate(delay: 100.ms).fadeIn(duration: 300.ms);
-  }
-
-  Widget _buildStatCard(String title, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1),
-        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
         child: Column(
           children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
+            // Question row
+            InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  expandedIndex = isExpanded ? null : globalIndex;
+                });
+              },
+              borderRadius: BorderRadius.circular(18),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Icon
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: item.iconColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(
+                          color: item.iconColor.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(item.icon, color: item.iconColor, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    // Question
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Category chip
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: item.iconColor.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              item.category,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: item.iconColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            item.question,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textColor,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Expand toggle
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isExpanded
+                            ? item.iconColor.withOpacity(0.12)
+                            : AppColors.backgroundColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: AnimatedRotation(
+                        duration: const Duration(milliseconds: 250),
+                        turns: isExpanded ? 0.5 : 0.0,
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: isExpanded
+                              ? item.iconColor
+                              : AppColors.subtextColor,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
+            ),
+
+            // Answer section
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: _buildAnswerSection(item),
+              crossFadeState: isExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 280),
+              sizeCurve: Curves.easeInOut,
             ),
           ],
         ),
@@ -391,270 +760,88 @@ class _FaqScreenState extends State<FaqScreen>
     );
   }
 
-  Widget _buildFaqContent() {
-    if (filteredFaqItems.isEmpty) {
-      return SliverToBoxAdapter(child: _buildEmptyState());
-    }
-
-    return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final categories = groupedFaqItems.keys.toList();
-        final category = categories[index];
-        final items = groupedFaqItems[category]!;
-
-        return _buildCategorySection(category, items, index);
-      }, childCount: groupedFaqItems.keys.length),
+  Widget _buildAnswerSection(FaqItem item) {
+    final isContact = item.category == 'Contact & Support';
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: item.iconColor.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: item.iconColor.withOpacity(0.12), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // "Answer" label
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: item.iconColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Answer',
+                style: GoogleFonts.poppins(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: item.iconColor,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            item.answer,
+            style: GoogleFonts.poppins(
+              fontSize: 13.5,
+              color: AppColors.subtextColor,
+              height: 1.65,
+            ),
+          ),
+          if (isContact) ...[
+            const SizedBox(height: 16),
+            _buildContactButtons(item.iconColor),
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _buildCategorySection(
-    String category,
-    List<FaqItem> items,
-    int sectionIndex,
-  ) {
-    return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    height: 24,
-                    width: 5,
-                    decoration: BoxDecoration(
-                      color: _getCategoryColor(category),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      category,
-                      style: TextStyle(
-                        color: Colors.grey.shade800,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getCategoryColor(category).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${items.length} FAQs',
-                      style: TextStyle(
-                        color: _getCategoryColor(category),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ...items.asMap().entries.map((entry) {
-                final itemIndex = entry.key;
-                final item = entry.value;
-                final globalIndex = _faqItems.indexOf(item);
-
-                return _buildFaqItem(item, globalIndex, itemIndex * 100);
-              }),
-            ],
-          ),
-        )
-        .animate(delay: (sectionIndex * 100).ms)
-        .slideX(begin: 0.1, duration: 400.ms, curve: Curves.easeOut)
-        .fadeIn(duration: 300.ms);
-  }
-
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Loan Products':
-        return Colors.blue;
-      case 'Loan Application':
-        return Colors.green;
-      case 'Collateral Process':
-        return Colors.orange;
-      case 'Loan Repayment':
-        return Colors.purple;
-      case 'Asset Auctions':
-        return Colors.red;
-      default:
-        return Colors.blue.shade600;
-    }
-  }
-
-  Widget _buildFaqItem(FaqItem item, int index, int delay) {
-    final isExpanded = expandedIndex == index;
-
-    return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.15),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: 1,
-              ),
-            ],
-            border: Border.all(
-              color: isExpanded ? item.iconColor : Colors.grey.shade200,
-              width: isExpanded ? 1.5 : 1,
-            ),
-          ),
-          child: Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              leading: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      item.iconColor.withOpacity(0.2),
-                      item.iconColor.withOpacity(0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: item.iconColor.withOpacity(0.3)),
-                ),
-                child: Icon(item.icon, color: item.iconColor, size: 26),
-              ),
-              title: Text(
-                item.question,
-                style: TextStyle(
-                  color: Colors.grey.shade900,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                ),
-              ),
-              trailing: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isExpanded
-                      ? item.iconColor.withOpacity(0.1)
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: AnimatedRotation(
-                  duration: const Duration(milliseconds: 300),
-                  turns: isExpanded ? 0.5 : 0,
-                  child: Icon(
-                    Icons.expand_more_rounded,
-                    color: isExpanded ? item.iconColor : Colors.grey.shade600,
-                  ),
-                ),
-              ),
-              onExpansionChanged: (expanded) {
-                setState(() {
-                  expandedIndex = expanded ? index : null;
-                });
-                if (expanded) {
-                  HapticFeedback.lightImpact();
-                }
-              },
-              children: [
-                Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      margin: const EdgeInsets.only(
-                        top: 8,
-                        left: 16,
-                        right: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: item.iconColor.withOpacity(0.03),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: item.iconColor.withOpacity(0.1),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline_rounded,
-                                size: 18,
-                                color: item.iconColor,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Detailed Answer',
-                                style: TextStyle(
-                                  color: item.iconColor,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            item.answer,
-                            style: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontSize: 15,
-                              height: 1.6,
-                            ),
-                          ),
-                          if (item.question.contains('contact') ||
-                              item.question.contains('support'))
-                            const SizedBox(height: 16),
-                          if (item.question.contains('contact') ||
-                              item.question.contains('support'))
-                            _buildContactButtons(),
-                        ],
-                      ),
-                    )
-                    .animate()
-                    .slideY(
-                      begin: -0.2,
-                      duration: 300.ms,
-                      curve: Curves.easeOut,
-                    )
-                    .fadeIn(duration: 250.ms),
-              ],
-            ),
-          ),
-        )
-        .animate(delay: delay.ms)
-        .slideX(begin: 0.1, duration: 400.ms, curve: Curves.easeOut)
-        .fadeIn(duration: 300.ms);
-  }
-
-  Widget _buildContactButtons() {
+  Widget _buildContactButtons(Color color) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
-            icon: Icon(Icons.chat, size: 18, color: Colors.blue),
+            icon: Icon(
+              Icons.chat_rounded,
+              size: 16,
+              color: RealTimeColors.primaryGreen,
+            ),
             label: Text(
               'Live Chat',
-              style: TextStyle(fontSize: 13, color: Colors.blue),
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: RealTimeColors.primaryGreen,
+              ),
             ),
             onPressed: () {},
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              side: BorderSide(color: Colors.blue.shade300),
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              side: BorderSide(
+                color: RealTimeColors.primaryGreen.withOpacity(0.5),
+                width: 1.2,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
@@ -662,14 +849,26 @@ class _FaqScreenState extends State<FaqScreen>
         const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton.icon(
-            icon: Icon(Icons.call, size: 18, color: Colors.white),
-            label: Text('Call Now', style: TextStyle(fontSize: 13)),
+            icon: const Icon(
+              Icons.phone_rounded,
+              size: 16,
+              color: Colors.white,
+            ),
+            label: Text(
+              'Call Now',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              backgroundColor: RealTimeColors.primaryGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
@@ -678,78 +877,102 @@ class _FaqScreenState extends State<FaqScreen>
     );
   }
 
+  // ─── EMPTY STATE ─────────────────────────────────────────────────────────────
+
   Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        children: [
-          Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(75),
-                  border: Border.all(color: Colors.blue.shade100, width: 2),
-                ),
-                child: Icon(
-                  Icons.search_off_rounded,
-                  size: 80,
-                  color: Colors.blue.shade300,
-                ),
-              )
-              .animate()
-              .scale(duration: 600.ms, curve: Curves.elasticOut)
-              .fadeIn(duration: 400.ms),
-          const SizedBox(height: 24),
-          Text(
-                'No matches found',
-                style: TextStyle(
-                  color: Colors.grey.shade900,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                ),
-              )
-              .animate(delay: 200.ms)
-              .slideY(begin: 0.3, duration: 400.ms, curve: Curves.easeOut)
-              .fadeIn(duration: 300.ms),
-          const SizedBox(height: 12),
-          Text(
-                'Try searching for "loan application", "auction", "payment", or "collateral"',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-              )
-              .animate(delay: 400.ms)
-              .slideY(begin: 0.3, duration: 400.ms, curve: Curves.easeOut)
-              .fadeIn(duration: 300.ms),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-                icon: Icon(Icons.explore, size: 18),
-                label: Text('Browse All Categories'),
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() {
-                    searchQuery = '';
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: RealTimeColors.primaryGreen.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: RealTimeColors.primaryGreen.withOpacity(0.2),
+                      width: 2,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  child: Icon(
+                    Icons.search_off_rounded,
+                    size: 52,
+                    color: RealTimeColors.primaryGreen.withOpacity(0.5),
                   ),
-                ),
-              )
-              .animate(delay: 600.ms)
-              .scale(duration: 400.ms, curve: Curves.easeOutBack)
-              .fadeIn(duration: 300.ms),
-        ],
+                )
+                .animate()
+                .scale(duration: 600.ms, curve: Curves.elasticOut)
+                .fadeIn(duration: 400.ms),
+            const SizedBox(height: 24),
+            Text(
+                  'No results found',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textColor,
+                  ),
+                )
+                .animate(delay: 200.ms)
+                .slideY(begin: 0.3, duration: 400.ms)
+                .fadeIn(duration: 300.ms),
+            const SizedBox(height: 8),
+            Text(
+                  'Try a different keyword or browse all categories.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5,
+                    color: AppColors.subtextColor,
+                    height: 1.5,
+                  ),
+                )
+                .animate(delay: 300.ms)
+                .slideY(begin: 0.3, duration: 400.ms)
+                .fadeIn(duration: 300.ms),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text(
+                    'Clear Filters',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      searchQuery = '';
+                      selectedCategory = 'All';
+                      expandedIndex = null;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: RealTimeColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 14,
+                    ),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                )
+                .animate(delay: 400.ms)
+                .scale(duration: 400.ms, curve: Curves.easeOutBack)
+                .fadeIn(duration: 300.ms),
+          ],
+        ),
       ),
     );
   }
 }
+
+// ─── DATA MODEL ──────────────────────────────────────────────────────────────
 
 class FaqItem {
   final String category;
@@ -758,11 +981,11 @@ class FaqItem {
   final IconData icon;
   final Color iconColor;
 
-  FaqItem({
+  const FaqItem({
     required this.category,
     required this.question,
     required this.answer,
     required this.icon,
-    this.iconColor = Colors.blue,
+    this.iconColor = RealTimeColors.primaryGreen,
   });
 }

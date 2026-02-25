@@ -5,7 +5,8 @@ import 'package:real_time_pawn/config/api_config/api_keys.dart';
 import '../../../core/utils/api_response.dart';
 import '../../../core/utils/logs.dart';
 import '../../../core/utils/shared_pref_methods.dart';
-import '../../../models/loan_application.model.dart';
+import '../../../models/loan_application_model.dart';
+
 class LoanApplicationService {
   /// 🔹 Create loan application
   static Future<APIResponse<LoanApplicationModel>> createLoanApplication({
@@ -26,8 +27,7 @@ class LoanApplicationService {
       DevLogs.logInfo('Create loan application response: ${response.body}');
       final decoded = json.decode(response.body);
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final application =
-            LoanApplicationModel.fromMap(decoded['data']);
+        final application = LoanApplicationModel.fromMap(decoded['data']);
         return APIResponse<LoanApplicationModel>(
           success: true,
           data: application,
@@ -50,9 +50,10 @@ class LoanApplicationService {
       );
     }
   }
+
   /// 🔹 Get loan applications by customer user
   static Future<APIResponse<List<LoanApplicationModel>>>
-      getLoanApplicationsByCustomer({
+  getLoanApplicationsByCustomer({
     required String customerUserId,
     String sortBy = 'created_at',
     String sortOrder = 'desc',
@@ -79,22 +80,16 @@ class LoanApplicationService {
       final decoded = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        final List applicationsJson =
-            decoded['data']?['applications'] ?? [];
+        final List applicationsJson = decoded['data']?['applications'] ?? [];
 
         final applications = applicationsJson
-            .map(
-              (e) => LoanApplicationModel.fromMap(
-                e as Map<String, dynamic>,
-              ),
-            )
+            .map((e) => LoanApplicationModel.fromMap(e as Map<String, dynamic>))
             .toList();
         return APIResponse<List<LoanApplicationModel>>(
           success: true,
           data: applications,
           message:
-              decoded['message'] ??
-              'Loan applications retrieved successfully',
+              decoded['message'] ?? 'Loan applications retrieved successfully',
         );
       } else {
         return APIResponse<List<LoanApplicationModel>>(
@@ -112,6 +107,7 @@ class LoanApplicationService {
       );
     }
   }
+
   /// 🔹 Update loan application
   static Future<APIResponse<LoanApplicationModel>> updateLoanApplication({
     required String loanApplicationId,
@@ -134,14 +130,12 @@ class LoanApplicationService {
       DevLogs.logInfo('Update loan application response: ${response.body}');
       final decoded = json.decode(response.body);
       if (response.statusCode == 200) {
-        final application =
-            LoanApplicationModel.fromMap(decoded['data']);
+        final application = LoanApplicationModel.fromMap(decoded['data']);
         return APIResponse<LoanApplicationModel>(
           success: true,
           data: application,
           message:
-              decoded['message'] ??
-              'Loan application updated successfully',
+              decoded['message'] ?? 'Loan application updated successfully',
         );
       } else {
         return APIResponse<LoanApplicationModel>(

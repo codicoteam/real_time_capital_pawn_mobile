@@ -43,12 +43,73 @@ class RoutesHelper {
   static String trainingProgramDetailsScreen =
       "/training_program_details_screen";
   static String allRaceExperienceScreen = "/all_race_experience_screen";
-  static String faqScreen = "/faq_screen";
-  static String aboutScreen = "/about_screen";
+
   static String helpAndSupportScreen = "/help_and_support_screen";
 
   static String loanApplicationsScreen = '/loan-applications';
   static String loanApplicationDetailsScreen = '/loan-application-details';
+  // Add this line with your other loan application routes
+  static const String loanApplicationUploadScreen = "/loan-application-upload";
+
+  // Auction Routes
+  static String auctionsListScreen = "/auctions";
+  static String liveAuctionsScreen = "/auctions/live";
+  static String auctionDetailsScreen = "/auction-details/:id";
+
+  // Add to routes.dart
+  static String searchAuctionsScreen = "/auctions/search";
+  static String auctionBidsScreen = "/auctions/:id/bids";
+
+  // Add these to your existing RoutesHelper class
+  static String userBiddingHistoryScreen = "/user_bidding_history";
+
+  // Bid Management Routes
+  static String myBidsScreen = "/my-bids";
+  static String bidDetailsScreen = "/bid-details/:id";
+  static const String bidPaymentScreen = "/bid-payment";
+  static const String bidPaymentDetailsScreen = "/bid-payment-details/:id";
+
+  // Add these to RoutesHelper
+  static String myBidPaymentsScreen = "/my-bid-payments";
+  static String selectPaymentMethodScreen = "/select-payment-method";
+  static String confirmBidPaymentScreen = "/confirm-payment";
+  static String paymentDetailsScreen = "/payment-details/:id";
+  static const String paymentProcessingScreen = "/payment-processing";
+
+  // Loan Management Routes
+  static String LoansScreen = "/loans";
+  static String LoanDetailsScreen = "/loan-details";
+  static String LoanChargesScreen = "/loan-charges";
+  static String LoanPaymentScreen = "/loan-payment";
+  static String LoanStatusScreen = "/loan-status";
+
+  // Loan Terms Management routes
+  static const String loanTermsScreen = "/loan-terms";
+  static const String loanTermDetailsScreen = "/loan-term-details";
+  static const String loanTermTimelineScreen = "/loan-term-timeline";
+  static const String renewLoanTermScreen = "/renew-loan-term";
+
+  // Payment Management Routes
+  static const String PaymentListScreen = "/payment-list";
+  static const String PaymentDetailsScreen = "/payment-details";
+  static const String CreatePaymentScreen = "/create-payment";
+
+  // =============================================
+  // SUPPORT TICKET ROUTES (CUSTOMER ONLY)
+  // =============================================
+
+  // Create New Ticket
+  static String createTicketScreen = "/create-ticket";
+
+  // Ticket List (your TicketListScreen)
+  static String ticketListScreen = "/ticket-list";
+
+  // Ticket Details (with parameter)
+  static String ticketDetailsScreen = "/ticket-details/:id";
+
+  static String aboutScreen = "/about";
+
+  static String faqScreen = "/faq";
 
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

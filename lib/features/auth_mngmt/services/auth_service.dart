@@ -39,16 +39,30 @@ class AuthServices {
         // Cache token
         await CacheUtils.storeToken(token: token);
 
+        // Extract and save user ID from token
+        try {
+          final decodedToken = JwtDecoder.decode(token);
+          final userId = decodedToken['userId'] as String?;
+          if (userId != null && userId.isNotEmpty) {
+            await CacheUtils.storeUserId(userId: userId);
+            DevLogs.logSuccess('User ID saved to cache: $userId');
+          } else {
+            // Fallback: try to get user ID from user object
+            final userObjectId = user['_id'] as String?;
+            if (userObjectId != null && userObjectId.isNotEmpty) {
+              await CacheUtils.storeUserId(userId: userObjectId);
+              DevLogs.logSuccess(
+                'User ID saved from user object: $userObjectId',
+              );
+            }
+          }
+        } catch (e) {
+          DevLogs.logError('Error extracting user ID from token: $e');
+        }
+
         DevLogs.logSuccess(
           'Login successful. Token saved. User: ${user['email']}',
         );
-
-        // Optional: decode user from token or use API user object
-        final decodedUser = await _getUserFromToken();
-        if (decodedUser != null) {
-          DevLogs.logInfo('User loaded from token: $decodedUser');
-          // Get.find<UserController>().setUser(decodedUser);
-        }
 
         return APIResponse(
           success: true,
@@ -173,6 +187,7 @@ class AuthServices {
   }
 
   /// VERIFY EMAIL
+  /// VERIFY EMAIL
   static Future<APIResponse<Map<String, dynamic>>> verifyEmail({
     required String email,
     required String otp,
@@ -211,16 +226,30 @@ class AuthServices {
           // Cache the token
           if (token != null && token.isNotEmpty) {
             await CacheUtils.storeToken(token: token);
+
+            // Extract and save user ID from token
+            try {
+              final decodedToken = JwtDecoder.decode(token);
+              final userId = decodedToken['userId'] as String?;
+              if (userId != null && userId.isNotEmpty) {
+                await CacheUtils.storeUserId(userId: userId);
+                DevLogs.logSuccess('User ID saved to cache: $userId');
+              } else {
+                // Fallback: try to get user ID from user object
+                final userObjectId = user['_id'] as String?;
+                if (userObjectId != null && userObjectId.isNotEmpty) {
+                  await CacheUtils.storeUserId(userId: userObjectId);
+                  DevLogs.logSuccess(
+                    'User ID saved from user object: $userObjectId',
+                  );
+                }
+              }
+            } catch (e) {
+              DevLogs.logError('Error extracting user ID from token: $e');
+            }
           }
 
           DevLogs.logSuccess('Email verification successful: $message');
-
-          // Decode user from token for app state
-          final decodedUser = await _getUserFromToken();
-          if (decodedUser != null) {
-            DevLogs.logInfo("User loaded from token after email verification");
-            // Get.find<UserController>().setUser(decodedUser);
-          }
 
           return APIResponse<Map<String, dynamic>>(
             success: true,

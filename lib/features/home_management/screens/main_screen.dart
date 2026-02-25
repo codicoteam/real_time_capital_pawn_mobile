@@ -5,7 +5,7 @@ import 'package:real_time_pawn/widgets/drawers/customer_drawer.dart'
     show CustomDrawer;
 
 import '../../../core/utils/pallete.dart';
-import '../../profile_mngmt/screens/profile_screen.dart' as MyProfile;
+import '../../profile_mngmt/screens/profile_mngmt_screen.dart' as MyProfile;
 import 'home_screen.dart';
 import '../../loan_application_mngmt/screens/loan_application_step1.dart'; // ADD THIS
 
@@ -45,10 +45,6 @@ class _MainHomePageState extends State<MainHomePage> {
 
     MyProfile.ProfileScreen(),
   ];
-
-  void _openDrawer() {
-    _scaffoldKey.currentState?.openDrawer();
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -2,7 +2,7 @@
 import 'package:get/get.dart';
 import '../../../core/utils/api_response.dart';
 import '../../../core/utils/logs.dart';
-import '../../../models/loan_application.model.dart';
+import '../../../models/loan_application_model.dart';
 import '../services/loan_application_mngmt_service.dart'
     show LoanApplicationService;
 

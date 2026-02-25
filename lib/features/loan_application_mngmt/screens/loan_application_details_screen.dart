@@ -3,15 +3,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/models/loan_application.model.dart';
+import 'package:real_time_pawn/models/loan_application_model.dart';
 
 class LoanApplicationDetailsScreen extends StatefulWidget {
   final LoanApplicationModel application;
 
-  const LoanApplicationDetailsScreen({
-    super.key,
-    required this.application,
-  });
+  const LoanApplicationDetailsScreen({super.key, required this.application});
 
   @override
   State<LoanApplicationDetailsScreen> createState() =>
@@ -80,9 +77,11 @@ class _LoanApplicationDetailsScreenState
       default:
         return category
             .split('_')
-            .map((word) => word.isEmpty
-                ? ''
-                : word[0].toUpperCase() + word.substring(1).toLowerCase())
+            .map(
+              (word) => word.isEmpty
+                  ? ''
+                  : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+            )
             .join(' ');
     }
   }
@@ -91,9 +90,11 @@ class _LoanApplicationDetailsScreenState
     if (status == null || status.isEmpty) return 'Unknown';
     return status
         .split('_')
-        .map((word) => word.isEmpty
-            ? ''
-            : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
         .join(' ');
   }
 
@@ -182,7 +183,7 @@ class _LoanApplicationDetailsScreenState
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
-                    
+
                     // Status Header Card
                     _buildStatusHeaderCard()
                         .animate()
@@ -206,36 +207,37 @@ class _LoanApplicationDetailsScreenState
 
                     // Personal Information
                     _buildSection(
-                      title: 'Personal Information',
-                      icon: Icons.person_outline_rounded,
-                      children: [
-                        _buildInfoRow(
-                          'Full Name',
-                          widget.application.fullName ?? 'N/A',
-                          Icons.badge_outlined,
-                        ),
-                        _buildInfoRow(
-                          'National ID',
-                          widget.application.nationalIdNumber ?? 'N/A',
-                          Icons.credit_card_outlined,
-                        ),
-                        _buildInfoRow(
-                          'Gender',
-                          widget.application.gender ?? 'N/A',
-                          Icons.wc_outlined,
-                        ),
-                        _buildInfoRow(
-                          'Date of Birth',
-                          _formatDateShort(widget.application.dateOfBirth),
-                          Icons.cake_outlined,
-                        ),
-                        _buildInfoRow(
-                          'Marital Status',
-                          widget.application.maritalStatus ?? 'N/A',
-                          Icons.favorite_outline_rounded,
-                        ),
-                      ],
-                    ).animate()
+                          title: 'Personal Information',
+                          icon: Icons.person_outline_rounded,
+                          children: [
+                            _buildInfoRow(
+                              'Full Name',
+                              widget.application.fullName ?? 'N/A',
+                              Icons.badge_outlined,
+                            ),
+                            _buildInfoRow(
+                              'National ID',
+                              widget.application.nationalIdNumber ?? 'N/A',
+                              Icons.credit_card_outlined,
+                            ),
+                            _buildInfoRow(
+                              'Gender',
+                              widget.application.gender ?? 'N/A',
+                              Icons.wc_outlined,
+                            ),
+                            _buildInfoRow(
+                              'Date of Birth',
+                              _formatDateShort(widget.application.dateOfBirth),
+                              Icons.cake_outlined,
+                            ),
+                            _buildInfoRow(
+                              'Marital Status',
+                              widget.application.maritalStatus ?? 'N/A',
+                              Icons.favorite_outline_rounded,
+                            ),
+                          ],
+                        )
+                        .animate()
                         .fadeIn(delay: 200.ms, duration: 400.ms)
                         .slideY(begin: 0.2, end: 0, delay: 200.ms),
 
@@ -243,32 +245,33 @@ class _LoanApplicationDetailsScreenState
 
                     // Contact Information
                     _buildSection(
-                      title: 'Contact Information',
-                      icon: Icons.contact_phone_outlined,
-                      children: [
-                        _buildInfoRow(
-                          'Phone Number',
-                          widget.application.contactDetails ?? 'N/A',
-                          Icons.phone_outlined,
-                        ),
-                        _buildInfoRow(
-                          'Alternative Number',
-                          widget.application.alternativeNumber ?? 'N/A',
-                          Icons.phone_android_outlined,
-                        ),
-                        _buildInfoRow(
-                          'Email Address',
-                          widget.application.emailAddress ?? 'N/A',
-                          Icons.email_outlined,
-                        ),
-                        _buildInfoRow(
-                          'Home Address',
-                          widget.application.homeAddress ?? 'N/A',
-                          Icons.home_outlined,
-                          maxLines: 2,
-                        ),
-                      ],
-                    ).animate()
+                          title: 'Contact Information',
+                          icon: Icons.contact_phone_outlined,
+                          children: [
+                            _buildInfoRow(
+                              'Phone Number',
+                              widget.application.contactDetails ?? 'N/A',
+                              Icons.phone_outlined,
+                            ),
+                            _buildInfoRow(
+                              'Alternative Number',
+                              widget.application.alternativeNumber ?? 'N/A',
+                              Icons.phone_android_outlined,
+                            ),
+                            _buildInfoRow(
+                              'Email Address',
+                              widget.application.emailAddress ?? 'N/A',
+                              Icons.email_outlined,
+                            ),
+                            _buildInfoRow(
+                              'Home Address',
+                              widget.application.homeAddress ?? 'N/A',
+                              Icons.home_outlined,
+                              maxLines: 2,
+                            ),
+                          ],
+                        )
+                        .animate()
                         .fadeIn(delay: 300.ms, duration: 400.ms)
                         .slideY(begin: 0.2, end: 0, delay: 300.ms),
 
@@ -277,37 +280,41 @@ class _LoanApplicationDetailsScreenState
                     // Employment Information
                     if (widget.application.employment != null)
                       _buildSection(
-                        title: 'Employment Information',
-                        icon: Icons.work_outline_rounded,
-                        children: [
-                          _buildInfoRow(
-                            'Employment Type',
-                            widget.application.employment?.employmentType ??
-                                'N/A',
-                            Icons.business_center_outlined,
-                          ),
-                          _buildInfoRow(
-                            'Job Title',
-                            widget.application.employment?.title ?? 'N/A',
-                            Icons.assignment_ind_outlined,
-                          ),
-                          _buildInfoRow(
-                            'Duration',
-                            widget.application.employment?.duration ?? 'N/A',
-                            Icons.schedule_outlined,
-                          ),
-                          _buildInfoRow(
-                            'Location',
-                            widget.application.employment?.location ?? 'N/A',
-                            Icons.location_on_outlined,
-                          ),
-                          _buildInfoRow(
-                            'Contacts',
-                            widget.application.employment?.contacts ?? 'N/A',
-                            Icons.contacts_outlined,
-                          ),
-                        ],
-                      ).animate()
+                            title: 'Employment Information',
+                            icon: Icons.work_outline_rounded,
+                            children: [
+                              _buildInfoRow(
+                                'Employment Type',
+                                widget.application.employment?.employmentType ??
+                                    'N/A',
+                                Icons.business_center_outlined,
+                              ),
+                              _buildInfoRow(
+                                'Job Title',
+                                widget.application.employment?.title ?? 'N/A',
+                                Icons.assignment_ind_outlined,
+                              ),
+                              _buildInfoRow(
+                                'Duration',
+                                widget.application.employment?.duration ??
+                                    'N/A',
+                                Icons.schedule_outlined,
+                              ),
+                              _buildInfoRow(
+                                'Location',
+                                widget.application.employment?.location ??
+                                    'N/A',
+                                Icons.location_on_outlined,
+                              ),
+                              _buildInfoRow(
+                                'Contacts',
+                                widget.application.employment?.contacts ??
+                                    'N/A',
+                                Icons.contacts_outlined,
+                              ),
+                            ],
+                          )
+                          .animate()
                           .fadeIn(delay: 400.ms, duration: 400.ms)
                           .slideY(begin: 0.2, end: 0, delay: 400.ms),
 
@@ -316,29 +323,30 @@ class _LoanApplicationDetailsScreenState
 
                     // Loan Details
                     _buildSection(
-                      title: 'Loan Details',
-                      icon: Icons.account_balance_wallet_outlined,
-                      children: [
-                        _buildInfoRow(
-                          'Application Number',
-                          widget.application.applicationNo ?? 'N/A',
-                          Icons.confirmation_number_outlined,
-                        ),
-                        _buildInfoRow(
-                          'Requested Amount',
-                          _formatCurrency(
-                            widget.application.requestedLoanAmount,
-                          ),
-                          Icons.attach_money_rounded,
-                          valueColor: AppColors.primaryColor,
-                        ),
-                        _buildInfoRow(
-                          'Application Date',
-                          _formatDateShort(widget.application.createdAt),
-                          Icons.calendar_today_outlined,
-                        ),
-                      ],
-                    ).animate()
+                          title: 'Loan Details',
+                          icon: Icons.account_balance_wallet_outlined,
+                          children: [
+                            _buildInfoRow(
+                              'Application Number',
+                              widget.application.applicationNo ?? 'N/A',
+                              Icons.confirmation_number_outlined,
+                            ),
+                            _buildInfoRow(
+                              'Requested Amount',
+                              _formatCurrency(
+                                widget.application.requestedLoanAmount,
+                              ),
+                              Icons.attach_money_rounded,
+                              valueColor: AppColors.primaryColor,
+                            ),
+                            _buildInfoRow(
+                              'Application Date',
+                              _formatDateShort(widget.application.createdAt),
+                              Icons.calendar_today_outlined,
+                            ),
+                          ],
+                        )
+                        .animate()
                         .fadeIn(delay: 500.ms, duration: 400.ms)
                         .slideY(begin: 0.2, end: 0, delay: 500.ms),
 
@@ -346,41 +354,43 @@ class _LoanApplicationDetailsScreenState
 
                     // Collateral Information
                     _buildSection(
-                      title: 'Collateral Information',
-                      icon: Icons.security_outlined,
-                      children: [
-                        _buildInfoRow(
-                          'Category',
-                          _formatCollateralCategory(
-                            widget.application.collateralCategory,
-                          ),
-                          Icons.category_outlined,
-                        ),
-                        if (widget.application.collateralDescription != null)
-                          _buildInfoRow(
-                            'Description',
-                            widget.application.collateralDescription!,
-                            Icons.description_outlined,
-                            maxLines: 3,
-                          ),
-                        if (widget.application.declaredAssetValue != null)
-                          _buildInfoRow(
-                            'Declared Value',
-                            _formatCurrency(
-                              widget.application.declaredAssetValue,
+                          title: 'Collateral Information',
+                          icon: Icons.security_outlined,
+                          children: [
+                            _buildInfoRow(
+                              'Category',
+                              _formatCollateralCategory(
+                                widget.application.collateralCategory,
+                              ),
+                              Icons.category_outlined,
                             ),
-                            Icons.monetization_on_outlined,
-                            valueColor: AppColors.successColor,
-                          ),
-                        if (widget.application.suretyDescription != null)
-                          _buildInfoRow(
-                            'Surety',
-                            widget.application.suretyDescription!,
-                            Icons.person_add_outlined,
-                            maxLines: 2,
-                          ),
-                      ],
-                    ).animate()
+                            if (widget.application.collateralDescription !=
+                                null)
+                              _buildInfoRow(
+                                'Description',
+                                widget.application.collateralDescription!,
+                                Icons.description_outlined,
+                                maxLines: 3,
+                              ),
+                            if (widget.application.declaredAssetValue != null)
+                              _buildInfoRow(
+                                'Declared Value',
+                                _formatCurrency(
+                                  widget.application.declaredAssetValue,
+                                ),
+                                Icons.monetization_on_outlined,
+                                valueColor: AppColors.successColor,
+                              ),
+                            if (widget.application.suretyDescription != null)
+                              _buildInfoRow(
+                                'Surety',
+                                widget.application.suretyDescription!,
+                                Icons.person_add_outlined,
+                                maxLines: 2,
+                              ),
+                          ],
+                        )
+                        .animate()
                         .fadeIn(delay: 600.ms, duration: 400.ms)
                         .slideY(begin: 0.2, end: 0, delay: 600.ms),
 
@@ -389,31 +399,33 @@ class _LoanApplicationDetailsScreenState
                     // Declaration
                     if (widget.application.declarationSignatureName != null)
                       _buildSection(
-                        title: 'Declaration',
-                        icon: Icons.verified_outlined,
-                        children: [
-                          if (widget.application.declarationText != null)
-                            _buildInfoRow(
-                              'Agreement',
-                              widget.application.declarationText!,
-                              Icons.gavel_outlined,
-                              maxLines: 5,
-                            ),
-                          _buildInfoRow(
-                            'Signed By',
-                            widget.application.declarationSignatureName!,
-                            Icons.draw_outlined,
-                          ),
-                          if (widget.application.declarationSignedAt != null)
-                            _buildInfoRow(
-                              'Signed Date',
-                              _formatDate(
-                                widget.application.declarationSignedAt,
+                            title: 'Declaration',
+                            icon: Icons.verified_outlined,
+                            children: [
+                              if (widget.application.declarationText != null)
+                                _buildInfoRow(
+                                  'Agreement',
+                                  widget.application.declarationText!,
+                                  Icons.gavel_outlined,
+                                  maxLines: 5,
+                                ),
+                              _buildInfoRow(
+                                'Signed By',
+                                widget.application.declarationSignatureName!,
+                                Icons.draw_outlined,
                               ),
-                              Icons.event_available_outlined,
-                            ),
-                        ],
-                      ).animate()
+                              if (widget.application.declarationSignedAt !=
+                                  null)
+                                _buildInfoRow(
+                                  'Signed Date',
+                                  _formatDate(
+                                    widget.application.declarationSignedAt,
+                                  ),
+                                  Icons.event_available_outlined,
+                                ),
+                            ],
+                          )
+                          .animate()
                           .fadeIn(delay: 700.ms, duration: 400.ms)
                           .slideY(begin: 0.2, end: 0, delay: 700.ms),
 
@@ -423,31 +435,34 @@ class _LoanApplicationDetailsScreenState
                     // Debtor Check (if available)
                     if (widget.application.debtorCheck?.checked == true)
                       _buildSection(
-                        title: 'Debtor Check',
-                        icon: Icons.fact_check_outlined,
-                        children: [
-                          _buildInfoRow(
-                            'Status',
-                            widget.application.debtorCheck!.matched == true
-                                ? 'Matched'
-                                : 'Clear',
-                            widget.application.debtorCheck!.matched == true
-                                ? Icons.warning_amber_rounded
-                                : Icons.check_circle_outline_rounded,
-                            valueColor:
+                            title: 'Debtor Check',
+                            icon: Icons.fact_check_outlined,
+                            children: [
+                              _buildInfoRow(
+                                'Status',
                                 widget.application.debtorCheck!.matched == true
+                                    ? 'Matched'
+                                    : 'Clear',
+                                widget.application.debtorCheck!.matched == true
+                                    ? Icons.warning_amber_rounded
+                                    : Icons.check_circle_outline_rounded,
+                                valueColor:
+                                    widget.application.debtorCheck!.matched ==
+                                        true
                                     ? AppColors.warningColor
                                     : AppColors.successColor,
-                          ),
-                          if (widget.application.debtorCheck!.matched == true)
-                            _buildInfoRow(
-                              'Matched Records',
-                              '${widget.application.debtorCheck!.matchedDebtorRecords?.length ?? 0} record(s)',
-                              Icons.assignment_late_outlined,
-                              valueColor: AppColors.errorColor,
-                            ),
-                        ],
-                      ).animate()
+                              ),
+                              if (widget.application.debtorCheck!.matched ==
+                                  true)
+                                _buildInfoRow(
+                                  'Matched Records',
+                                  '${widget.application.debtorCheck!.matchedDebtorRecords?.length ?? 0} record(s)',
+                                  Icons.assignment_late_outlined,
+                                  valueColor: AppColors.errorColor,
+                                ),
+                            ],
+                          )
+                          .animate()
                           .fadeIn(delay: 800.ms, duration: 400.ms)
                           .slideY(begin: 0.2, end: 0, delay: 800.ms),
 
@@ -470,30 +485,31 @@ class _LoanApplicationDetailsScreenState
                     if (widget.application.internalNotes != null &&
                         widget.application.internalNotes!.isNotEmpty)
                       _buildSection(
-                        title: 'Internal Notes',
-                        icon: Icons.note_outlined,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: RealTimeColors.grey100,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.borderColor,
-                                width: 1,
+                            title: 'Internal Notes',
+                            icon: Icons.note_outlined,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: RealTimeColors.grey100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.borderColor,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  widget.application.internalNotes!,
+                                  style: GoogleFonts.poppins(
+                                    color: AppColors.textColor,
+                                    fontSize: 14,
+                                    height: 1.6,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              widget.application.internalNotes!,
-                              style: GoogleFonts.poppins(
-                                color: AppColors.textColor,
-                                fontSize: 14,
-                                height: 1.6,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ).animate()
+                            ],
+                          )
+                          .animate()
                           .fadeIn(delay: 1000.ms, duration: 400.ms)
                           .slideY(begin: 0.2, end: 0, delay: 1000.ms),
 
@@ -610,13 +626,11 @@ class _LoanApplicationDetailsScreenState
           ),
         ],
       ),
-    )
-        .animate()
-        .shimmer(
-          delay: 800.ms,
-          duration: 1500.ms,
-          color: Colors.white.withOpacity(0.3),
-        );
+    ).animate().shimmer(
+      delay: 800.ms,
+      duration: 1500.ms,
+      color: Colors.white.withOpacity(0.3),
+    );
   }
 
   Widget _buildAmountCard() {
@@ -685,13 +699,11 @@ class _LoanApplicationDetailsScreenState
           ),
         ],
       ),
-    )
-        .animate()
-        .shimmer(
-          delay: 1000.ms,
-          duration: 1800.ms,
-          color: Colors.white.withOpacity(0.2),
-        );
+    ).animate().shimmer(
+      delay: 1000.ms,
+      duration: 1800.ms,
+      color: Colors.white.withOpacity(0.2),
+    );
   }
 
   Widget _buildSection({
@@ -705,10 +717,7 @@ class _LoanApplicationDetailsScreenState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.borderColor, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -728,11 +737,7 @@ class _LoanApplicationDetailsScreenState
                   color: AppColors.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: AppColors.primaryColor,
-                  size: 20,
-                ),
+                child: Icon(icon, color: AppColors.primaryColor, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -771,11 +776,7 @@ class _LoanApplicationDetailsScreenState
               color: RealTimeColors.grey100,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: AppColors.subtextColor,
-            ),
+            child: Icon(icon, size: 18, color: AppColors.subtextColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -818,10 +819,7 @@ class _LoanApplicationDetailsScreenState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.borderColor, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -886,10 +884,7 @@ class _LoanApplicationDetailsScreenState
               decoration: BoxDecoration(
                 color: RealTimeColors.grey400,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.borderColor,
-                  width: 1,
-                ),
+                border: Border.all(color: AppColors.borderColor, width: 1),
               ),
               child: Row(
                 children: [
@@ -940,7 +935,7 @@ class _LoanApplicationDetailsScreenState
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -952,42 +947,43 @@ class _LoanApplicationDetailsScreenState
       right: 24,
       child: ScaleTransition(
         scale: _fabController,
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            // TODO: Implement edit functionality
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Edit functionality coming soon!',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
+        child:
+            FloatingActionButton.extended(
+                  onPressed: () {
+                    // TODO: Implement edit functionality
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Edit functionality coming soon!',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        backgroundColor: AppColors.primaryColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  },
+                  backgroundColor: AppColors.primaryColor,
+                  elevation: 8,
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  label: Text(
+                    'Edit Details',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                )
+                .animate(onPlay: (controller) => controller.repeat())
+                .shimmer(
+                  delay: 2000.ms,
+                  duration: 1500.ms,
+                  color: Colors.white.withOpacity(0.3),
                 ),
-                backgroundColor: AppColors.primaryColor,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
-          },
-          backgroundColor: AppColors.primaryColor,
-          elevation: 8,
-          icon: const Icon(Icons.edit_outlined, size: 20),
-          label: Text(
-            'Edit Details',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        )
-            .animate(onPlay: (controller) => controller.repeat())
-            .shimmer(
-              delay: 2000.ms,
-              duration: 1500.ms,
-              color: Colors.white.withOpacity(0.3),
-            ),
       ),
     );
   }

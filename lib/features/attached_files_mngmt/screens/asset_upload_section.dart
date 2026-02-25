@@ -67,13 +67,13 @@ class AssetUploadSection extends StatefulWidget {
   final String entityId;
 
   const AssetUploadSection({
-    Key? key,
+    super.key,
     required this.uploadedAssets,
     required this.selectedLoanCategory,
     required this.onAssetsUpdated,
     required this.entityType,
     required this.entityId,
-  }) : super(key: key);
+  });
 
   @override
   State<AssetUploadSection> createState() => _AssetUploadSectionState();
@@ -81,7 +81,6 @@ class AssetUploadSection extends StatefulWidget {
 
 class _AssetUploadSectionState extends State<AssetUploadSection> {
   late List<UploadedAsset> _uploadedAssets;
-  int? _selectedAssetIndex;
   final ImagePicker _picker = ImagePicker();
   final SupabaseClient _supabase = Supabase.instance.client;
   bool _isUploading = false;
@@ -228,9 +227,10 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
       final attachmentModel = await AttachmentHelper.uploadAttachment(
         entityType: widget.entityType,
         entityId: widget.entityId,
-        category: widget.selectedLoanCategory ?? 'general',
+        category:  'asset_photos',
         filename: fileName,
         mimeType: 'image/jpeg',
+        storage: 'url',
         url: publicUrl,
         meta: metaData,
       );
@@ -296,7 +296,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
           errorMessage +=
               'Access denied. Make sure the storage bucket is public in Supabase Dashboard.';
         } else {
-          errorMessage += e.message!;
+          errorMessage += e.message;
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -497,9 +497,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
   }
 
   void _editAssetDetails(int index) {
-    setState(() {
-      _selectedAssetIndex = index;
-    });
+    setState(() {});
     _showAssetEditModal(index);
   }
 
@@ -992,11 +990,11 @@ class AssetDetailsModal extends StatefulWidget {
   onAssetSaved;
 
   const AssetDetailsModal({
-    Key? key,
+    super.key,
     required this.imageFile,
     required this.selectedLoanCategory,
     required this.onAssetSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<AssetDetailsModal> createState() => _AssetDetailsModalState();
@@ -1161,11 +1159,11 @@ class AssetEditModal extends StatefulWidget {
   final VoidCallback onAssetRemoved;
 
   const AssetEditModal({
-    Key? key,
+    super.key,
     required this.asset,
     required this.onAssetUpdated,
     required this.onAssetRemoved,
-  }) : super(key: key);
+  });
 
   @override
   State<AssetEditModal> createState() => _AssetEditModalState();

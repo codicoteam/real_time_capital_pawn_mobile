@@ -126,13 +126,13 @@ class CustomDrawer extends StatelessWidget {
                     color: RealTimeColors.primaryGreen,
                     onTap: () => _navigateAndClose(context, '/about'),
                   ).animate().fadeIn(delay: 300.ms),
-
                   // Loans
                   _buildDrawerItem(
                     icon: Icons.account_balance_wallet_outlined,
                     title: 'Loans',
                     color: RealTimeColors.primaryGreen,
-                    onTap: () => _navigateAndClose(context, '/loans'),
+                    onTap: () =>
+                        _navigateAndClose(context, RoutesHelper.LoansScreen),
                   ).animate().fadeIn(delay: 400.ms),
 
                   // Bid Payment
@@ -140,7 +140,10 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.payment,
                     title: 'Bid Payments',
                     color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(context, '/bid_payment'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.myBidPaymentsScreen,
+                    ),
                   ).animate().fadeIn(delay: 360.ms),
 
                   // Notifications
@@ -151,12 +154,15 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateAndClose(context, '/notifications'),
                   ).animate().fadeIn(delay: 420.ms),
 
-                  // Auctions
+                  // Auctions - FIXED
                   _buildDrawerItem(
                     icon: Icons.gavel,
                     title: 'Auctions',
                     color: RealTimeColors.grey800,
-                    onTap: () => _navigateAndClose(context, '/auctions'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.auctionsListScreen, // Use the route name
+                    ),
                   ).animate().fadeIn(delay: 460.ms),
 
                   // Bids
@@ -164,9 +170,12 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.local_offer_outlined,
                     title: 'Bids',
                     color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(context, '/bids'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper
+                          .myBidsScreen, // Changed from '/my-bids' to RoutesHelper.myBidsScreen
+                    ),
                   ).animate().fadeIn(delay: 480.ms),
-
                   // FAQ
                   _buildDrawerItem(
                     icon: Icons.question_answer_outlined,
@@ -200,7 +209,10 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.help_outline,
                     title: 'Support',
                     color: RealTimeColors.warning,
-                    onTap: () => _navigateAndClose(context, '/support'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.ticketListScreen, // Using the route name
+                    ),
                   ).animate().fadeIn(delay: 580.ms),
 
                   const Divider(height: 32, indent: 20, endIndent: 20),

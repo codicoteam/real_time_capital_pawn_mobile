@@ -49,5 +49,14 @@
 	<string>This app needs camera access to take photos of assets</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access to select photos of assets</string>
+	
+	<!-- ✅ ADD THIS SECTION HERE -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<!-- END OF ADDED SECTION -->
+	
 </dict>
 </plist>

@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/screens/asset_upload_section.dart'
     show UploadedAsset, AssetUploadSection;
 import 'package:real_time_pawn/widgets/custom_button.dart';
+import 'package:real_time_pawn/core/utils/api_response.dart';
+import 'package:real_time_pawn/core/utils/logs.dart';
+import 'package:real_time_pawn/models/attachment_model.dart';
+import 'package:real_time_pawn/features/attached_files_mngmt/services/attached_files_mngmt_service.dart'
+    show AttachmentService;
 
 class LoanApplicationUploadScreen extends StatefulWidget {
   final String loanId;
   final String loanCategory;
   final String applicationNo;
+  final String userId; // Add user ID for API calls
 
   const LoanApplicationUploadScreen({
     super.key,
     required this.loanId,
     required this.loanCategory,
     required this.applicationNo,
+    required this.userId,
   });
 
   @override
@@ -27,6 +36,126 @@ class _LoanApplicationUploadScreenState
     extends State<LoanApplicationUploadScreen> {
   final List<UploadedAsset> _uploadedAssets = [];
   bool _canProceed = false;
+  bool _isLoading = false;
+  String _errorMessage = '';
+  String _successMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Don't fetch existing attachments initially - they won't exist yet
+    // Instead, set loading to false immediately
+    _isLoading = false;
+  }
+
+  Future<void> _fetchExistingAttachments() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final APIResponse<List<AttachmentModel>> response =
+          await AttachmentService.getAttachmentsByUserAndEntity(
+            userId: widget.userId,
+            entityType: 'LoanApplication',
+            entityId: widget.loanId,
+          );
+
+      DevLogs.logInfo('Fetched ${response.data?.length ?? 0} attachments');
+
+      if (response.success && response.data != null) {
+        // Convert AttachmentModel to UploadedAsset
+        final List<UploadedAsset> existingAssets = response.data!.map((
+          attachment,
+        ) {
+          return UploadedAsset(
+            id: attachment.id,
+            category: attachment.category,
+            filename: attachment.filename,
+            mimeType: attachment.mimeType,
+            url: attachment.url,
+            meta: attachment.meta,
+            createdAt: attachment.createdAt,
+          );
+        }).toList();
+
+        setState(() {
+          _uploadedAssets.clear();
+          _uploadedAssets.addAll(existingAssets);
+          _canProceed = _uploadedAssets.isNotEmpty;
+          _successMessage = response.message ?? 'Loaded existing attachments';
+          _isLoading = false;
+        });
+
+        if (existingAssets.isNotEmpty) {
+          _showSuccessSnackbar(_successMessage);
+        }
+      } else {
+        setState(() {
+          _errorMessage = response.message ?? 'Failed to load attachments';
+          _isLoading = false;
+        });
+        if (response.message?.contains('No attachments') == false) {
+          _showErrorSnackbar(_errorMessage);
+        }
+      }
+    } catch (e) {
+      DevLogs.logError('Error fetching attachments: $e');
+      setState(() {
+        _errorMessage = 'Error fetching attachments: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.successColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.errorColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // ❌ REMOVED: _showAttachmentDetails method (not used)
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +189,22 @@ class _LoanApplicationUploadScreenState
         ),
         elevation: 0,
         backgroundColor: AppColors.backgroundColor,
+        actions: [
+          if (_isLoading)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryColor,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -134,6 +279,15 @@ class _LoanApplicationUploadScreenState
                                   color: AppColors.textColor,
                                 ),
                               ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Application #${widget.applicationNo}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -205,75 +359,120 @@ class _LoanApplicationUploadScreenState
 
                   const SizedBox(height: 24),
 
-                  // Asset Upload Section
+                  // Asset Upload Section - FIXED: Removed userId parameter
                   AssetUploadSection(
                     uploadedAssets: _uploadedAssets,
                     selectedLoanCategory: widget.loanCategory,
                     entityType: 'LoanApplication',
                     entityId: widget.loanId,
+                    // ✅ REMOVED: userId parameter (doesn't exist in AssetUploadSection)
                     onAssetsUpdated: (List<UploadedAsset> updatedAssets) {
                       setState(() {
                         _uploadedAssets.clear();
                         _uploadedAssets.addAll(updatedAssets);
                         _canProceed = _uploadedAssets.isNotEmpty;
+
+                        // Refresh the list to show newly uploaded assets
+                        _fetchExistingAttachments();
                       });
                     },
                   ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+
+                  // Refresh Button
+                  if (_uploadedAssets.isNotEmpty)
+                    Center(
+                      child: CustomButton(
+                        btnColor: AppColors.surfaceColor,
+                        borderRadius: 12,
+                        width: 250, // ✅ ADDED width parameter
+                        onTap: _fetchExistingAttachments,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.refresh,
+                              color: AppColors.primaryColor,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Refresh Uploaded Files',
+                              style: GoogleFonts.poppins(
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1),
+
+                  const SizedBox(height: 16),
 
                   // Upload Stats Card
-                  if (_uploadedAssets.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.cloud_done,
-                                color: AppColors.successColor,
-                                size: 24,
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.cloud_done,
+                              color: AppColors.successColor,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Upload Summary',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textColor,
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Upload Summary',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _buildStatRow(
-                            icon: Icons.photo_library,
-                            label: 'Total Files',
-                            value: '${_uploadedAssets.length}',
-                          ),
-                          const SizedBox(height: 12),
-                          _buildStatRow(
-                            icon: Icons.check_circle,
-                            label: 'Status',
-                            value: 'Ready to Submit',
-                            valueColor: AppColors.successColor,
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildStatRow(
+                          icon: Icons.photo_library,
+                          label: 'Total Files',
+                          value: '${_uploadedAssets.length}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStatRow(
+                          icon: Icons.check_circle,
+                          label: 'Status',
+                          value: _canProceed
+                              ? 'Ready to Submit'
+                              : 'Upload Required',
+                          valueColor: _canProceed
+                              ? AppColors.successColor
+                              : AppColors.warningColor,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStatRow(
+                          icon: Icons.cloud_upload,
+                          label: 'API Registered',
+                          value:
+                              '${_uploadedAssets.where((a) => a.id != null).length}',
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
 
                   const SizedBox(height: 120),
                 ],
@@ -551,8 +750,7 @@ class _LoanApplicationUploadScreenState
             borderRadius: 12,
             width: double.infinity,
             onTap: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to main screen
+              Get.offAllNamed(RoutesHelper.main_home_page);
             },
             child: Text(
               'Done',
@@ -603,11 +801,11 @@ class _LoanApplicationUploadScreenState
           CustomButton(
             btnColor: AppColors.primaryColor,
             borderRadius: 12,
+            width: double.infinity,
             onTap: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to main screen
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
-          width: double.infinity,
             child: Text(
               'Skip',
               style: GoogleFonts.poppins(
