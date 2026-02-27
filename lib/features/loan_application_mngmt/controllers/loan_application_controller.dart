@@ -11,7 +11,8 @@ import 'package:real_time_pawn/widgets/loading_widgets/circular_loader.dart';
 import '../../../core/utils/shared_pref_methods.dart' show CacheUtils;
 import '../helpers/loan_application_mngmt_helper.dart'
     show LoanApplicationHelper;
-import '../screens/Loan application upload screen.dart' show LoanApplicationUploadScreen;
+import '../screens/Loan application upload screen.dart'
+    show LoanApplicationUploadScreen;
 
 class LoanApplicationControllerTwo extends GetxController {
   // Personal Information Controllers
@@ -103,7 +104,12 @@ class LoanApplicationControllerTwo extends GetxController {
     'Self-employed',
     'Unemployed',
   ];
-  final employmentDurationOptions = ['< 1 year', '1-3 years', '3-5 years', '5+ years'];
+  final employmentDurationOptions = [
+    '< 1 year',
+    '1-3 years',
+    '3-5 years',
+    '5+ years',
+  ];
 
   final loanCategories = [
     {
@@ -293,7 +299,7 @@ class LoanApplicationControllerTwo extends GetxController {
         throw Exception('User not logged in');
       }
 
-      const bucket = 'loan-documents';
+      const bucket = 'topics';
       final filePath =
           '$userId/$documentType/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
 
@@ -301,8 +307,9 @@ class LoanApplicationControllerTwo extends GetxController {
           .from('topics')
           .upload(filePath, File(file.path));
 
-      final publicUrl =
-          Supabase.instance.client.storage.from(bucket).getPublicUrl(filePath);
+      final publicUrl = Supabase.instance.client.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
       return publicUrl;
     } catch (e) {
       DevLogs.logError('Upload failed for $documentType: $e');
@@ -390,39 +397,54 @@ class LoanApplicationControllerTwo extends GetxController {
     if (nationalIdController.text.isEmpty) missingFields.add('National ID');
     if (selectedGender.value == null) missingFields.add('Gender');
     if (dateOfBirthController.text.isEmpty) missingFields.add('Date of Birth');
-    if (selectedMaritalStatus.value == null) missingFields.add('Marital Status');
+    if (selectedMaritalStatus.value == null)
+      missingFields.add('Marital Status');
     if (phoneController.text.isEmpty) missingFields.add('Phone Number');
     if (emailController.text.isEmpty) missingFields.add('Email');
     if (addressController.text.isEmpty) missingFields.add('Address');
-    if (selectedEmploymentType.value == null) missingFields.add('Employment Type');
+    if (selectedEmploymentType.value == null)
+      missingFields.add('Employment Type');
     if (jobTitleController.text.isEmpty) missingFields.add('Job Title');
-    if (selectedEmploymentDuration.value == null) missingFields.add('Employment Duration');
+    if (selectedEmploymentDuration.value == null)
+      missingFields.add('Employment Duration');
     if (workLocationController.text.isEmpty) missingFields.add('Work Location');
     if (loanAmountController.text.isEmpty) missingFields.add('Loan Amount');
     if (selectedLoanCategory.value == null) missingFields.add('Loan Category');
-    if (collateralDescController.text.isEmpty) missingFields.add('Collateral Description');
-    if (assetValueController.text.isEmpty) missingFields.add('Declared Asset Value');
+    if (collateralDescController.text.isEmpty)
+      missingFields.add('Collateral Description');
+    if (assetValueController.text.isEmpty)
+      missingFields.add('Declared Asset Value');
     if (!isDeclarationChecked.value) missingFields.add('Declaration Checkbox');
 
     // Category-specific fields
     if (selectedLoanCategoryType.value == 'motor_vehicle') {
       if (vehicleMakeController.text.isEmpty) missingFields.add('Vehicle Make');
-      if (vehicleModelController.text.isEmpty) missingFields.add('Vehicle Model');
-      if (vehicleRegController.text.isEmpty) missingFields.add('Registration Number');
-      if (vehicleCcSerialController.text.isEmpty) missingFields.add('CC/Serial Number');
-      if (vehicleEngineController.text.isEmpty) missingFields.add('Engine Number');
-      if (vehicleChassisController.text.isEmpty) missingFields.add('Chassis Number');
+      if (vehicleModelController.text.isEmpty)
+        missingFields.add('Vehicle Model');
+      if (vehicleRegController.text.isEmpty)
+        missingFields.add('Registration Number');
+      if (vehicleCcSerialController.text.isEmpty)
+        missingFields.add('CC/Serial Number');
+      if (vehicleEngineController.text.isEmpty)
+        missingFields.add('Engine Number');
+      if (vehicleChassisController.text.isEmpty)
+        missingFields.add('Chassis Number');
       if (vehicleYearController.text.isEmpty) missingFields.add('Vehicle Year');
     } else if (selectedLoanCategoryType.value == 'small_loans') {
-      if (electronicTypeController.text.isEmpty) missingFields.add('Electronic Type');
-      if (electronicModelController.text.isEmpty) missingFields.add('Electronic Model');
-      if (electronicSerialController.text.isEmpty) missingFields.add('Serial Number');
+      if (electronicTypeController.text.isEmpty)
+        missingFields.add('Electronic Type');
+      if (electronicModelController.text.isEmpty)
+        missingFields.add('Electronic Model');
+      if (electronicSerialController.text.isEmpty)
+        missingFields.add('Serial Number');
     } else if (selectedLoanCategoryType.value == 'jewellery') {
       if (jewelTypeController.text.isEmpty) missingFields.add('Jewellery Type');
-      if (jewelDescController.text.isEmpty) missingFields.add('Jewellery Description');
+      if (jewelDescController.text.isEmpty)
+        missingFields.add('Jewellery Description');
       if (jewelWeightController.text.isEmpty) missingFields.add('Weight');
       if (jewelPurityController.text.isEmpty) missingFields.add('Purity');
-      if (jewelEstimatedValueController.text.isEmpty) missingFields.add('Estimated Value');
+      if (jewelEstimatedValueController.text.isEmpty)
+        missingFields.add('Estimated Value');
     }
 
     if (missingFields.isNotEmpty) {
@@ -545,7 +567,9 @@ class LoanApplicationControllerTwo extends GetxController {
       };
     }
 
-    DevLogs.logError("Selected Loan Category Type: ${selectedLoanCategoryType.value}");
+    DevLogs.logError(
+      "Selected Loan Category Type: ${selectedLoanCategoryType.value}",
+    );
 
     // Show loader
     Get.dialog(

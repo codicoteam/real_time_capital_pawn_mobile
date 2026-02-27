@@ -14,6 +14,7 @@ import 'features/auth_mngmt/controllers/auth_controller.dart';
 import 'features/loan_application_mngmt/controllers/loan_application_controller.dart'
     show LoanApplicationControllerTwo;
 import 'features/loan_application_mngmt/controllers/loan_application_mngmt_controller.dart';
+import 'features/loan_terms_mngmt/controllers/loan_terms_mngmt_controller.dart' show LoanTermsController;
 
 void main() {
   runZonedGuarded(
@@ -28,6 +29,7 @@ void main() {
       Get.put(AttachmentController());
       Get.put(LoanApplicationController());
       Get.put(LoanApplicationControllerTwo());
+      Get.put(LoanTermsController());
       runApp(const MyApp());
     },
     (error, stack) {
