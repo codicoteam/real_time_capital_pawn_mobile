@@ -10,7 +10,7 @@ import 'package:real_time_pawn/widgets/custom_button.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../models/attachment_model.dart';
-import '../helpers/attached_files_mngmt_helper.dart';
+import '../helpers/attached_files_mngmt_helper.dart' show AttachmentHelper;
 
 class UploadedAsset {
   final String? id;
