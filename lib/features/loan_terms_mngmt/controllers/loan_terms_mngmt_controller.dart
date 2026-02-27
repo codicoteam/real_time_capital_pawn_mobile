@@ -94,7 +94,7 @@ class LoanTermsController extends GetxController {
       final response = await LoanTermsService.getLoanTermsByLoanId(
         loanId,
         page: currentPage.value,
-        limit: 10,
+        limit: 100000000,
         status: selectedFilter.value != 'All' ? selectedFilter.value : null,
         termType: selectedTypeFilter.value != 'All'
             ? selectedTypeFilter.value

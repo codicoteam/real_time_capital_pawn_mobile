@@ -13,7 +13,7 @@ class LoanTermsService {
   static Future<APIResponse<List<LoanTerm>>> getLoanTermsByLoanId(
     String loanId, {
     int page = 1,
-    int limit = 10,
+    int limit = 10000000,
     String? status,
     String? termType,
   }) async {

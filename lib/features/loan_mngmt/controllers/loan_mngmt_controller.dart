@@ -1,111 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:real_time_pawn/features/loan_mngmt/services/loan_mngmt_service.dart';
-import 'package:real_time_pawn/models/loan_mngmt_model.dart';
+import '../../../core/utils/api_response.dart';
+import '../../../core/utils/logs.dart';
+import '../../../models/loan_mngmt_model.dart';
+import '../services/loan_mngmt_service.dart';
+
 
 class LoanController extends GetxController {
-  // State
-  final RxList<LoanModel> loans = <LoanModel>[].obs;
-  final Rx<LoanModel?> selectedLoan = Rx<LoanModel?>(null);
-  final RxBool isLoading = false.obs;
-  final RxString errorMessage = ''.obs;
-  final RxString selectedFilter = 'All'.obs;
-  final RxString searchQuery = ''.obs;
+  // =====================
+  // Observable states
+  // =====================
+  final isLoading = false.obs;
+  final successMessage = ''.obs;
+  final errorMessage = ''.obs;
 
-  // Pagination
-  final RxInt currentPage = 1.obs;
-  final RxInt totalPages = 1.obs;
-  final RxBool hasNextPage = false.obs;
-  final RxBool hasPrevPage = false.obs;
-  final RxInt totalLoans = 0.obs;
-  final RxBool isLoadingMore = false.obs;
+  // =====================
+  // Loans list
+  // =====================
+  final loans = <LoanModel>[].obs;
+  final selectedLoan = Rx<LoanModel?>(null);
 
-  // Statistics
-  double get totalOutstandingBalance {
-    return loans.fold(0.0, (sum, loan) => sum + loan.currentBalance);
-  }
+  // =====================
+  // Search & filter
+  // =====================
+  final searchQuery = ''.obs;
+  final selectedFilter = 'All'.obs;
 
-  int get activeLoansCount {
-    return loans.where((loan) => loan.isActive).length;
-  }
+  // =====================
+  // Statistics (computed)
+  // =====================
 
-  int get overdueLoansCount {
-    return loans.where((loan) => loan.isOverdue).length;
-  }
 
-  int get settledLoansCount {
-    return loans.where((loan) => loan.isSettled).length;
-  }
+  // =====================
+  // Filtered loans (based on search & filter)
 
-  // Filtered loans
-  List<LoanModel> get filteredLoans {
-    if (searchQuery.value.isNotEmpty) {
-      final query = searchQuery.value.toLowerCase();
-      return loans.where((loan) {
-        return loan.loanNo.toLowerCase().contains(query) ||
-            loan.customerName.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    switch (selectedFilter.value) {
-      case 'Active':
-        return loans.where((loan) => loan.isActive).toList();
-      case 'Overdue':
-        return loans.where((loan) => loan.isOverdue).toList();
-      case 'Settled':
-        return loans.where((loan) => loan.isSettled).toList();
-      default:
-        return loans;
-    }
-  }
-
+  // =====================
   // Fetch customer loans
+  // =====================
   Future<void> fetchCustomerLoans({bool refresh = false}) async {
-    try {
-      if (refresh) {
-        currentPage.value = 1;
-        loans.clear();
-      }
+    if (refresh) {
+      loans.clear();
+    }
 
+    try {
       isLoading.value = true;
       errorMessage.value = '';
 
-      print('DEBUG: Controller - Starting fetchCustomerLoans');
-      print('DEBUG: Selected filter: ${selectedFilter.value}');
+      DevLogs.logInfo('Fetching customer loans with filter: ${selectedFilter.value}');
 
       final response = await LoanService.getCustomerLoans(
-        page: currentPage.value,
-        limit: 10,
         status: selectedFilter.value != 'All' ? selectedFilter.value : null,
       );
 
       if (response.success && response.data != null) {
-        print(
-          'DEBUG: Controller - Response success, loans count: ${response.data!.loans.length}',
-        );
-
-        if (response.data!.loans.isNotEmpty) {
-          print(
-            'DEBUG: Controller - First loan: ${response.data!.loans.first.loanNo}',
-          );
-          print(
-            'DEBUG: Controller - First loan customer: ${response.data!.loans.first.customerName}',
-          );
-        } else {
-          print('DEBUG: Controller - No loans in response');
-        }
-
-        loans.value = response.data!.loans;
-        totalLoans.value = response.data!.pagination.total;
-        totalPages.value = response.data!.pagination.totalPages;
-        hasNextPage.value = response.data!.pagination.hasNextPage;
-        hasPrevPage.value = response.data!.pagination.hasPrevPage;
-
-        print('DEBUG: Controller - Updated loans list: ${loans.length} loans');
-        print('DEBUG: Controller - Total loans: ${totalLoans.value}');
+        loans.value = response.data!;
+        successMessage.value = response.message ?? 'Loans loaded successfully';
+        DevLogs.logSuccess('Loaded ${loans.length} loans');
       } else {
         errorMessage.value = response.message ?? 'Failed to load loans';
-        print('DEBUG: Controller - Error: ${errorMessage.value}');
+        DevLogs.logError(errorMessage.value);
         Get.snackbar(
           'Error',
           errorMessage.value,
@@ -113,8 +66,8 @@ class LoanController extends GetxController {
         );
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load loans: ${e.toString()}';
-      print('DEBUG: Controller - Exception: ${errorMessage.value}');
+      errorMessage.value = 'An error occurred while fetching loans: $e';
+      DevLogs.logError(errorMessage.value);
       Get.snackbar(
         'Error',
         errorMessage.value,
@@ -122,49 +75,19 @@ class LoanController extends GetxController {
       );
     } finally {
       isLoading.value = false;
-      print('DEBUG: Controller - Loading completed');
     }
   }
 
-  // Load more loans
-  Future<void> loadMoreLoans() async {
-    if (isLoadingMore.value || !hasNextPage.value) return;
-
-    try {
-      isLoadingMore.value = true;
-      currentPage.value++;
-
-      final response = await LoanService.getCustomerLoans(
-        page: currentPage.value,
-        limit: 10,
-        status: selectedFilter.value != 'All' ? selectedFilter.value : null,
-      );
-
-      if (response.success && response.data != null) {
-        loans.addAll(response.data!.loans);
-        hasNextPage.value = response.data!.pagination.hasNextPage;
-        hasPrevPage.value = response.data!.pagination.hasPrevPage;
-      } else {
-        currentPage.value--;
-        Get.snackbar(
-          'Error',
-          'Failed to load more loans',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    } catch (e) {
-      currentPage.value--;
-      Get.snackbar(
-        'Error',
-        'Failed to load more loans',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      isLoadingMore.value = false;
-    }
+  // =====================
+  // Refresh loans
+  // =====================
+  Future<void> refreshLoans() async {
+    await fetchCustomerLoans(refresh: true);
   }
 
+  // =====================
   // Get loan details by ID
+  // =====================
   Future<LoanModel?> getLoanDetails(String loanId) async {
     try {
       isLoading.value = true;
@@ -184,7 +107,7 @@ class LoanController extends GetxController {
         return null;
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load loan details: ${e.toString()}';
+      errorMessage.value = 'Failed to load loan details: $e';
       Get.snackbar(
         'Error',
         errorMessage.value,
@@ -196,7 +119,9 @@ class LoanController extends GetxController {
     }
   }
 
+  // =====================
   // Calculate loan charges
+  // =====================
   Future<Map<String, dynamic>?> calculateLoanCharges(String loanId) async {
     try {
       isLoading.value = true;
@@ -215,7 +140,7 @@ class LoanController extends GetxController {
         return null;
       }
     } catch (e) {
-      errorMessage.value = 'Failed to calculate charges: ${e.toString()}';
+      errorMessage.value = 'Failed to calculate charges: $e';
       Get.snackbar(
         'Error',
         errorMessage.value,
@@ -227,7 +152,9 @@ class LoanController extends GetxController {
     }
   }
 
+  // =====================
   // Process loan payment
+  // =====================
   Future<Map<String, dynamic>?> processLoanPayment({
     required String loanId,
     required double amount,
@@ -250,7 +177,7 @@ class LoanController extends GetxController {
 
       if (response.success && response.data != null) {
         // Refresh loan data after successful payment
-        await fetchCustomerLoans(refresh: true);
+        await refreshLoans();
         if (selectedLoan.value != null && selectedLoan.value!.id == loanId) {
           await getLoanDetails(loanId);
         }
@@ -274,7 +201,7 @@ class LoanController extends GetxController {
         return null;
       }
     } catch (e) {
-      errorMessage.value = 'Payment failed: ${e.toString()}';
+      errorMessage.value = 'Payment failed: $e';
       Get.snackbar(
         'Payment Error',
         errorMessage.value,
@@ -286,7 +213,9 @@ class LoanController extends GetxController {
     }
   }
 
+  // =====================
   // Update loan status
+  // =====================
   Future<bool> updateLoanStatus({
     required String loanId,
     required String status,
@@ -303,7 +232,7 @@ class LoanController extends GetxController {
 
       if (response.success && response.data == true) {
         // Refresh loan data
-        await fetchCustomerLoans(refresh: true);
+        await refreshLoans();
         if (selectedLoan.value != null && selectedLoan.value!.id == loanId) {
           await getLoanDetails(loanId);
         }
@@ -326,7 +255,7 @@ class LoanController extends GetxController {
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Failed to update status: ${e.toString()}';
+      errorMessage.value = 'Failed to update status: $e';
       Get.snackbar(
         'Error',
         errorMessage.value,
@@ -338,28 +267,47 @@ class LoanController extends GetxController {
     }
   }
 
+  // =====================
   // Set filter
+  // =====================
   void setFilter(String filter) {
     selectedFilter.value = filter;
     fetchCustomerLoans(refresh: true);
   }
 
+  // =====================
   // Set search query
+  // =====================
   void setSearchQuery(String query) {
     searchQuery.value = query;
   }
 
+  // =====================
   // Clear search
+  // =====================
   void clearSearch() {
     searchQuery.value = '';
   }
 
+  // =====================
+  // Clear all filters (reset to default)
+  // =====================
+  void clearFilters() {
+    selectedFilter.value = 'All';
+    searchQuery.value = '';
+    fetchCustomerLoans(refresh: true);
+  }
+
+  // =====================
   // Select loan
+  // =====================
   void selectLoan(LoanModel loan) {
     selectedLoan.value = loan;
   }
 
+  // =====================
   // Clear selected loan
+  // =====================
   void clearSelectedLoan() {
     selectedLoan.value = null;
   }

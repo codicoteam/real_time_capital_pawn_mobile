@@ -8,15 +8,15 @@ import 'package:real_time_pawn/models/loan_mngmt_model.dart';
 
 class LoanService {
   /// GET CUSTOMER'S LOANS
-  static Future<APIResponse<LoansResponse>> getCustomerLoans({
+  static Future<APIResponse<List<LoanModel>>> getCustomerLoans({
     int page = 1,
-    int limit = 10,
+    int limit = 10000000,
     String? status,
   }) async {
     final token = await CacheUtils.checkToken();
 
     if (token == null || token.isEmpty) {
-      return APIResponse<LoansResponse>(
+      return APIResponse<List<LoanModel>>(
         success: false,
         message: 'Authentication required',
         data: null,
@@ -27,7 +27,7 @@ class LoanService {
     final userId = await CacheUtils.getUserId();
 
     if (userId == null || userId.isEmpty) {
-      return APIResponse<LoansResponse>(
+      return APIResponse<List<LoanModel>>(
         success: false,
         message: 'User not logged in',
         data: null,
@@ -74,7 +74,7 @@ class LoanService {
       if (responseBody.contains('<!DOCTYPE') ||
           responseBody.contains('<html')) {
         DevLogs.logError('Server returned HTML instead of JSON. Check URL.');
-        return APIResponse<LoansResponse>(
+        return APIResponse<List<LoanModel>>(
           success: false,
           message:
               'Server error: Invalid endpoint. Please check API configuration.',
@@ -93,7 +93,7 @@ class LoanService {
       }
 
       if (response.statusCode == 401) {
-        return APIResponse<LoansResponse>(
+        return APIResponse<List<LoanModel>>(
           success: false,
           message: 'Authentication failed. Please login again.',
           data: null,
@@ -101,7 +101,7 @@ class LoanService {
       }
 
       if (response.statusCode == 403) {
-        return APIResponse<LoansResponse>(
+        return APIResponse<List<LoanModel>>(
           success: false,
           message: 'You can only view your own loans',
           data: null,
@@ -109,7 +109,7 @@ class LoanService {
       }
 
       if (response.statusCode == 404) {
-        return APIResponse<LoansResponse>(
+        return APIResponse<List<LoanModel>>(
           success: false,
           message: 'Customer not found',
           data: null,
@@ -119,23 +119,34 @@ class LoanService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (responseData['success'] == true) {
           final data = responseData['data'];
+          final loansJson = data['loans'] as List?;
+
+          if (loansJson == null) {
+            DevLogs.logError('Loans array missing in response');
+            return APIResponse<List<LoanModel>>(
+              success: false,
+              message: 'Invalid response format: loans array not found',
+              data: null,
+            );
+          }
 
           try {
-            final loansResponse = LoansResponse.fromMap(data);
-            DevLogs.logSuccess(
-              'Fetched ${loansResponse.loans.length} loans successfully',
-            );
+            final loans = loansJson
+                .map((item) => LoanModel.fromMap(item as Map<String, dynamic>))
+                .toList();
 
-            return APIResponse<LoansResponse>(
+            DevLogs.logSuccess('Fetched ${loans.length} loans successfully');
+
+            return APIResponse<List<LoanModel>>(
               success: true,
-              data: loansResponse,
+              data: loans,
               message:
                   responseData['message'] ?? 'Loans retrieved successfully',
             );
           } catch (e) {
             DevLogs.logError('Error parsing loans response: $e');
             DevLogs.logError('Error stack: ${e.toString()}');
-            return APIResponse<LoansResponse>(
+            return APIResponse<List<LoanModel>>(
               success: false,
               message: 'Error parsing loan data: ${e.toString()}',
               data: null,
@@ -146,7 +157,7 @@ class LoanService {
               responseData['message'] ?? 'Failed to fetch loans';
           DevLogs.logError('Loans fetch failed: $errorMessage');
 
-          return APIResponse<LoansResponse>(
+          return APIResponse<List<LoanModel>>(
             success: false,
             message: errorMessage,
             data: null,
@@ -157,7 +168,7 @@ class LoanService {
             responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
         DevLogs.logError('Loans HTTP error: $errorMessage');
 
-        return APIResponse<LoansResponse>(
+        return APIResponse<List<LoanModel>>(
           success: false,
           message: errorMessage,
           data: null,
@@ -165,7 +176,7 @@ class LoanService {
       }
     } catch (e) {
       DevLogs.logError('Error fetching customer loans: $e');
-      return APIResponse<LoansResponse>(
+      return APIResponse<List<LoanModel>>(
         success: false,
         message: 'An error occurred while fetching loans: ${e.toString()}',
         data: null,
@@ -382,7 +393,7 @@ class LoanService {
       'paymentMethod': paymentMethod,
       if (provider != null && provider.isNotEmpty) 'provider': provider,
       if (phoneNumber != null && phoneNumber.isNotEmpty)
-        'payer_phone': "263"+phoneNumber,
+        'payer_phone': "263" + phoneNumber,
       if (accountNumber != null && accountNumber.isNotEmpty)
         'accountNumber': accountNumber,
     });
