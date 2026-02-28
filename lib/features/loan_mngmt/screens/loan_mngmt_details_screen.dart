@@ -6,8 +6,6 @@ import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/loan_mngmt/controllers/loan_mngmt_controller.dart';
 import 'package:real_time_pawn/models/loan_mngmt_model.dart';
-import 'package:real_time_pawn/models/attachment_model.dart';
-import 'package:real_time_pawn/models/loan_terms_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../attached_files_mngmt/controllers/attached_files_mngmt_controller.dart'
     show AttachmentController;
@@ -385,7 +383,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                 icon: Icons.list_alt_outlined,
                 label: 'Loan Terms',
                 onTap: () => Get.toNamed(
-                  RoutesHelper.loanTermsScreen,
+                  RoutesHelper.loanTermsDisplayScreen,
                   arguments: {'loanId': _loan.id, 'loanNo': _loan.loanNo},
                 ),
               ),
@@ -724,7 +722,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
   }
 
   void _showImageDialog(String? url) {
-    DevLogs.logInfo( 'Showing image dialog for URL: $url');
+    DevLogs.logInfo('Showing image dialog for URL: $url');
     if (url == null) return;
     Get.dialog(
       Dialog(
@@ -814,8 +812,8 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                   ),
                 ),
                 onTap: () => Get.toNamed(
-                  RoutesHelper.loanTermDetailsScreen,
-                  arguments: {'termId': term.id, 'loanId': _loan.id},
+                  RoutesHelper.loanTermsDisplayScreen, // CHANGED THIS
+                  arguments: {'loanId': _loan.id, 'loanNo': _loan.loanNo},
                 ),
               );
             },
@@ -823,7 +821,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
           if (terms.length > 3)
             TextButton(
               onPressed: () => Get.toNamed(
-                RoutesHelper.loanTermsScreen,
+                RoutesHelper.loanTermsDisplayScreen, // CHANGED THIS
                 arguments: {'loanId': _loan.id, 'loanNo': _loan.loanNo},
               ),
               child: const Text('View All Terms'),

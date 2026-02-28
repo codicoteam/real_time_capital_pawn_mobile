@@ -84,10 +84,7 @@ class RoutesHelper {
   static String LoanStatusScreen = "/loan-status";
 
   // Loan Terms Management routes
-  static const String loanTermsScreen = "/loan-terms";
-  static const String loanTermDetailsScreen = "/loan-term-details";
-  static const String loanTermTimelineScreen = "/loan-term-timeline";
-  static const String renewLoanTermScreen = "/renew-loan-term";
+  static const String loanTermsDisplayScreen = "/loan-terms-display";
 
   // Payment Management Routes
   static const String PaymentListScreen = "/payment-list";
