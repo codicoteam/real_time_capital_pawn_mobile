@@ -201,7 +201,10 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.credit_card,
                     title: 'Loan Payments',
                     color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(context, '/payments'),
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.CustomerPaymentsScreen,
+                    ),
                   ).animate().fadeIn(delay: 560.ms),
 
                   // Support

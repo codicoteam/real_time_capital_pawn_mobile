@@ -108,5 +108,7 @@ class RoutesHelper {
 
   static String faqScreen = "/faq";
 
+  static const String CustomerPaymentsScreen = "/customer-payments";
+
   // static String paymentSuccessScreen = "/payment_success_screen";
 }

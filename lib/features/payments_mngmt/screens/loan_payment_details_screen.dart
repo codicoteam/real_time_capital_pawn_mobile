@@ -1,3 +1,5 @@
+// features/payments_mngmt/screens/loan_payment_details_screen.dart - CORRECTED VERSION
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,7 +14,7 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PaymentController controller = Get.find<PaymentController>();
+    final PaymentController controller = Get.put(PaymentController());
 
     // Load payment details ONCE when screen is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -369,6 +371,7 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
     );
   }
 
+  // 🔴 FIXED: Changed payment.paymentDate to payment.paidAt
   Widget _buildInfoSection(PaymentModel payment) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -397,8 +400,9 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
             _buildInfoRow('Provider', payment.provider!.toUpperCase()),
           _buildInfoRow('Currency', payment.currency),
           _buildInfoRow('Created', _formatDate(payment.createdAt)),
-          if (payment.paymentDate != null)
-            _buildInfoRow('Payment Date', payment.paymentDate!),
+          if (payment.paidAt !=
+              null) // ✅ FIX: Use paidAt instead of paymentDate
+            _buildInfoRow('Payment Date', _formatDate(payment.paidAt!)),
         ],
       ),
     );
@@ -426,8 +430,8 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildInfoRow('Payment ID', _truncate(payment.id, 12)),
           _buildInfoRow('Reference', _truncate(payment.reference, 15)),
-          if (payment.loan.isNotEmpty)
-            _buildInfoRow('Loan ID', _truncate(payment.loan, 12)),
+          if (payment.loanId.isNotEmpty)
+            _buildInfoRow('Loan ID', _truncate(payment.loanId, 12)),
           if (payment.loanTerm != null)
             _buildInfoRow('Loan Term', payment.loanTerm!),
         ],
@@ -529,8 +533,23 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
     );
   }
 
+  // 🔴 UPDATED: Match the date format from the model
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    final monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${monthNames[date.month - 1]} ${date.year}';
   }
 
   String _truncate(String text, int length) {

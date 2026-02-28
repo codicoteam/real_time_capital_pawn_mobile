@@ -1,9 +1,11 @@
+// models/payment_mngmt_model.dart - UPDATED MODEL
+
 import 'dart:convert';
 
 class PaymentModel {
   final String id;
   final String reference;
-  final String loan;
+  final dynamic loan; // Can be String or Map
   final String? loanTerm;
   final double amount;
   final String currency;
@@ -19,12 +21,51 @@ class PaymentModel {
   final String? receiptNo;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final String? paymentDate;
+  final DateTime? paidAt;
+  final Map<String, dynamic>? meta;
+  final String? paynowInvoiceId;
+  final String? providerRef;
+  final String? phoneNumber;
+
+  // Derived properties from nested objects
+  String get loanId {
+    if (loan is Map) {
+      return loan['_id']?.toString() ?? '';
+    }
+    return loan?.toString() ?? '';
+  }
+
+  String get loanNumber {
+    if (loan is Map) {
+      return loan['loan_no']?.toString() ?? '';
+    }
+    return '';
+  }
+
+  double get loanPrincipal {
+    if (loan is Map) {
+      return (loan['principal_amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  String get customerName {
+    if (loan is Map && loan['customer_user'] != null) {
+      final customer = loan['customer_user'];
+      final firstName = customer['first_name']?.toString() ?? '';
+      final lastName = customer['last_name']?.toString() ?? '';
+      if (firstName.isNotEmpty || lastName.isNotEmpty) {
+        return '$firstName $lastName'.trim();
+      }
+      return customer['email']?.toString() ?? '';
+    }
+    return '';
+  }
 
   PaymentModel({
     required this.id,
     required this.reference,
-    required this.loan,
+    this.loan,
     this.loanTerm,
     required this.amount,
     this.currency = 'USD',
@@ -40,7 +81,11 @@ class PaymentModel {
     this.receiptNo,
     required this.createdAt,
     required this.updatedAt,
-    this.paymentDate,
+    this.paidAt,
+    this.meta,
+    this.paynowInvoiceId,
+    this.providerRef,
+    this.phoneNumber,
   });
 
   factory PaymentModel.fromJson(String str) =>
@@ -48,7 +93,6 @@ class PaymentModel {
 
   String toJson() => json.encode(toMap());
 
-  // 🔴 THIS IS THE ONLY METHOD YOU NEED TO REPLACE - COPY THIS EXACTLY
   factory PaymentModel.fromMap(Map<String, dynamic> json) {
     // STEP 1: Get the actual payment data regardless of wrapper
     Map<String, dynamic> data;
@@ -63,20 +107,7 @@ class PaymentModel {
       data = json;
     }
 
-    // STEP 2: Extract loan ID
-    String loanId = '';
-    if (data['loan'] != null) {
-      if (data['loan'] is Map) {
-        loanId =
-            data['loan']['_id']?.toString() ??
-            data['loan']['loan_no']?.toString() ??
-            '';
-      } else {
-        loanId = data['loan'].toString();
-      }
-    }
-
-    // STEP 3: Parse dates safely
+    // STEP 2: Parse dates safely
     DateTime parseDate(dynamic dateValue) {
       if (dateValue == null) return DateTime.now();
       try {
@@ -86,10 +117,22 @@ class PaymentModel {
       }
     }
 
+    // STEP 3: Extract meta data
+    Map<String, dynamic>? metaData;
+    if (data["meta"] != null) {
+      metaData = Map<String, dynamic>.from(data["meta"]);
+    }
+
+    // STEP 4: Extract phone number from meta if available
+    String? extractedPhone;
+    if (metaData != null && metaData["phone_number"] != null) {
+      extractedPhone = metaData["phone_number"].toString();
+    }
+
     return PaymentModel(
       id: data["_id"]?.toString() ?? '',
       reference: data["reference"]?.toString() ?? '',
-      loan: loanId,
+      loan: data["loan"], // Keep as dynamic - could be String or Map
       loanTerm: data["loan_term"]?.toString(),
       amount: (data["amount"] as num?)?.toDouble() ?? 0.0,
       currency: data["currency"]?.toString() ?? 'USD',
@@ -104,11 +147,15 @@ class PaymentModel {
       storageComponent: (data["storage_component"] as num?)?.toDouble() ?? 0.0,
       penaltyComponent: (data["penalty_component"] as num?)?.toDouble() ?? 0.0,
       notes: data["notes"]?.toString(),
-      pollUrl: data["pollUrl"]?.toString(),
+      pollUrl: data["poll_url"]?.toString(),
       receiptNo: data["receipt_no"]?.toString(),
       createdAt: parseDate(data["created_at"]),
       updatedAt: parseDate(data["updated_at"]),
-      paymentDate: data["payment_date"]?.toString(),
+      paidAt: data["paid_at"] != null ? parseDate(data["paid_at"]) : null,
+      meta: metaData,
+      paynowInvoiceId: data["paynow_invoice_id"]?.toString(),
+      providerRef: data["provider_ref"]?.toString(),
+      phoneNumber: extractedPhone,
     );
   }
 
@@ -129,7 +176,31 @@ class PaymentModel {
 
   // Helper getters
   String get formattedAmount => '\$${amount.toStringAsFixed(2)}';
-  String get formattedDate => paymentDate ?? createdAt.toString();
+  String get formattedDate {
+    if (paidAt != null) {
+      return _formatDate(paidAt!);
+    }
+    return _formatDate(createdAt);
+  }
+
+  String _formatDate(DateTime date) {
+    final monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${monthNames[date.month - 1]} ${date.year}';
+  }
+
   bool get isPending => paymentStatus.toLowerCase() == 'pending';
   bool get isPaid => paymentStatus.toLowerCase() == 'paid';
   bool get isFailed => paymentStatus.toLowerCase() == 'failed';
@@ -149,6 +220,22 @@ class PaymentModel {
       'storage': (storageComponent / amount * 100),
       'penalty': (penaltyComponent / amount * 100),
     };
+  }
+
+  // Get payment instructions (for EcoCash)
+  String? get paymentInstructions {
+    if (meta != null && meta!.containsKey('instructions')) {
+      return meta!['instructions'].toString();
+    }
+    return null;
+  }
+
+  // Get redirect URL (for PayNow)
+  String? get redirectUrl {
+    if (meta != null && meta!.containsKey('redirect_url')) {
+      return meta!['redirect_url'].toString();
+    }
+    return null;
   }
 }
 

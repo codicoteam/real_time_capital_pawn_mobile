@@ -360,16 +360,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
               child: _buildActionButton(
                 icon: Icons.receipt_long_outlined,
                 label: 'View Charges',
-                onTap: () async {
-                  final charges = await _loanController.calculateLoanCharges(
-                    _loan.id!,
+                onTap: () {
+                  Get.toNamed(
+                    RoutesHelper.LoanChargesScreen,
+                    arguments: {'loanId': _loan.id},
                   );
-                  if (charges != null) {
-                    Get.toNamed(
-                      RoutesHelper.LoanChargesScreen,
-                      arguments: {'loanId': _loan.id, 'charges': charges},
-                    );
-                  }
                 },
               ),
             ),
