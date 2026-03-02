@@ -228,9 +228,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                       _buildAttachmentsSection(),
                       const SizedBox(height: 16),
 
-                      // Loan Terms
-                      _buildLoanTermsSection(),
-                      const SizedBox(height: 16),
+
 
                       // Status Management (if applicable)
                       if (_loan.status?.toLowerCase() == 'active' ||
@@ -737,94 +735,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
     );
   }
 
-  Widget _buildLoanTermsSection() {
-    return Obx(() {
-      final terms = _loanTermsController.loanTerms;
-      if (_loanTermsController.isLoading.value && terms.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (terms.isEmpty) {
-        return const SizedBox.shrink();
-      }
-      return _buildSectionCard(
-        title: 'Loan Terms (${terms.length})',
-        children: [
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: terms.length > 3 ? 3 : terms.length,
-            separatorBuilder: (_, __) => const Divider(height: 16),
-            itemBuilder: (context, index) {
-              final term = terms[index];
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(term.status).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      term.termNo.substring(term.termNo.length - 2),
-                      style: TextStyle(
-                        color: _getStatusColor(term.status),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                title: Text(
-                  'Term ${term.termNo} - ${term.termType}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                subtitle: Text(
-                  '${term.formattedPrincipalAmount} • ${_formatDateFull(term.startDate)} - ${_formatDateFull(term.endDate)}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: AppColors.subtextColor,
-                  ),
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(term.status).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    term.status.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: _getStatusColor(term.status),
-                    ),
-                  ),
-                ),
-                onTap: () => Get.toNamed(
-                  RoutesHelper.loanTermsDisplayScreen, // CHANGED THIS
-                  arguments: {'loanId': _loan.id, 'loanNo': _loan.loanNo},
-                ),
-              );
-            },
-          ),
-          if (terms.length > 3)
-            TextButton(
-              onPressed: () => Get.toNamed(
-                RoutesHelper.loanTermsDisplayScreen, // CHANGED THIS
-                arguments: {'loanId': _loan.id, 'loanNo': _loan.loanNo},
-              ),
-              child: const Text('View All Terms'),
-            ),
-        ],
-      );
-    });
-  }
+
 
   Widget _buildStatusManagement() {
     return Container(
