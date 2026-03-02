@@ -13,7 +13,8 @@ class CreateTicketScreen extends StatefulWidget {
   State<CreateTicketScreen> createState() => _CreateTicketScreenState();
 }
 
-class _CreateTicketScreenState extends State<CreateTicketScreen> {
+class _CreateTicketScreenState extends State<CreateTicketScreen>
+    with TickerProviderStateMixin {
   final SupportTicketController _controller = Get.put(
     SupportTicketController(),
   );
@@ -21,21 +22,58 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  // Local state since controller doesn't have these properties
   TicketCategory _selectedCategory = TicketCategory.general;
-  TicketPriority _selectedPriority = TicketPriority.medium;
+  TicketPriority _selectedPriority = TicketPriority.urgent;
+
+  int _currentStep = 0;
+  late AnimationController _slideController;
+  late AnimationController _fadeController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller.clearMessages();
+
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.06, 0), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+
+    _slideController.forward();
+    _fadeController.forward();
   }
 
   @override
   void dispose() {
     _subjectController.dispose();
     _descriptionController.dispose();
+    _slideController.dispose();
+    _fadeController.dispose();
     super.dispose();
+  }
+
+  void _animateToStep(int step) {
+    _slideController.reset();
+    _fadeController.reset();
+    setState(() => _currentStep = step);
+    _slideController.forward();
+    _fadeController.forward();
   }
 
   Future<void> _submitTicket() async {
@@ -57,367 +95,928 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         priority: _selectedPriority,
       );
 
-      if (success) {
-        Get.back();
-      }
+      if (success) Get.back();
     }
   }
 
-  // Helper methods for display since model doesn't have display properties
-  String _getCategoryName(TicketCategory category) {
-    switch (category) {
-      case TicketCategory.loan:
-        return 'Loan';
-      case TicketCategory.payment:
-        return 'Payment';
-      case TicketCategory.auction:
-        return 'Auction';
-      case TicketCategory.account:
-        return 'Account';
-      case TicketCategory.technical:
-        return 'Technical';
-      case TicketCategory.general:
-        return 'General';
-    }
-  }
+  // ── Category config ──────────────────────────────────────────────
+  static const _categories = [
+    _CategoryItem(TicketCategory.loan, 'Loan', Icons.account_balance_outlined),
+    _CategoryItem(
+      TicketCategory.payment,
+      'Payment',
+      Icons.credit_card_outlined,
+    ),
+    _CategoryItem(TicketCategory.auction, 'Auction', Icons.gavel_outlined),
+    _CategoryItem(TicketCategory.account, 'Account', Icons.person_outline),
+    _CategoryItem(
+      TicketCategory.technical,
+      'Technical',
+      Icons.terminal_outlined,
+    ),
+    _CategoryItem(TicketCategory.general, 'General', Icons.help_outline),
+  ];
 
-  IconData _getCategoryIcon(TicketCategory category) {
-    switch (category) {
-      case TicketCategory.loan:
-        return Icons.money;
-      case TicketCategory.payment:
-        return Icons.payment;
-      case TicketCategory.auction:
-        return Icons.gavel;
-      case TicketCategory.account:
-        return Icons.person;
-      case TicketCategory.technical:
-        return Icons.settings;
-      case TicketCategory.general:
-        return Icons.help;
-    }
-  }
+  // ── Priority config ──────────────────────────────────────────────
+  static const _priorities = [
+    _PriorityItem(
+      TicketPriority.urgent,
+      'Urgent',
+      Color(0xFFFF4757),
+      '⚡ Needs immediate attention',
+    ),
+    _PriorityItem(
+      TicketPriority.high,
+      'High',
+      Color(0xFFFF6B35),
+      '🔥 Important issue',
+    ),
+    _PriorityItem(
+      TicketPriority.medium,
+      'Medium',
+      Color(0xFFFFBE0B),
+      '📋 Standard request',
+    ),
+    _PriorityItem(
+      TicketPriority.low,
+      'Low',
+      Color(0xFF22C55E),
+      '💬 Non-urgent inquiry',
+    ),
+  ];
 
-  String _getPriorityName(TicketPriority priority) {
-    switch (priority) {
-      case TicketPriority.low:
-        return 'Low';
-      case TicketPriority.medium:
-        return 'Medium';
-      case TicketPriority.high:
-        return 'High';
-      case TicketPriority.urgent:
-        return 'Urgent';
-    }
-  }
+  // ── Steps ─────────────────────────────────────────────────────────
+  static const _stepTitles = ['Category', 'Priority', 'Details'];
+  static const _stepSubtitles = [
+    'What\'s this about?',
+    'How critical is this?',
+    'Tell us more',
+  ];
 
-  Color _getPriorityColor(TicketPriority priority) {
-    switch (priority) {
-      case TicketPriority.low:
-        return Colors.green;
-      case TicketPriority.medium:
-        return Colors.blue;
-      case TicketPriority.high:
-        return Colors.orange;
-      case TicketPriority.urgent:
-        return Colors.red;
-    }
-  }
-
-  Widget _buildCategoryCard(TicketCategory category) {
-    final isSelected = _selectedCategory == category;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedCategory = category;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryColor.withOpacity(0.1)
-              : AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryColor : AppColors.borderColor,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: Column(
           children: [
-            Icon(
-              _getCategoryIcon(category),
-              color: isSelected
-                  ? AppColors.primaryColor
-                  : AppColors.subtextColor,
-            ),
-            const SizedBox(width: 12),
+            _buildHeader(),
+            _buildStepIndicator(),
             Expanded(
-              child: Text(
-                _getCategoryName(category),
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected
-                      ? AppColors.primaryColor
-                      : AppColors.textColor,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: _buildCurrentStep(),
                 ),
               ),
             ),
-            if (isSelected)
-              Icon(Icons.check_circle, color: AppColors.primaryColor),
+            _buildBottomNav(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPriorityChip(TicketPriority priority) {
-    final isSelected = _selectedPriority == priority;
-
-    return ChoiceChip(
-      label: Text(
-        _getPriorityName(priority),
-        style: GoogleFonts.poppins(
-          color: isSelected ? Colors.white : _getPriorityColor(priority),
-          fontWeight: FontWeight.w500,
+  // ── Header — mirrors TicketDetailScreen's gradient header ─────────
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryColor,
+            AppColors.primaryColor.withOpacity(0.8),
+          ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryColor.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedPriority = priority;
-        });
-      },
-      selectedColor: _getPriorityColor(priority),
-      backgroundColor: _getPriorityColor(priority).withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: _getPriorityColor(priority).withOpacity(isSelected ? 0 : 0.5),
-        ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Support Ticket',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.15,
+                  ),
+                ),
+                Text(
+                  _stepSubtitles[_currentStep],
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.75),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: const Icon(
+              Icons.confirmation_number_outlined,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Create Support Ticket',
-          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: const Icon(Icons.arrow_back),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Category Section
-              Text(
-                'Category',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...TicketCategory.values.map(_buildCategoryCard).toList(),
-              const SizedBox(height: 24),
-
-              // Subject
-              Text(
-                'Subject',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _subjectController,
-                decoration: InputDecoration(
-                  hintText: 'Brief description of your issue',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surfaceColor,
-                ),
-                maxLines: 1,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a subject';
-                  }
-                  if (value.length < 5) {
-                    return 'Subject must be at least 5 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Priority
-              Text(
-                'Priority',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: TicketPriority.values
-                    .map(_buildPriorityChip)
-                    .toList(),
-              ),
-              const SizedBox(height: 24),
-
-              // Description
-              Text(
-                'Description',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  hintText:
-                      'Please provide detailed information about your issue...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surfaceColor,
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 6,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  if (value.length < 10) {
-                    return 'Description must be at least 10 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Please be as detailed as possible. Include relevant information such as dates, amounts, error messages, etc.',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: AppColors.subtextColor,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                child: Obx(() {
-                  return ElevatedButton(
-                    onPressed: _controller.isCreatingTicket.value
-                        ? null
-                        : _submitTicket,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: AppColors.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      disabledBackgroundColor: AppColors.primaryColor
-                          .withOpacity(0.5),
-                    ),
-                    child: _controller.isCreatingTicket.value
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          )
-                        : Text(
-                            'Submit Ticket',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-
-              // Info Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+  // ── Step Indicator — white bar matching app card style ────────────
+  Widget _buildStepIndicator() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Row(
+        children: List.generate(_stepTitles.length, (i) {
+          final isCompleted = i < _currentStep;
+          final isActive = i == _currentStep;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                if (i < _currentStep) _animateToStep(i);
+              },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: AppColors.primaryColor,
-                          size: 20,
+                        Row(
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              width: isActive ? 28 : 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: isCompleted || isActive
+                                    ? AppColors.primaryColor
+                                    : AppColors.backgroundColor,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: isActive || isCompleted
+                                      ? AppColors.primaryColor
+                                      : AppColors.borderColor,
+                                ),
+                              ),
+                              child: Center(
+                                child: isCompleted
+                                    ? const Icon(
+                                        Icons.check_rounded,
+                                        size: 12,
+                                        color: Colors.white,
+                                      )
+                                    : Text(
+                                        '${i + 1}',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: isActive
+                                              ? Colors.white
+                                              : AppColors.subtextColor,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _stepTitles[i],
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: isActive
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: isActive || isCompleted
+                                    ? AppColors.textColor
+                                    : AppColors.subtextColor,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'What happens next?',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textColor,
+                        const SizedBox(height: 6),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeOutCubic,
+                          height: 2.5,
+                          decoration: BoxDecoration(
+                            color: isCompleted || isActive
+                                ? AppColors.primaryColor
+                                : AppColors.borderColor,
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                  ),
+                  if (i < _stepTitles.length - 1) const SizedBox(width: 8),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  // ── Step Router ───────────────────────────────────────────────────
+  Widget _buildCurrentStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      child: switch (_currentStep) {
+        0 => _buildCategoryStep(),
+        1 => _buildPriorityStep(),
+        2 => _buildDetailsStep(),
+        _ => const SizedBox.shrink(),
+      },
+    );
+  }
+
+  // ── STEP 1: Category ──────────────────────────────────────────────
+  Widget _buildCategoryStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select the area\nthat needs attention.',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textColor,
+            height: 1.3,
+          ),
+        ),
+        const SizedBox(height: 20),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.5,
+          children: _categories.map((cat) {
+            final isSelected = _selectedCategory == cat.value;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedCategory = cat.value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryColor.withOpacity(0.08)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryColor
+                        : AppColors.borderColor,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? AppColors.primaryColor.withOpacity(0.1)
+                          : Colors.black.withOpacity(0.04),
+                      blurRadius: isSelected ? 12 : 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryColor.withOpacity(0.12)
+                            : AppColors.backgroundColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        cat.icon,
+                        color: isSelected
+                            ? AppColors.primaryColor
+                            : AppColors.subtextColor,
+                        size: 18,
+                      ),
+                    ),
                     Text(
-                      '• You will receive a ticket number for tracking\n'
-                      '• Our support team will review your ticket\n'
-                      '• We will contact you via email or phone\n'
-                      '• Average response time: 24-48 hours',
+                      cat.label,
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: AppColors.subtextColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.primaryColor
+                            : AppColors.textColor,
                       ),
                     ),
                   ],
                 ),
               ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  // ── STEP 2: Priority ──────────────────────────────────────────────
+  Widget _buildPriorityStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'How urgently do you\nneed this resolved?',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textColor,
+            height: 1.3,
+          ),
+        ),
+        const SizedBox(height: 20),
+        ..._priorities.map((p) {
+          final isSelected = _selectedPriority == p.value;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedPriority = p.value),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isSelected ? p.color.withOpacity(0.07) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected ? p.color : AppColors.borderColor,
+                  width: isSelected ? 1.5 : 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected
+                        ? p.color.withOpacity(0.12)
+                        : Colors.black.withOpacity(0.04),
+                    blurRadius: isSelected ? 12 : 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: p.color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: isSelected
+                          ? Icon(
+                              Icons.radio_button_checked_rounded,
+                              color: p.color,
+                              size: 22,
+                            )
+                          : Icon(
+                              Icons.radio_button_off_rounded,
+                              color: p.color.withOpacity(0.5),
+                              size: 22,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              p.label,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected
+                                    ? p.color
+                                    : AppColors.textColor,
+                              ),
+                            ),
+                            if (p.value == TicketPriority.urgent) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: p.color.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  'DEFAULT',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: p.color,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          p.description,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.subtextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  // ── STEP 3: Details ───────────────────────────────────────────────
+  Widget _buildDetailsStep() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Describe your issue\nin detail.',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textColor,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Summary pill — same glass card language as TicketDetailScreen
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: AppColors.primaryColor.withOpacity(0.2),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryColor.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _categories
+                      .firstWhere((c) => c.value == _selectedCategory)
+                      .icon,
+                  color: AppColors.primaryColor,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _categories
+                      .firstWhere((c) => c.value == _selectedCategory)
+                      .label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Container(
+                    width: 1,
+                    height: 12,
+                    color: AppColors.borderColor,
+                  ),
+                ),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _priorities
+                        .firstWhere((p) => p.value == _selectedPriority)
+                        .color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  _priorities
+                      .firstWhere((p) => p.value == _selectedPriority)
+                      .label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: _priorities
+                        .firstWhere((p) => p.value == _selectedPriority)
+                        .color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+
+          _buildFieldLabel('Subject'),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _subjectController,
+            style: GoogleFonts.poppins(
+              color: AppColors.textColor,
+              fontSize: 14,
+            ),
+            decoration: _inputDecoration('Brief description of your issue'),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Please enter a subject';
+              if (v.length < 5) return 'Subject must be at least 5 characters';
+              return null;
+            },
+          ),
+          const SizedBox(height: 18),
+
+          _buildFieldLabel('Description'),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _descriptionController,
+            style: GoogleFonts.poppins(
+              color: AppColors.textColor,
+              fontSize: 14,
+              height: 1.6,
+            ),
+            maxLines: 7,
+            decoration: _inputDecoration(
+              'Describe the issue in full detail.\nInclude dates, amounts, error messages…',
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Please enter a description';
+              if (v.length < 10)
+                return 'Description must be at least 10 characters';
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Info card — mirrors _buildSectionCard from TicketDetailScreen
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primaryColor.withOpacity(0.15),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryColor.withOpacity(0.07),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.schedule_outlined,
+                    color: AppColors.primaryColor,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Response within 24–48 hours',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'You\'ll receive a ticket ID and our team will follow up via email or phone.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.subtextColor,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String label) {
+    return Text(
+      label,
+      style: GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.subtextColor,
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.poppins(
+        color: AppColors.subtextColor.withOpacity(0.6),
+        fontSize: 13,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFFF4757)),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFFF4757), width: 1.5),
+      ),
+      errorStyle: GoogleFonts.poppins(
+        color: const Color(0xFFFF4757),
+        fontSize: 12,
+      ),
+    );
+  }
+
+  // ── Bottom Nav ────────────────────────────────────────────────────
+  Widget _buildBottomNav() {
+    final isLastStep = _currentStep == _stepTitles.length - 1;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppColors.borderColor)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (_currentStep > 0) ...[
+            GestureDetector(
+              onTap: () => _animateToStep(_currentStep - 1),
+              child: Container(
+                height: 50,
+                width: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderColor),
+                ),
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textColor,
+                  size: 16,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: isLastStep
+                ? Obx(() => _buildSubmitButton())
+                : _buildNextButton(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNextButton() {
+    return GestureDetector(
+      onTap: () => _animateToStep(_currentStep + 1),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primaryColor,
+              AppColors.primaryColor.withOpacity(0.85),
             ],
           ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryColor.withOpacity(0.3),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Continue',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.arrow_forward_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildSubmitButton() {
+    final isLoading = _controller.isCreatingTicket.value;
+    return GestureDetector(
+      onTap: isLoading ? null : _submitTicket,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 50,
+        decoration: BoxDecoration(
+          gradient: isLoading
+              ? null
+              : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.85),
+                  ],
+                ),
+          color: isLoading ? AppColors.primaryColor.withOpacity(0.4) : null,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isLoading
+              ? []
+              : [
+                  BoxShadow(
+                    color: AppColors.primaryColor.withOpacity(0.3),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+        ),
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.send_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Submit Ticket',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Data Classes ──────────────────────────────────────────────────────
+class _CategoryItem {
+  final TicketCategory value;
+  final String label;
+  final IconData icon;
+  const _CategoryItem(this.value, this.label, this.icon);
+}
+
+class _PriorityItem {
+  final TicketPriority value;
+  final String label;
+  final Color color;
+  final String description;
+  const _PriorityItem(this.value, this.label, this.color, this.description);
 }
