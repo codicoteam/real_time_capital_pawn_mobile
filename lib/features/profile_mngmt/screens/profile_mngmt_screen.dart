@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/helpers/attached_files_mngmt_helper.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/services/attached_files_mngmt_service.dart';
 import 'package:real_time_pawn/models/profile_mngmt_model.dart';
@@ -45,11 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController lastNameCtrl;
   late TextEditingController phoneCtrl;
 
-  // ❌ REMOVED: Controllers for non-existent fields
-  // late TextEditingController dateOfBirthCtrl;
-  // late TextEditingController addressCtrl;
-  // late TextEditingController locationCtrl;
-
   // For account deletion
   final TextEditingController otpController = TextEditingController();
 
@@ -58,17 +54,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _initializeControllers();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadProfile();
+      _checkAuthAndLoadProfile();
     });
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _checkAuthAndLoadProfile() async {
     setState(() {
       isLoading = true;
       hasError = false;
       errorMessage = '';
     });
 
+    try {
+      // Check if token exists
+      final token = await CacheUtils.checkToken();
+
+      if (token == null || token.isEmpty) {
+        // No token - redirect to login
+        Get.offAllNamed('/login');
+        return;
+      }
+
+      // Token exists - load profile
+      await _loadProfile();
+    } catch (e) {
+      setState(() {
+        hasError = true;
+        errorMessage = 'Authentication error: $e';
+      });
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _loadProfile() async {
     try {
       // 1. Fetch user profile
       final success = await ProfileMngmtHelper.fetchUserProfile();
@@ -91,8 +110,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         hasError = true;
         errorMessage = 'An error occurred: $e';
       });
-    } finally {
-      setState(() => isLoading = false);
     }
   }
 
@@ -100,7 +117,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     firstNameCtrl = TextEditingController();
     lastNameCtrl = TextEditingController();
     phoneCtrl = TextEditingController();
-    // ❌ NO dateOfBirthCtrl, addressCtrl, or locationCtrl
   }
 
   void _updateControllers() {
@@ -110,7 +126,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         firstNameCtrl.text = user.firstName;
         lastNameCtrl.text = user.lastName;
         phoneCtrl.text = user.phone ?? '';
-        // ❌ NO dateOfBirth, address, or location fields to update
       });
     }
   }
@@ -120,7 +135,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     firstNameCtrl.dispose();
     lastNameCtrl.dispose();
     phoneCtrl.dispose();
-    // ❌ NO dateOfBirthCtrl, addressCtrl, or locationCtrl to dispose
     otpController.dispose();
     super.dispose();
   }
@@ -225,11 +239,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _uploadProfileImage(File imageFile) async {
     try {
       // TODO: IMPLEMENT ACTUAL IMAGE UPLOAD TO YOUR STORAGE SERVICE
-      // 1. Upload to AWS S3 / Firebase Storage / etc.
-      // 2. Get the public URL
-      // 3. Update profile with the URL
-
-      // For now, we'll just update the profile without the image
       Get.snackbar(
         'Info',
         'Image upload feature requires storage integration',
@@ -237,14 +246,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.blue,
         colorText: Colors.white,
       );
-
-      // If you have the URL, call:
-      // await ProfileMngmtHelper.updateProfile(
-      //   firstName: firstNameCtrl.text.trim(),
-      //   lastName: lastNameCtrl.text.trim(),
-      //   phone: phoneCtrl.text.trim(),
-      //   profilePicUrl: imageUrl, // <- ACTUAL IMAGE URL HERE
-      // );
     } catch (e) {
       Get.snackbar(
         'Upload Failed',
@@ -290,12 +291,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => isLoading = true);
 
     try {
-      // ✅ UPDATED: Only pass fields that exist
       final success = await ProfileMngmtHelper.updateProfile(
         firstName: firstNameCtrl.text.trim(),
         lastName: lastNameCtrl.text.trim(),
         phone: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
-        // ❌ NO dateOfBirth, address, or location parameters
       );
 
       if (success) {
@@ -392,22 +391,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         publicUrl = supabase.storage.from('attachments').getPublicUrl(filePath);
       }
 
-      // Map DocumentType to API category (must match dropdown values)
+      // Map DocumentType to API category
       String apiCategory;
       switch (documentType) {
         case DocumentType.national_id:
-          apiCategory = 'national_id'; // ✅ Valid dropdown value
+          apiCategory = 'national_id';
           break;
         case DocumentType.passport:
-          apiCategory = 'other'; // ✅ 'passport' not in dropdown, use 'other'
+          apiCategory = 'other';
           break;
         case DocumentType.proof_of_address:
-          apiCategory = 'proof_of_residence'; // ✅ Valid dropdown value
+          apiCategory = 'proof_of_residence';
           break;
-        // ✅ Fallback to 'other'
       }
 
-      // ✅ Create proper JSON metadata
+      // Create proper JSON metadata
       final metaData = json.encode({
         'document_type': documentType.toString().split('.').last,
         'uploaded_at': DateTime.now().toIso8601String(),
@@ -417,22 +415,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'purpose': 'profile_verification',
       });
 
-      print('DEBUG: entityId = ${user.id}');
-      print('DEBUG: entityType = User');
-      print('DEBUG: category = $apiCategory');
-      print('DEBUG: storage = url');
-
-      // ✅ CORRECTED: Use API-compliant values
       final attachmentModel = await AttachmentHelper.uploadAttachment(
-        entityType:
-            'User', // ✅ Must be 'User' (from dropdown: {LoanApplication, Loan, Asset, User, Ticket, DebtorRecord, Other})
-        entityId: user.id, // ✅ Actual user ID (MongoDB ObjectId)
-        category:
-            apiCategory, // ✅ Must be from dropdown: {other, national_id, loan_request_form, pawn_ticket, contract, proof_of_residence, asset_photos}
+        entityType: 'User',
+        entityId: user.id,
+        category: apiCategory,
         filename: fileName,
         mimeType: 'image/jpeg',
-        storage:
-            'url', // ✅ Must be 'url' (from dropdown: {url, local, s3, gridfs})
+        storage: 'url',
         url: publicUrl,
         meta: metaData,
       );
@@ -506,11 +495,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) {
       setState(() => isLoading = true);
       try {
-        // Use AttachmentService for deletion (not ProfileMngmtHelper)
         final response = await AttachmentService.deleteAttachment(document.id);
 
         if (response.success) {
-          // Refresh the profile to update UI
           await _loadProfile();
           Get.snackbar(
             'Success',
@@ -578,21 +565,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) {
       setState(() => isLoading = true);
       try {
-        // TODO: Implement proper logout logic
-        // 1. Clear cache/tokens
-        // 2. Navigate to login
+        // Clear all user data from cache
+        await CacheUtils.clearAllUserData();
 
-        await Future.delayed(const Duration(seconds: 1));
-
-        Get.snackbar(
-          'Info',
-          'Logout functionality needs cache clearing implementation',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.blue,
-          colorText: Colors.white,
-        );
-
-        // Get.offAllNamed('/login'); // Uncomment when ready
+        // Navigate to login
+        Get.offAllNamed('/login');
       } catch (e) {
         Get.snackbar(
           'Error',
@@ -606,9 +583,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
-
-  // ❌ REMOVED: selectDateOfBirth method since no date field exists
-  // Future<void> selectDateOfBirth() async { ... }
 
   Future<void> _requestAccountDeletion() async {
     final user = _profileController.userProfile.value;
@@ -752,7 +726,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
 
                 if (success) {
-                  // Account deleted successfully
+                  // Clear all user data and navigate to login
+                  await CacheUtils.clearAllUserData();
                   Get.offAllNamed('/login');
                 }
               } catch (e) {
@@ -823,17 +798,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            GeneralButton(
-              btnColor: AppColors.primaryColor,
-              borderRadius: 8,
-              onTap: _loadProfile,
-              child: Text(
-                'Try Again',
-                style: GoogleFonts.nunito(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GeneralButton(
+                  btnColor: Colors.grey,
+                  borderRadius: 8,
+                  width: 120,
+                  onTap: () => Get.back(),
+                  child: Text(
+                    'Go Back',
+                    style: GoogleFonts.nunito(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                GeneralButton(
+                  btnColor: AppColors.primaryColor,
+                  borderRadius: 8,
+                  width: 120,
+                  onTap: _checkAuthAndLoadProfile,
+                  child: Text(
+                    'Try Again',
+                    style: GoogleFonts.nunito(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -865,10 +860,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             body: Center(
               child: CachedNetworkImage(
                 imageUrl: document.url,
-                placeholder: (context, url) =>
-                    CircularProgressIndicator(color: AppColors.primaryColor),
+                placeholder: (context, url) => const CircularProgressIndicator(
+                  color: AppColors.primaryColor,
+                ),
                 errorWidget: (context, url, error) =>
-                    Icon(Icons.error_outline, color: Colors.red),
+                    const Icon(Icons.error_outline, color: Colors.red),
                 fit: BoxFit.contain,
               ),
             ),
@@ -1224,6 +1220,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.textColor),
+          onPressed: () => Get.back(),
+        ),
         actions: [
           if (isLoading)
             Container(
