@@ -509,5 +509,13 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
+
+    GetPage(
+      name: RoutesHelper.CustomerPaymentsScreen,
+      page: () => const CustomerPaymentsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
   ];
 }
