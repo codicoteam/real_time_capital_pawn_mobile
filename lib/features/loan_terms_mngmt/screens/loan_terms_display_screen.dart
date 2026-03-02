@@ -1,4 +1,3 @@
-// lib/features/loan_terms_mngmt/screens/loan_term_mngmt_details_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,21 +5,21 @@ import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/loan_terms_mngmt/controllers/loan_terms_mngmt_controller.dart';
 import 'package:real_time_pawn/models/loan_terms_model.dart';
 
-class LoanTermDetailsScreen extends StatefulWidget {
-  final String termId;
+class LoanTermsDisplayScreen extends StatefulWidget {
   final String loanId;
+  final String loanNo;
 
-  const LoanTermDetailsScreen({
+  const LoanTermsDisplayScreen({
     super.key,
-    required this.termId,
     required this.loanId,
+    required this.loanNo,
   });
 
   @override
-  State<LoanTermDetailsScreen> createState() => _LoanTermDetailsScreenState();
+  State<LoanTermsDisplayScreen> createState() => _LoanTermsDisplayScreenState();
 }
 
-class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
+class _LoanTermsDisplayScreenState extends State<LoanTermsDisplayScreen> {
   final LoanTermsController _controller = Get.find<LoanTermsController>();
   LoanTerm? _term;
   bool _isLoading = true;
@@ -29,10 +28,10 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTermDetails();
+    _loadTerms();
   }
 
-  Future<void> _loadTermDetails() async {
+  Future<void> _loadTerms() async {
     if (!mounted) return;
 
     setState(() {
@@ -41,16 +40,19 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
     });
 
     try {
-      final term = await _controller.getTermDetails(widget.termId);
+      await _controller.fetchLoanTerms(widget.loanId, refresh: true);
       if (mounted) {
-        setState(() {
-          _term = term;
-        });
+        // Get the first term from the list
+        if (_controller.loanTerms.isNotEmpty) {
+          setState(() {
+            _term = _controller.loanTerms.first;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error loading term details';
+          _errorMessage = 'Failed to load loan terms';
         });
       }
     } finally {
@@ -59,23 +61,6 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
           _isLoading = false;
         });
       }
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return RealTimeColors.success;
-      case 'approved':
-        return RealTimeColors.success;
-      case 'pending':
-        return RealTimeColors.warning;
-      case 'completed':
-        return AppColors.primaryColor;
-      case 'rejected':
-        return RealTimeColors.error;
-      default:
-        return AppColors.subtextColor;
     }
   }
 
@@ -202,43 +187,28 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Term Details',
+                          'Loan Terms',
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textColor,
                           ),
                         ),
-                        if (_term != null)
-                          Text(
-                            'Term ${_term!.termNo}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: AppColors.subtextColor,
-                            ),
+                        Text(
+                          'Loan: ${widget.loanNo}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.subtextColor,
                           ),
+                        ),
                       ],
                     ),
                   ),
-                  if (_term != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(_term!.status).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _term!.status.toUpperCase(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _getStatusColor(_term!.status),
-                        ),
-                      ),
-                    ),
+                  IconButton(
+                    onPressed: _loadTerms,
+                    icon: const Icon(Icons.refresh_outlined),
+                    color: AppColors.primaryColor,
+                  ),
                 ],
               ),
             ),
@@ -266,7 +236,7 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: _loadTermDetails,
+                            onPressed: _loadTerms,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
                               foregroundColor: Colors.white,
@@ -278,11 +248,33 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
                     )
                   : _term == null
                   ? Center(
-                      child: Text(
-                        'Term not found',
-                        style: GoogleFonts.poppins(
-                          color: AppColors.subtextColor,
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.assignment_outlined,
+                            size: 64,
+                            color: RealTimeColors.grey400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No Terms Found',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No loan terms have been created for this loan yet.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: AppColors.subtextColor,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     )
                   : SingleChildScrollView(
@@ -312,7 +304,7 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _term!.formattedCurrentBalance,
+                                  'ZWL ${_term!.currentBalance.toStringAsFixed(2)}',
                                   style: GoogleFonts.poppins(
                                     color: Colors.white,
                                     fontSize: 28,
@@ -336,7 +328,7 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
                               ),
                               _buildInfoRow(
                                 'Principal',
-                                _term!.formattedPrincipalAmount,
+                                'ZWL ${_term!.principalAmount.toStringAsFixed(2)}',
                               ),
                               _buildInfoRow(
                                 'Interest Rate',

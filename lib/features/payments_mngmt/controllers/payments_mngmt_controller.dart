@@ -1,3 +1,5 @@
+// features/payments_mngmt/controllers/payments_mngmt_controller.dart - COMPLETE MERGED VERSION
+
 import 'package:get/get.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/features/payments_mngmt/services/payments_mngmt_service.dart';
@@ -12,6 +14,10 @@ class PaymentController extends GetxController {
 
   // Loan-specific payments
   final RxMap<String, List<PaymentModel>> loanPayments =
+      <String, List<PaymentModel>>{}.obs;
+
+  // Grouped by loan (for customer-wide view)
+  final RxMap<String, List<PaymentModel>> paymentsByLoan =
       <String, List<PaymentModel>>{}.obs;
 
   // Pagination
@@ -72,7 +78,29 @@ class PaymentController extends GetxController {
         .length;
   }
 
-  // Fetch payments by loan - UPDATED to set pagination correctly
+  // Get unique loans from payments (for customer-wide view)
+  List<Map<String, dynamic>> get uniqueLoans {
+    final Map<String, Map<String, dynamic>> loanMap = {};
+
+    for (var payment in payments) {
+      if (payment.loanId.isNotEmpty) {
+        if (!loanMap.containsKey(payment.loanId)) {
+          loanMap[payment.loanId] = {
+            'id': payment.loanId,
+            'number': payment.loanNumber,
+            'principal': payment.loanPrincipal,
+            'customerName': payment.customerName,
+          };
+        }
+      }
+    }
+
+    return loanMap.values.toList();
+  }
+
+  // ============================================
+  // METHOD 1: Fetch payments for a specific loan
+  // ============================================
   Future<void> fetchPaymentsByLoan({
     required String loanId,
     bool refresh = false,
@@ -111,10 +139,10 @@ class PaymentController extends GetxController {
           loanPayments[loanId] = fetchedPayments;
         }
 
-        // ✅ CRITICAL: Update the main payments list
+        // ✅ Update the main payments list
         payments.value = fetchedPayments;
 
-        // ✅ CRITICAL: Update pagination values
+        // ✅ Update pagination values
         totalPayments.value = response.data!.pagination.total;
         totalPages.value = response.data!.pagination.totalPages;
         hasNextPage.value = response.data!.pagination.hasNextPage;
@@ -135,12 +163,15 @@ class PaymentController extends GetxController {
     }
   }
 
-  // Fetch payments by customer
+  // ============================================
+  // METHOD 2: Fetch all payments for a customer
+  // ============================================
   Future<void> fetchPaymentsByCustomer({bool refresh = false}) async {
     try {
       if (refresh) {
         currentPage.value = 1;
         payments.clear();
+        paymentsByLoan.clear();
       }
 
       isLoading.value = true;
@@ -156,7 +187,7 @@ class PaymentController extends GetxController {
       }
 
       print(
-        'DEBUG: Payment Controller - Fetching payments for customer: $customerId',
+        '📄 Fetching payments for customer: $customerId, page: ${currentPage.value}',
       );
 
       final response = await PaymentService.getPaymentsByCustomer(
@@ -167,34 +198,67 @@ class PaymentController extends GetxController {
 
       if (response.success && response.data != null) {
         print(
-          'DEBUG: Payment Controller - Successfully fetched ${response.data!.payments.length} payments',
+          '✅ Successfully fetched ${response.data!.payments.length} payments',
         );
 
-        payments.value = response.data!.payments;
+        final fetchedPayments = response.data!.payments;
 
+        // Update main payments list
+        if (refresh) {
+          payments.value = fetchedPayments;
+        } else {
+          payments.addAll(fetchedPayments);
+        }
+
+        // Group payments by loan
+        _groupPaymentsByLoan(fetchedPayments);
+
+        // Update pagination
         totalPayments.value = response.data!.pagination.total;
         totalPages.value = response.data!.pagination.totalPages;
         hasNextPage.value = response.data!.pagination.hasNextPage;
         hasPrevPage.value = response.data!.pagination.hasPrevPage;
+
+        print(
+          '📊 Pagination - Page: ${currentPage.value}, Total: $totalPayments, HasNext: $hasNextPage',
+        );
       } else {
         errorMessage.value = response.message ?? 'Failed to load payments';
-        print('DEBUG: Payment Controller - Error: $errorMessage');
+        print('❌ Error: $errorMessage');
         Get.snackbar('Error', errorMessage.value);
       }
     } catch (e) {
       errorMessage.value = 'Failed to load payments: ${e.toString()}';
-      print('DEBUG: Payment Controller - Exception: $errorMessage');
+      print('❌ Exception: $e');
       Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
-      print('DEBUG: Payment Controller - Loading completed');
     }
   }
 
-  // Load more payments - WORKS FOR BOTH CUSTOMER AND LOAN PAYMENTS
+  // Helper to group payments by loan
+  void _groupPaymentsByLoan(List<PaymentModel> newPayments) {
+    for (var payment in newPayments) {
+      final loanId = payment.loanId;
+      if (loanId.isNotEmpty) {
+        if (!paymentsByLoan.containsKey(loanId)) {
+          paymentsByLoan[loanId] = [];
+        }
+        // Avoid duplicates
+        if (!paymentsByLoan[loanId]!.any((p) => p.id == payment.id)) {
+          paymentsByLoan[loanId]!.add(payment);
+        }
+      }
+    }
+    paymentsByLoan.refresh();
+  }
+
+  // ============================================
+  // METHOD 3: Load more payments (pagination)
+  // ============================================
   Future<void> loadMorePayments({
     required bool isCustomerPayments,
-    String? loanId, // ← Add this parameter
+    String? loanId,
   }) async {
     if (isLoadingMore.value || !hasNextPage.value) return;
 
@@ -203,10 +267,11 @@ class PaymentController extends GetxController {
       currentPage.value++;
 
       if (isCustomerPayments) {
-        // ✅ LOAD MORE CUSTOMER PAYMENTS
+        // Load more customer payments
         final customerId = await CacheUtils.getUserId();
         if (customerId == null || customerId.isEmpty) {
           isLoadingMore.value = false;
+          currentPage.value--;
           return;
         }
 
@@ -218,13 +283,15 @@ class PaymentController extends GetxController {
 
         if (response.success && response.data != null) {
           payments.addAll(response.data!.payments);
+          _groupPaymentsByLoan(response.data!.payments);
           hasNextPage.value = response.data!.pagination.hasNextPage;
           totalPages.value = response.data!.pagination.totalPages;
+          print('✅ Loaded ${response.data!.payments.length} more payments');
         } else {
           currentPage.value--;
         }
       } else {
-        // ✅ LOAD MORE LOAN PAYMENTS - THIS NOW WORKS!
+        // Load more loan payments
         if (loanId == null) {
           print('❌ Cannot load more loan payments: loanId is null');
           currentPage.value--;
@@ -260,9 +327,12 @@ class PaymentController extends GetxController {
     }
   }
 
+  // ============================================
+  // METHOD 4: Create payment
+  // ============================================
   Future<Map<String, dynamic>?> createPayment({
     required String loanId,
-    required String loanTermId, // ← ADD THIS LINE
+    required String loanTermId,
     required double amount,
     required String provider,
     required String method,
@@ -285,7 +355,7 @@ class PaymentController extends GetxController {
 
       final response = await PaymentService.createPayment(
         loanId: loanId,
-        loanTermId: loanTermId, // ← PASS THIS
+        loanTermId: loanTermId,
         amount: amount,
         provider: provider,
         method: method,
@@ -329,7 +399,9 @@ class PaymentController extends GetxController {
     }
   }
 
-  /// Get payment details - REPLACE YOUR EXISTING METHOD WITH THIS EXACT VERSION
+  // ============================================
+  // METHOD 5: Get payment details by ID
+  // ============================================
   Future<PaymentModel?> getPaymentDetails(String paymentId) async {
     try {
       isLoading.value = true;
@@ -358,7 +430,9 @@ class PaymentController extends GetxController {
     }
   }
 
-  // Check payment status
+  // ============================================
+  // METHOD 6: Check payment status
+  // ============================================
   Future<Map<String, dynamic>?> checkPaymentStatus(String paymentId) async {
     try {
       isPollingStatus[paymentId] = true;
@@ -389,6 +463,17 @@ class PaymentController extends GetxController {
               loanPayments.refresh();
             }
           }
+
+          // Update payments by loan
+          for (final loanId in paymentsByLoan.keys) {
+            final loanPaymentIndex = paymentsByLoan[loanId]!.indexWhere(
+              (p) => p.id == paymentId,
+            );
+            if (loanPaymentIndex != -1) {
+              paymentsByLoan[loanId]![loanPaymentIndex] = updatedPayment;
+              paymentsByLoan.refresh();
+            }
+          }
         }
 
         return response.data;
@@ -405,7 +490,9 @@ class PaymentController extends GetxController {
     }
   }
 
-  // Start payment status polling (for PayNow payments)
+  // ============================================
+  // METHOD 7: Start payment status polling
+  // ============================================
   void startPaymentStatusPolling(String paymentId) {
     if (isPollingStatus[paymentId] == true) return;
 
@@ -434,9 +521,18 @@ class PaymentController extends GetxController {
     });
   }
 
-  // Get payments for specific loan
+  // ============================================
+  // HELPER METHODS
+  // ============================================
+
+  // Get payments for specific loan (from loanPayments map)
   List<PaymentModel> getPaymentsForLoan(String loanId) {
     return loanPayments[loanId] ?? [];
+  }
+
+  // Get payments for specific loan (from paymentsByLoan map - customer view)
+  List<PaymentModel> getPaymentsForLoanInCustomerView(String loanId) {
+    return paymentsByLoan[loanId] ?? [];
   }
 
   // Clear selected payment
@@ -449,6 +545,7 @@ class PaymentController extends GetxController {
     payments.clear();
     selectedPayment.value = null;
     loanPayments.clear();
+    paymentsByLoan.clear();
     isLoading.value = false;
     errorMessage.value = '';
     paymentError.value = '';

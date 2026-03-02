@@ -5,7 +5,6 @@ import '../../../core/utils/logs.dart';
 import '../../../models/loan_mngmt_model.dart';
 import '../services/loan_mngmt_service.dart';
 
-
 class LoanController extends GetxController {
   // =====================
   // Observable states
@@ -30,7 +29,6 @@ class LoanController extends GetxController {
   // Statistics (computed)
   // =====================
 
-
   // =====================
   // Filtered loans (based on search & filter)
 
@@ -46,7 +44,9 @@ class LoanController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      DevLogs.logInfo('Fetching customer loans with filter: ${selectedFilter.value}');
+      DevLogs.logInfo(
+        'Fetching customer loans with filter: ${selectedFilter.value}',
+      );
 
       final response = await LoanService.getCustomerLoans(
         status: selectedFilter.value != 'All' ? selectedFilter.value : null,
@@ -122,6 +122,8 @@ class LoanController extends GetxController {
   // =====================
   // Calculate loan charges
   // =====================
+  // In loan_mngmt_controller.dart - update the calculateLoanCharges method
+
   Future<Map<String, dynamic>?> calculateLoanCharges(String loanId) async {
     try {
       isLoading.value = true;
@@ -132,20 +134,14 @@ class LoanController extends GetxController {
         return response.data;
       } else {
         errorMessage.value = response.message ?? 'Failed to calculate charges';
-        Get.snackbar(
-          'Error',
-          errorMessage.value,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        // REMOVE THIS SNACKBAR
+        // Get.snackbar('Error', errorMessage.value);
         return null;
       }
     } catch (e) {
       errorMessage.value = 'Failed to calculate charges: $e';
-      Get.snackbar(
-        'Error',
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      // REMOVE THIS SNACKBAR
+      // Get.snackbar('Error', errorMessage.value);
       return null;
     } finally {
       isLoading.value = false;
