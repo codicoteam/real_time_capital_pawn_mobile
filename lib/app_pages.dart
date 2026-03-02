@@ -34,10 +34,11 @@ import 'package:real_time_pawn/features/payments_mngmt/screens/payment_list_scre
 import 'package:real_time_pawn/features/support_mngmt/screens/create_ticket_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/ticket_detail_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/ticket_list_screen.dart';
-import 'package:real_time_pawn/features/welcome_page/splash_screen.dart';
+import 'package:real_time_pawn/features/payments_mngmt/screens/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
 import 'package:real_time_pawn/models/loan_mngmt_model.dart';
 import 'package:real_time_pawn/models/loan_terms_model.dart';
+import 'package:real_time_pawn/models/support_ticket_model.dart';
 import 'features/auth_mngmt/screens/account_verification_screen.dart';
 import 'features/auth_mngmt/screens/confirm_email_screen.dart';
 import 'features/auth_mngmt/screens/reset_password_screen.dart'
@@ -102,15 +103,12 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
     ),
-
     GetPage(
       name: RoutesHelper.resetPasswordScreen,
       page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        return ResetPasswordScreen(
-          email: arguments['email'] ?? '',
-          otp: arguments['otp'] ?? '',
-        );
+        final arguments = Get.arguments as Map<String, dynamic>?;
+        // Provide a fallback to avoid runtime errors if arguments are missing
+        return ResetPasswordScreen(email: arguments?['email'] ?? '');
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
@@ -517,8 +515,8 @@ class AppPages {
     GetPage(
       name: RoutesHelper.ticketDetailsScreen,
       page: () {
-        final ticketId = Get.parameters['id'] ?? '';
-        return TicketDetailScreen(ticketId: ticketId);
+        final ticket = Get.arguments as SupportTicket;
+        return TicketDetailScreen(ticket: ticket);
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),

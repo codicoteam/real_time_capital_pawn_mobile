@@ -353,7 +353,7 @@ class AuthServices {
 
     var request = http.Request(
       'POST',
-      Uri.parse('${ApiKeys.baseUrl}/user_route/forgot-password'),
+      Uri.parse('${ApiKeys.baseUrl}/users/forgot-password'),
     );
 
     request.body = json.encode({"email": email});
@@ -448,7 +448,7 @@ class AuthServices {
 
     var request = http.Request(
       'POST',
-      Uri.parse('${ApiKeys.baseUrl}/user_route/reset-password'),
+      Uri.parse('${ApiKeys.baseUrl}/users/reset-password'),
     );
 
     request.body = json.encode({

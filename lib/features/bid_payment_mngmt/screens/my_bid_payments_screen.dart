@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +10,38 @@ import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/controllers/bid_payment_mngmt_controller.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/helpers/bid_payment_mngmt_helper.dart';
 import 'package:real_time_pawn/models/bid_payment_model.dart';
+import '../../../widgets/cards/bid_payment_card.dart' show PaymentCard;
+
+// Curved edges clipper (copied from MyBidsScreen)
+class _CurvedEdgeClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 30);
+    var firstControlPoint = Offset(size.width / 4, size.height);
+    var firstEndPoint = Offset(size.width / 2, size.height);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
+    var secondControlPoint = Offset(size.width * 3 / 4, size.height - 30);
+    var secondEndPoint = Offset(size.width, size.height - 30);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
 
 class MyBidPaymentsScreen extends StatefulWidget {
   const MyBidPaymentsScreen({super.key});
@@ -17,12 +50,13 @@ class MyBidPaymentsScreen extends StatefulWidget {
   State<MyBidPaymentsScreen> createState() => _MyBidPaymentsScreenState();
 }
 
-class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
+class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
+    with TickerProviderStateMixin {
   final BidPaymentController _controller = Get.put(BidPaymentController());
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
-  // List of status filters - moved to class level
+  // List of status filters
   final List<String> statusFilters = [
     'All',
     'Successful',
@@ -34,21 +68,41 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
   // Track active status filter
   String? _activeStatusFilter;
 
+  bool _isLoadingMore = false;
+  bool _isRefreshing = false;
+  bool _isReversed = false; // true = oldest first, false = newest first
+
+  late AnimationController _headerAnimationController;
+  late AnimationController _contentAnimationController;
+
+  Timer? _searchDebounceTimer;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _loadInitialPayments();
+
+    _headerAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _contentAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _headerAnimationController.forward();
+    _contentAnimationController.forward();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
-    // Cancel search timer
-    if (_searchDebounceTimer != null) {
-      _searchDebounceTimer!.cancel();
-    }
+    _searchDebounceTimer?.cancel();
+    _headerAnimationController.dispose();
+    _contentAnimationController.dispose();
     super.dispose();
   }
 
@@ -64,39 +118,24 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
   }
 
   Future<void> _loadMorePayments() async {
-    if (_controller.isLoadingMore.value || !_controller.hasMorePayments.value) {
-      return;
-    }
-
-    _controller.isLoadingMore.value = true;
-
+    if (_isLoadingMore || !_controller.hasMorePayments.value) return;
+    setState(() => _isLoadingMore = true);
     await _controller.loadMorePayments();
-
-    _controller.isLoadingMore.value = false;
+    setState(() => _isLoadingMore = false);
   }
 
-  Timer? _searchDebounceTimer;
-
   void _handleSearch(String query) {
-    // Cancel previous timer
-    if (_searchDebounceTimer != null) {
-      _searchDebounceTimer!.cancel();
-    }
-
-    // Set a new timer
+    _searchDebounceTimer?.cancel();
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (query.isEmpty) {
         _clearSearch();
       } else if (query.length >= 2) {
-        // Check if there are any payments first
         if (_controller.bidPayments.isEmpty) {
           BidPaymentHelper.showError(
             'No payments to search. You have no payments yet.',
           );
           return;
         }
-
-        // Use client-side search
         final results = _searchPaymentsLocallyImpl(query);
         if (results.isNotEmpty) {
           _controller.bidPayments.value = results;
@@ -105,20 +144,14 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
           BidPaymentHelper.showError('No payments found matching "$query"');
         }
       } else {
-        // 1 character - show message
         BidPaymentHelper.showError('Search requires at least 2 characters');
       }
     });
   }
 
-  // CLIENT-SIDE SEARCH METHOD
-
-  // IMPLEMENTATION: Client-side search
   List<BidPayment> _searchPaymentsLocallyImpl(String query) {
     if (query.isEmpty || query.length < 2) return _controller.bidPayments;
-
     final searchLower = query.toLowerCase();
-
     return _controller.bidPayments.where((payment) {
       return payment.auction.asset.title.toLowerCase().contains(searchLower) ||
           payment.auction.auctionNo.toLowerCase().contains(searchLower) ||
@@ -130,10 +163,8 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
     }).toList();
   }
 
-  // CLIENT-SIDE STATUS FILTERING METHOD
   List<BidPayment> _filterPaymentsByStatus(String statusText) {
     if (statusText == 'All') return _controller.bidPayments;
-
     PaymentStatus status;
     switch (statusText.toLowerCase()) {
       case 'successful':
@@ -151,26 +182,40 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
       default:
         return _controller.bidPayments;
     }
-
     return _controller.bidPayments
         .where((payment) => payment.status == status)
         .toList();
   }
 
   void _clearSearch() {
-    // Clear search and refresh original list
-    setState(() {
-      _activeStatusFilter = null;
-    });
+    setState(() => _activeStatusFilter = null);
     _controller.clearSearch();
     _refreshPayments();
   }
 
   Future<void> _refreshPayments() async {
+    setState(() => _isRefreshing = true);
     await BidPaymentHelper.loadPayerPayments(showLoader: false);
     setState(() {
+      _isRefreshing = false;
       _activeStatusFilter = null;
     });
+  }
+
+  void _toggleReverse() {
+    setState(() {
+      _isReversed = !_isReversed;
+    });
+  }
+
+  List<BidPayment> _getSortedPayments() {
+    final payments = _controller.bidPayments.toList();
+    payments.sort((a, b) {
+      final aDate = a.paidAt ?? a.createdAt;
+      final bDate = b.paidAt ?? b.createdAt;
+      return _isReversed ? aDate.compareTo(bDate) : bDate.compareTo(aDate);
+    });
+    return payments;
   }
 
   Widget _buildEmptyState() {
@@ -257,10 +302,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {
-              // Go to auctions instead of bids
-              Get.offAllNamed('/auctions');
-            },
+            onPressed: () => Get.offAllNamed('/auctions'),
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: AppColors.primaryColor,
@@ -279,9 +321,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () {
-              Get.toNamed('/my-bids');
-            },
+            onPressed: () => Get.toNamed('/my-bids'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primaryColor,
               side: BorderSide(color: AppColors.primaryColor),
@@ -305,9 +345,8 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
 
   Widget _buildSummaryCard() {
     final stats = _controller.getPaymentStatistics();
-
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceColor,
@@ -324,7 +363,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
       ),
       child: Column(
         children: [
-          // Total amount row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -377,7 +415,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          // Stats grid
           GridView.count(
             crossAxisCount: 4,
             crossAxisSpacing: 8,
@@ -451,226 +488,32 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
     );
   }
 
-  Widget _buildPaymentCard(BidPayment payment) {
-    final dateFormat = DateFormat('MMM dd, yyyy');
-    final timeFormat = DateFormat('h:mm a');
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Get.toNamed(
-            RoutesHelper.paymentDetailsScreen.replaceFirst(':id', payment.id),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Auction header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          payment.auction.asset.title,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          payment.auction.auctionNo,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Payment status badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: BidPaymentHelper.getPaymentStatusColor(
-                        payment.statusText.toLowerCase(),
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      payment.statusText,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Payment amount and method
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Amount',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.subtextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        BidPaymentHelper.formatCurrency(payment.amount),
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Method',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.subtextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        BidPaymentHelper.getPaymentMethodDisplayName(
-                          payment.method,
-                        ),
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      if (payment.provider.isNotEmpty)
-                        Text(
-                          payment.provider,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Payment info
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Paid',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.subtextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        dateFormat.format(payment.paidAt ?? payment.createdAt),
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      Text(
-                        timeFormat.format(payment.paidAt ?? payment.createdAt),
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.subtextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (payment.receiptNo != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Receipt',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          payment.receiptNo!,
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Get.toNamed('/payment-details/${payment.id}');
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryColor,
-                        side: BorderSide(color: AppColors.primaryColor),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text('View Details'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+  // Helper for glass card effect
+  Widget _buildGlassCard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.primaryColor.withOpacity(0.15),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryColor.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
+      child: child,
     );
   }
 
@@ -678,206 +521,408 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceColor,
-                border: Border(
-                  bottom: BorderSide(color: AppColors.borderColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back),
-                    color: AppColors.textColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'My Bid Payments',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textColor,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _refreshPayments,
-                    icon: const Icon(Icons.refresh_outlined),
-                    color: AppColors.textColor,
-                  ),
-                ],
-              ),
-            ),
-
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search payments...',
-                  prefixIcon: const Icon(Icons.search_outlined),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            _clearSearch();
-                          },
-                          icon: const Icon(Icons.close),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: AppColors.surfaceColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-                onChanged: _handleSearch,
-              ),
-            ),
-
-            // Status filter chips
-            SizedBox(
-              height: 48,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: statusFilters.length,
-                itemBuilder: (context, index) {
-                  final status = statusFilters[index];
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(status),
-                      selected: _activeStatusFilter == status,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _activeStatusFilter = status;
-                          } else {
-                            _activeStatusFilter = null;
-                          }
-                        });
-
-                        if (selected) {
-                          if (status == 'All') {
-                            _refreshPayments();
-                          } else {
-                            // Check if there are any payments first
-                            if (_controller.bidPayments.isEmpty) {
-                              BidPaymentHelper.showError(
-                                'No payments to filter. You have no payments yet.',
-                              );
-                              setState(() {
-                                _activeStatusFilter = null;
-                              });
-                              return;
-                            }
-
-                            // Use client-side filtering
-                            final filtered = _filterPaymentsByStatus(status);
-                            if (filtered.isNotEmpty) {
-                              _controller.bidPayments.value = filtered;
-                              BidPaymentHelper.showSuccess(
-                                'Found ${filtered.length} ${status.toLowerCase()} payments',
-                              );
-                            } else {
-                              BidPaymentHelper.showError(
-                                'No ${status.toLowerCase()} payments found',
-                              );
-                              // Don't clear the filter - keep it selected but show empty state
-                            }
-                          }
-                        } else {
-                          // Deselected - show all
-                          _refreshPayments();
-                        }
-                      },
-                      backgroundColor: AppColors.surfaceColor,
-                      selectedColor: AppColors.primaryColor.withOpacity(0.1),
-                      labelStyle: GoogleFonts.poppins(
-                        color: _activeStatusFilter == status
-                            ? AppColors.primaryColor
-                            : AppColors.subtextColor,
-                        fontWeight: _activeStatusFilter == status
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: _activeStatusFilter == status
-                              ? AppColors.primaryColor
-                              : AppColors.borderColor,
+      body: Stack(
+        children: [
+          // Main scrollable content
+          RefreshIndicator(
+            onRefresh: _refreshPayments,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // Animated curved header
+                SliverToBoxAdapter(
+                  child: AnimatedBuilder(
+                    animation: _headerAnimationController,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(
+                          0,
+                          -20 * (1 - _headerAnimationController.value),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Summary card - NEEDS Obx to watch bidPayments
-            Obx(() {
-              if (_controller.bidPayments.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return _buildSummaryCard();
-            }),
-
-            // Payments list - NEEDS Obx
-            Expanded(
-              child: Obx(() {
-                if (_controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (_controller.bidPayments.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                return RefreshIndicator(
-                  onRefresh: _refreshPayments,
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount:
-                        _controller.bidPayments.length +
-                        (_controller.isLoadingMore.value ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= _controller.bidPayments.length) {
-                        return Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
+                        child: Opacity(
+                          opacity: _headerAnimationController.value,
+                          child: ClipPath(
+                            clipper: _CurvedEdgeClipper(),
+                            child: Container(
+                              height: 200,
+                              padding: const EdgeInsets.fromLTRB(
+                                24,
+                                50,
+                                24,
+                                24,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppColors.primaryColor,
+                                    AppColors.primaryColor.withOpacity(0.7),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryColor.withOpacity(
+                                      0.3,
+                                    ),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.payments_outlined,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'My Bid Payments',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white,
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        );
-                      }
-
-                      return _buildPaymentCard(_controller.bidPayments[index]);
+                        ),
+                      );
                     },
                   ),
-                );
-              }),
+                ),
+
+                // Content section
+                SliverPadding(
+                  padding: const EdgeInsets.all(20),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Search bar
+                      _buildGlassCard(
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search payments...',
+                                prefixIcon: const Icon(
+                                  Icons.search_outlined,
+                                  size: 20,
+                                ),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _clearSearch();
+                                        },
+                                        icon: const Icon(Icons.close, size: 18),
+                                      )
+                                    : null,
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 12,
+                                ),
+                              ),
+                              onChanged: _handleSearch,
+                            ),
+                          )
+                          .animate(controller: _contentAnimationController)
+                          .fadeIn()
+                          .slideY(
+                            begin: 0.2,
+                            duration: 400.ms,
+                            curve: Curves.easeOutQuad,
+                          ),
+
+                      const SizedBox(height: 12),
+
+                      // Status filter chips
+                      SizedBox(
+                            height: 48,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 0,
+                              ),
+                              itemCount: statusFilters.length,
+                              itemBuilder: (context, index) {
+                                final status = statusFilters[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: FilterChip(
+                                    label: Text(status),
+                                    selected: _activeStatusFilter == status,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _activeStatusFilter = status;
+                                        } else {
+                                          _activeStatusFilter = null;
+                                        }
+                                      });
+
+                                      if (selected) {
+                                        if (status == 'All') {
+                                          _refreshPayments();
+                                        } else {
+                                          if (_controller.bidPayments.isEmpty) {
+                                            BidPaymentHelper.showError(
+                                              'No payments to filter. You have no payments yet.',
+                                            );
+                                            setState(
+                                              () => _activeStatusFilter = null,
+                                            );
+                                            return;
+                                          }
+                                          final filtered =
+                                              _filterPaymentsByStatus(status);
+                                          if (filtered.isNotEmpty) {
+                                            _controller.bidPayments.value =
+                                                filtered;
+                                            BidPaymentHelper.showSuccess(
+                                              'Found ${filtered.length} ${status.toLowerCase()} payments',
+                                            );
+                                          } else {
+                                            BidPaymentHelper.showError(
+                                              'No ${status.toLowerCase()} payments found',
+                                            );
+                                          }
+                                        }
+                                      } else {
+                                        _refreshPayments();
+                                      }
+                                    },
+                                    backgroundColor: AppColors.surfaceColor,
+                                    selectedColor: AppColors.primaryColor
+                                        .withOpacity(0.1),
+                                    labelStyle: GoogleFonts.poppins(
+                                      color: _activeStatusFilter == status
+                                          ? AppColors.primaryColor
+                                          : AppColors.subtextColor,
+                                      fontWeight: _activeStatusFilter == status
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                        color: _activeStatusFilter == status
+                                            ? AppColors.primaryColor
+                                            : AppColors.borderColor,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                          .animate(controller: _contentAnimationController)
+                          .fadeIn()
+                          .slideY(
+                            begin: 0.2,
+                            delay: 50.ms,
+                            duration: 400.ms,
+                            curve: Curves.easeOutQuad,
+                          ),
+
+                      const SizedBox(height: 8),
+
+                      // Summary card (only if there are payments)
+                      Obx(() {
+                        if (_controller.bidPayments.isEmpty)
+                          return const SizedBox.shrink();
+                        return _buildSummaryCard()
+                            .animate(controller: _contentAnimationController)
+                            .fadeIn()
+                            .slideY(
+                              begin: 0.2,
+                              delay: 100.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOutQuad,
+                            );
+                      }),
+
+                      const SizedBox(height: 8),
+
+                      // Payments list or empty state
+                      Obx(() {
+                        if (_controller.isLoading.value &&
+                            _controller.bidPayments.isEmpty) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        final sortedPayments = _getSortedPayments();
+                        final hasAnyPayments =
+                            _controller.bidPayments.isNotEmpty;
+
+                        if (sortedPayments.isEmpty) {
+                          if (!hasAnyPayments) {
+                            return SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.4,
+                              child: _buildEmptyState(),
+                            );
+                          } else {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Text(
+                                  'No payments match your search.',
+                                  style: GoogleFonts.poppins(
+                                    color: AppColors.subtextColor,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        }
+
+                        return Column(
+                          children: sortedPayments
+                              .map((payment) => PaymentCard(payment: payment))
+                              .toList(),
+                        );
+                      }),
+
+                      // Load more indicator
+                      if (_isLoadingMore)
+                        const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      const SizedBox(height: 20),
+                    ]),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // Custom floating app bar with back, sort toggle, refresh
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    // Back button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => Get.back(),
+                      ),
+                    ),
+                    const Spacer(),
+                    // Sort toggle (newest/oldest)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: _toggleReverse,
+                        icon: Icon(
+                          _isReversed
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        tooltip: _isReversed ? 'Oldest first' : 'Newest first',
+                      ),
+                    ),
+                    // Refresh button
+                    if (!_isRefreshing)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.refresh_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          onPressed: _refreshPayments,
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

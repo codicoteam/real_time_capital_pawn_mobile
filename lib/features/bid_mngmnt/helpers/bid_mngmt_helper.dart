@@ -9,7 +9,8 @@ import 'package:real_time_pawn/features/bid_payment_mngmt/controllers/bid_paymen
 import 'package:real_time_pawn/widgets/loading_widgets/circular_loader.dart';
 
 class BidManagementHelper {
-  static final BidManagementController _bidController =
+  // Lazily obtain the controller – avoids “Controller not found” errors
+  static BidManagementController get _bidController =>
       Get.find<BidManagementController>();
 
   /// LOAD USER BIDS
@@ -418,7 +419,7 @@ class BidManagementHelper {
     required BuildContext context,
   }) {
     try {
-      // ✅ ADD THIS ONE LINE - Check if controller exists, if not create it
+      // Ensure the payment controller is registered
       if (!Get.isRegistered<BidPaymentController>()) {
         Get.put(BidPaymentController());
       }

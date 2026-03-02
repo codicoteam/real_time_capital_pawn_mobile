@@ -491,6 +491,10 @@ class AuthHelper {
         // );
         // ✅ Show success message and navigate to OTP verification
         showSuccess(_authController.successMessage.value);
+        Get.toNamed(
+          RoutesHelper.resetPasswordScreen,
+          arguments: {'email': email},
+        );
         return true;
       } else {
         // ❌ Show error from controller
@@ -631,7 +635,7 @@ class AuthHelper {
       if (success) {
         // ✅ Show success message and navigate to login
         showSuccess(_authController.successMessage.value);
-        // Get.offNamed(RoutesHelper.loginScreen); // Adjust route as needed
+        Get.offNamed(RoutesHelper.loginScreen); // Adjust route as needed
         return true;
       } else {
         // ❌ Show error from controller

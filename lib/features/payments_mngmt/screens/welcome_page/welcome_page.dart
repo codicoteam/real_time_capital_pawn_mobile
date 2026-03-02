@@ -186,7 +186,7 @@ class WelcomeScreen extends StatelessWidget {
 
   void _onIntroEnd(BuildContext context) async {
     await CacheUtils.updateOnboardingStatus(true).then((_) {
-      Get.to(() => const Login());
+      Get.off(const Login());
     });
   }
 }
