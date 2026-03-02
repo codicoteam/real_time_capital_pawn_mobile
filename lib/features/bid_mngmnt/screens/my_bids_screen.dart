@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +7,38 @@ import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/bid_mngmnt/controllers/bid_mngmt_controller.dart';
 import 'package:real_time_pawn/features/bid_mngmnt/helpers/bid_mngmt_helper.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
+import '../../../widgets/cards/bid_card.dart';
+
+// Simple curved edges clipper (copied from TicketDetailScreen's dependency)
+class _CurvedEdgeClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 30);
+    var firstControlPoint = Offset(size.width / 4, size.height);
+    var firstEndPoint = Offset(size.width / 2, size.height);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
+    var secondControlPoint = Offset(size.width * 3 / 4, size.height - 30);
+    var secondEndPoint = Offset(size.width, size.height - 30);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
 
 class MyBidsScreen extends StatefulWidget {
   const MyBidsScreen({super.key});
@@ -14,25 +47,45 @@ class MyBidsScreen extends StatefulWidget {
   State<MyBidsScreen> createState() => _MyBidsScreenState();
 }
 
-class _MyBidsScreenState extends State<MyBidsScreen> {
+class _MyBidsScreenState extends State<MyBidsScreen>
+    with TickerProviderStateMixin {
   final BidManagementController _controller = Get.put(
     BidManagementController(),
   );
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   bool _isLoadingMore = false;
+  bool _isReversed = false; // true = oldest first, false = newest first
+  bool _isRefreshing = false;
+
+  late AnimationController _headerAnimationController;
+  late AnimationController _contentAnimationController;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _loadInitialBids();
+
+    _headerAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _contentAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _headerAnimationController.forward();
+    _contentAnimationController.forward();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _headerAnimationController.dispose();
+    _contentAnimationController.dispose();
     super.dispose();
   }
 
@@ -48,23 +101,33 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
   }
 
   Future<void> _loadMoreBids() async {
-    if (_isLoadingMore || !_controller.hasMoreBids.value) {
-      return;
-    }
-
-    setState(() {
-      _isLoadingMore = true;
-    });
-
+    if (_isLoadingMore || !_controller.hasMoreBids.value) return;
+    setState(() => _isLoadingMore = true);
     await _controller.loadMoreBids();
-
-    setState(() {
-      _isLoadingMore = false;
-    });
+    setState(() => _isLoadingMore = false);
   }
 
   Future<void> _refreshBids() async {
+    setState(() => _isRefreshing = true);
     await BidManagementHelper.loadUserBids(showLoader: false);
+    setState(() => _isRefreshing = false);
+  }
+
+  void _toggleReverse() {
+    setState(() {
+      _isReversed = !_isReversed;
+    });
+  }
+
+  /// Returns the list of bids sorted by placedAt (newest first or oldest first)
+  List<UserBid> _getSortedBids() {
+    final bids = _controller.userBids.toList();
+    bids.sort(
+      (a, b) => _isReversed
+          ? a.placedAt.compareTo(b.placedAt) // oldest first
+          : b.placedAt.compareTo(a.placedAt), // newest first
+    );
+    return bids;
   }
 
   Widget _buildEmptyState() {
@@ -97,9 +160,7 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                Get.back(); // Go back to auctions
-              },
+              onPressed: () => Get.back(),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: AppColors.primaryColor,
@@ -127,9 +188,8 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
 
   Widget _buildSummaryCard() {
     final stats = _controller.getBidStatistics();
-
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceColor,
@@ -147,7 +207,6 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Total amount row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -204,9 +263,8 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          // Stats grid - Fixed height to prevent overflow
           SizedBox(
-            height: 80, // Fixed height for the grid
+            height: 80,
             child: GridView.count(
               crossAxisCount: 4,
               crossAxisSpacing: 8,
@@ -280,538 +338,347 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
     );
   }
 
-  Widget _buildBidCard(UserBid bid) {
-    final dateFormat = DateFormat('MMM dd, yyyy');
-    final timeFormat = DateFormat('h:mm a');
-
-    // Get status strings
-    final bidStatusText = BidManagementHelper.getBidStatusText(bid);
-    final paymentStatus = bid.paymentStatus
-        .toString()
-        .split('.')
-        .last
-        .toLowerCase();
-    final disputeStatus = bid.dispute.status
-        .toString()
-        .split('.')
-        .last
-        .toLowerCase();
-    final auctionStatus = bid.auction.status.toLowerCase();
-
-    // Check bid statuses
-    final hasDispute = _controller.hasBidDispute(bid);
-    final isPaid = _controller.isBidPaid(bid);
-    // ignore: unused_local_variable
-    final isWinning = _controller.isBidWinning(bid);
-    final isWon = _controller.isBidWon(bid);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Get.toNamed('/bid-details/${bid.id}');
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Auction header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          bid.auction.asset.title,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          bid.auction.auctionNo,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  BidStatusTextBadge(statusText: bidStatusText),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Bid amount and time
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Your Bid',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          BidManagementHelper.formatCurrency(
-                            bid.amount,
-                            bid.currency,
-                          ),
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Placed',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          dateFormat.format(bid.placedAt),
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                        Text(
-                          timeFormat.format(bid.placedAt),
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Status indicators
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  // Payment status
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: BidManagementHelper.getPaymentStatusColor(
-                        paymentStatus,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: BidManagementHelper.getPaymentStatusColor(
-                          paymentStatus,
-                        ).withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: BidManagementHelper.getPaymentStatusColor(
-                              paymentStatus,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          BidManagementHelper.getPaymentStatusText(
-                            paymentStatus,
-                          ),
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Dispute status (if any)
-                  if (hasDispute)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: BidManagementHelper.getDisputeStatusColor(
-                          disputeStatus,
-                        ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: BidManagementHelper.getDisputeStatusColor(
-                            disputeStatus,
-                          ).withOpacity(0.3),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.warning_outlined,
-                            size: 12,
-                            color: BidManagementHelper.getDisputeStatusColor(
-                              disputeStatus,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            BidManagementHelper.getDisputeStatusText(
-                              disputeStatus,
-                            ),
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: AppColors.subtextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // Auction status
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getAuctionStatusColor(
-                        auctionStatus,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _getAuctionStatusColor(
-                          auctionStatus,
-                        ).withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _getAuctionStatusColor(auctionStatus),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          auctionStatus.toUpperCase(),
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              // Only show Pay Now button if needed, otherwise show nothing
-              if (auctionStatus == 'closed' && isWon && !isPaid) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to select payment method
-                      Get.toNamed(
-                        '/select-payment-method',
-                        arguments: {'bidId': bid.id, 'amount': bid.amount},
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: AppColors.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text('Pay Now'),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header - Fixed at top
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceColor,
-                border: Border(
-                  bottom: BorderSide(color: AppColors.borderColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back),
-                    color: AppColors.textColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'My Bids',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textColor,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _refreshBids,
-                    icon: const Icon(Icons.refresh_outlined),
-                    color: AppColors.textColor,
-                  ),
-                ],
-              ),
-            ),
-
-            // Everything in a single scrollable view
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _refreshBids,
-                child: Obx(() {
-                  if (_controller.isLoading.value) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  return ListView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      // Search bar
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+      body: Stack(
+        children: [
+          // Main scrollable content
+          RefreshIndicator(
+            onRefresh: _refreshBids,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // Animated curved header
+                SliverToBoxAdapter(
+                  child: AnimatedBuilder(
+                    animation: _headerAnimationController,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(
+                          0,
+                          -20 * (1 - _headerAnimationController.value),
                         ),
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search bids...',
-                            prefixIcon: const Icon(Icons.search_outlined),
-                            suffixIcon: _searchController.text.isNotEmpty
-                                ? IconButton(
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _controller.searchBids('');
-                                    },
-                                    icon: const Icon(Icons.close),
-                                  )
-                                : null,
-                            filled: true,
-                            fillColor: AppColors.surfaceColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                        child: Opacity(
+                          opacity: _headerAnimationController.value,
+                          child: ClipPath(
+                            clipper: _CurvedEdgeClipper(),
+                            child: Container(
+                              height: 200,
+                              padding: const EdgeInsets.fromLTRB(
+                                24,
+                                50,
+                                24,
+                                24,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppColors.primaryColor,
+                                    AppColors.primaryColor.withOpacity(0.7),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryColor.withOpacity(
+                                      0.3,
+                                    ),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.gavel_rounded,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'My Bids',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white,
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          onChanged: (value) {
-                            _controller.searchBids(value);
-                          },
                         ),
-                      ),
+                      );
+                    },
+                  ),
+                ),
 
-                      // Status filter chips
-                      SizedBox(
-                        height: 48,
-                        child: Obx(() {
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _controller.statusFilters.length,
-                            itemBuilder: (context, index) {
-                              final status = _controller.statusFilters[index];
-                              final isSelected =
-                                  _controller.selectedStatus.value == status;
-
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: FilterChip(
-                                  label: Text(status),
-                                  selected: isSelected,
-                                  onSelected: (selected) {
-                                    _controller.filterBidsByStatus(
-                                      selected ? status : 'All',
-                                    );
-                                  },
-                                  backgroundColor: AppColors.surfaceColor,
-                                  selectedColor: AppColors.primaryColor
-                                      .withOpacity(0.1),
-                                  labelStyle: GoogleFonts.poppins(
-                                    color: isSelected
-                                        ? AppColors.primaryColor
-                                        : AppColors.subtextColor,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    side: BorderSide(
-                                      color: isSelected
-                                          ? AppColors.primaryColor
-                                          : AppColors.borderColor,
-                                    ),
-                                  ),
+                // Content section
+                SliverPadding(
+                  padding: const EdgeInsets.all(20),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Search bar
+                      _buildGlassCard(
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search bids...',
+                                prefixIcon: const Icon(
+                                  Icons.search_outlined,
+                                  size: 20,
                                 ),
-                              );
-                            },
-                          );
-                        }),
-                      ),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _controller.searchBids('');
+                                        },
+                                        icon: const Icon(Icons.close, size: 18),
+                                      )
+                                    : null,
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 12,
+                                ),
+                              ),
+                              onChanged: _controller.searchBids,
+                            ),
+                          )
+                          .animate(controller: _contentAnimationController)
+                          .fadeIn()
+                          .slideY(
+                            begin: 0.2,
+                            duration: 400.ms,
+                            curve: Curves.easeOutQuad,
+                          ),
+
+                      const SizedBox(height: 12),
 
                       // Summary card (only if there are bids)
-                      if (_controller.userBids.isNotEmpty) _buildSummaryCard(),
+                      if (_controller.userBids.isNotEmpty)
+                        _buildSummaryCard()
+                            .animate(controller: _contentAnimationController)
+                            .fadeIn()
+                            .slideY(
+                              begin: 0.2,
+                              delay: 100.ms,
+                              duration: 400.ms,
+                              curve: Curves.easeOutQuad,
+                            ),
+
+                      const SizedBox(height: 8),
 
                       // Bids list or empty state
-                      if (_controller.userBids.isEmpty)
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.6,
-                          child: _buildEmptyState(),
-                        )
-                      else
-                        ..._controller.userBids.map(
-                          (bid) => _buildBidCard(bid),
-                        ),
+                      Obx(() {
+                        if (_controller.isLoading.value &&
+                            _controller.userBids.isEmpty) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        final sortedBids = _getSortedBids();
+                        final hasAnyBids = _controller.userBids.isNotEmpty;
+
+                        if (sortedBids.isEmpty) {
+                          if (!hasAnyBids) {
+                            return SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.5,
+                              child: _buildEmptyState(),
+                            );
+                          } else {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Text(
+                                  'No bids match your search.',
+                                  style: GoogleFonts.poppins(
+                                    color: AppColors.subtextColor,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        }
+
+                        return Column(
+                          children: sortedBids
+                              .map((bid) => BidCard(bid: bid))
+                              .toList(),
+                        );
+                      }),
 
                       // Load more indicator
                       if (_isLoadingMore)
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Center(
+                        const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      const SizedBox(height: 20),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Custom floating app bar with back, reverse toggle, refresh
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    // Back button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => Get.back(),
+                      ),
+                    ),
+                    const Spacer(),
+                    // Reverse order toggle
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: _toggleReverse,
+                        icon: Icon(
+                          _isReversed
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        tooltip: _isReversed ? 'Oldest first' : 'Newest first',
+                      ),
+                    ),
+                    // Refresh button
+                    if (!_isRefreshing)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.refresh_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          onPressed: _refreshBids,
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
                             child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           ),
                         ),
-
-                      // Add some bottom padding
-                      const SizedBox(height: 20),
-                    ],
-                  );
-                }),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  // Helper to get auction status color from string
-  Color _getAuctionStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'live':
-        return RealTimeColors.success;
-      case 'closed':
-        return RealTimeColors.error;
-      case 'upcoming':
-        return RealTimeColors.warning;
-      case 'draft':
-        return RealTimeColors.grey500;
-      default:
-        return RealTimeColors.grey400;
-    }
-  }
-}
-
-// Simple badge widget for bid status
-class BidStatusTextBadge extends StatelessWidget {
-  final String statusText;
-  final double fontSize;
-
-  const BidStatusTextBadge({
-    super.key,
-    required this.statusText,
-    this.fontSize = 12,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = BidManagementHelper.getBidStatusColorFromText(
-      statusText,
-    );
-
+  // Helper to build a subtle glass card for the search bar
+  Widget _buildGlassCard({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: statusColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        statusText,
-        style: GoogleFonts.poppins(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+        border: Border.all(
+          color: AppColors.primaryColor.withOpacity(0.15),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryColor.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
+      child: child,
     );
   }
 }

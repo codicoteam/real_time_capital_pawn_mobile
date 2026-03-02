@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pin_code_fields/pin_code_fields.dart'; // added
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auth_mngmt/helpers/auth_mngmt_helper.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
-  final String otp;
   final VoidCallback? onPasswordResetSuccess;
 
   const ResetPasswordScreen({
     super.key,
     required this.email,
-    required this.otp,
     this.onPasswordResetSuccess,
   });
 
@@ -24,21 +23,30 @@ class ResetPasswordScreen extends StatefulWidget {
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen>
     with TickerProviderStateMixin {
+  // Controllers for OTP and password fields
+  final TextEditingController otpController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+
+  final FocusNode otpFocus = FocusNode();
   final FocusNode newPasswordFocus = FocusNode();
   final FocusNode confirmPasswordFocus = FocusNode();
 
   final bool _isLoading = false;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
+
+  // Password validation flags
   bool _hasMinLength = false;
   bool _hasUppercase = false;
   bool _hasLowercase = false;
   bool _hasNumber = false;
   bool _hasSpecialChar = false;
   bool _passwordsMatch = false;
+
+  // OTP validation flag
+  bool _isOtpValid = false;
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -64,6 +72,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
   void _setupListeners() {
     newPasswordController.addListener(_validatePassword);
     confirmPasswordController.addListener(_validatePasswordMatch);
+    otpController.addListener(_validateOtp);
   }
 
   void _validatePassword() {
@@ -86,8 +95,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
     });
   }
 
+  void _validateOtp() {
+    setState(() {
+      _isOtpValid = otpController.text.length == 6;
+    });
+  }
+
   bool get _isFormValid {
-    return _hasMinLength &&
+    return _isOtpValid &&
+        _hasMinLength &&
         _hasUppercase &&
         _hasLowercase &&
         _hasNumber &&
@@ -104,8 +120,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
 
   @override
   void dispose() {
+    otpController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
+    otpFocus.dispose();
     newPasswordFocus.dispose();
     confirmPasswordFocus.dispose();
     _shakeController.dispose();
@@ -161,9 +179,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                               height: 1.4,
                             ),
                             children: [
-                              const TextSpan(
-                                text: 'Create a strong password for\n',
-                              ),
+                              const TextSpan(text: 'Enter the OTP sent to\n'),
                               TextSpan(
                                 text: widget.email,
                                 style: GoogleFonts.poppins(
@@ -206,6 +222,46 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                // OTP Field using PinCodeFields
+                                PinCodeTextField(
+                                      appContext: context,
+                                      length: 6,
+                                      controller: otpController,
+                                      focusNode: otpFocus,
+                                      keyboardType: TextInputType.number,
+                                      textStyle: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textColor,
+                                      ),
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      enableActiveFill: true,
+                                      pinTheme: PinTheme(
+                                        shape: PinCodeFieldShape.box,
+                                        borderRadius: BorderRadius.circular(12),
+                                        fieldHeight: 45,
+                                        fieldWidth: 40,
+                                        activeFillColor: AppColors.surfaceColor,
+                                        inactiveFillColor:
+                                            AppColors.surfaceColor,
+                                        selectedFillColor:
+                                            AppColors.surfaceColor,
+                                        activeColor: AppColors.primaryColor,
+                                        inactiveColor: AppColors.borderColor,
+                                        selectedColor: AppColors.primaryColor,
+                                      ),
+                                      onChanged: (value) {
+                                        _validateOtp();
+                                      },
+                                      beforeTextPaste: (text) => true,
+                                    )
+                                    .animate()
+                                    .fadeIn(duration: 600.ms, delay: 300.ms)
+                                    .slideY(begin: 0.3),
+
+                                const SizedBox(height: 24),
+
                                 // New Password Field
                                 CustomTextField(
                                       controller: newPasswordController,
@@ -382,17 +438,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          onTap: () async {
-                                            await AuthHelper.validateAndResetPassword(
-                                              email: widget.email,
-                                              otp: widget.otp,
-                                              newPassword:
-                                                  newPasswordController.text,
-                                              confirmPassword:
-                                                  confirmPasswordController
-                                                      .text,
-                                            );
-                                          },
+                                          onTap: _isFormValid
+                                              ? () async {
+                                                  await AuthHelper.validateAndResetPassword(
+                                                    email: widget.email,
+                                                    otp: otpController.text,
+                                                    newPassword:
+                                                        newPasswordController
+                                                            .text,
+                                                    confirmPassword:
+                                                        confirmPasswordController
+                                                            .text,
+                                                  );
+                                                }
+                                              : _shakeForm,
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 16,

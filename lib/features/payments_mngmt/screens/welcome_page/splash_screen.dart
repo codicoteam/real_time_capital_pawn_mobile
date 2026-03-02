@@ -1,7 +1,8 @@
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:real_time_pawn/core/contants/image_asset_constants.dart';
-import 'package:real_time_pawn/features/welcome_page/welcome_page.dart';
+
+import '../../../../core/contants/image_asset_constants.dart';
+import '../../../auth_mngmt/controllers/handler/auth_handler.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
       splashIconSize: 150, // optional, you can control overall size
       screenFunction: () async {
-        return const WelcomeScreen();
+        return const AuthHandler();
       },
       splashTransition: SplashTransition.fadeTransition,
       backgroundColor: Colors.white, // optional

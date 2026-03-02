@@ -15,10 +15,7 @@ class _FaqScreenState extends State<FaqScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int? expandedIndex;
-  String searchQuery = '';
   String selectedCategory = 'All';
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocus = FocusNode();
 
   final List<FaqItem> _faqItems = [
     FaqItem(
@@ -157,20 +154,9 @@ class _FaqScreenState extends State<FaqScreen>
   }
 
   List<FaqItem> get filteredItems {
-    var items = selectedCategory == 'All'
+    return selectedCategory == 'All'
         ? _faqItems
         : _faqItems.where((e) => e.category == selectedCategory).toList();
-    if (searchQuery.isNotEmpty) {
-      items = items
-          .where(
-            (e) =>
-                e.question.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                e.answer.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                e.category.toLowerCase().contains(searchQuery.toLowerCase()),
-          )
-          .toList();
-    }
-    return items;
   }
 
   Color _categoryColor(String category) {
@@ -221,8 +207,6 @@ class _FaqScreenState extends State<FaqScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _searchController.dispose();
-    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -238,7 +222,6 @@ class _FaqScreenState extends State<FaqScreen>
           ],
           body: Column(
             children: [
-              _buildSearchBar(),
               _buildCategoryTabs(),
               Expanded(child: _buildFaqList()),
             ],
@@ -412,14 +395,7 @@ class _FaqScreenState extends State<FaqScreen>
                           ),
                         ).animate(delay: 250.ms).fadeIn(duration: 400.ms),
                         const SizedBox(height: 10),
-                        // Quick stat pills
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            _heroPill(Icons.bolt_rounded, 'Instant Approval'),
-                            _heroPill(Icons.gavel_rounded, 'Live Auctions'),
-                          ],
-                        ).animate(delay: 350.ms).fadeIn(duration: 400.ms),
+            
                       ],
                     ),
                   ),
@@ -458,88 +434,12 @@ class _FaqScreenState extends State<FaqScreen>
     );
   }
 
-  // ─── SEARCH BAR ──────────────────────────────────────────────────────────────
-
-  Widget _buildSearchBar() {
-    return Container(
-      color: AppColors.backgroundColor,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child:
-          Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _searchFocus.hasFocus
-                        ? RealTimeColors.primaryGreen
-                        : AppColors.borderColor,
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: RealTimeColors.primaryGreen.withOpacity(0.06),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocus,
-                  onChanged: (v) => setState(() {
-                    searchQuery = v;
-                    expandedIndex = null;
-                  }),
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: AppColors.textColor,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search questions, topics…',
-                    hintStyle: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: AppColors.subtextColor.withOpacity(0.6),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: RealTimeColors.primaryGreen,
-                    ),
-                    suffixIcon: searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.close_rounded,
-                              color: AppColors.subtextColor,
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                searchQuery = '';
-                                expandedIndex = null;
-                              });
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 4,
-                    ),
-                  ),
-                ),
-              )
-              .animate()
-              .slideY(begin: -0.15, duration: 400.ms, curve: Curves.easeOut)
-              .fadeIn(duration: 300.ms),
-    );
-  }
-
   // ─── CATEGORY TABS ───────────────────────────────────────────────────────────
 
   Widget _buildCategoryTabs() {
     return Container(
       color: AppColors.backgroundColor,
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
       child: SizedBox(
         height: 40,
         child: ListView.separated(
@@ -877,8 +777,6 @@ class _FaqScreenState extends State<FaqScreen>
     );
   }
 
-  // ─── EMPTY STATE ─────────────────────────────────────────────────────────────
-
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -887,8 +785,8 @@ class _FaqScreenState extends State<FaqScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-                  width: 110,
-                  height: 110,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
                     color: RealTimeColors.primaryGreen.withOpacity(0.08),
                     shape: BoxShape.circle,
@@ -906,11 +804,11 @@ class _FaqScreenState extends State<FaqScreen>
                 .animate()
                 .scale(duration: 600.ms, curve: Curves.elasticOut)
                 .fadeIn(duration: 400.ms),
-            const SizedBox(height: 24),
+            const SizedBox(height: 5),
             Text(
                   'No results found',
                   style: GoogleFonts.poppins(
-                    fontSize: 20,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textColor,
                   ),
@@ -919,19 +817,7 @@ class _FaqScreenState extends State<FaqScreen>
                 .slideY(begin: 0.3, duration: 400.ms)
                 .fadeIn(duration: 300.ms),
             const SizedBox(height: 8),
-            Text(
-                  'Try a different keyword or browse all categories.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13.5,
-                    color: AppColors.subtextColor,
-                    height: 1.5,
-                  ),
-                )
-                .animate(delay: 300.ms)
-                .slideY(begin: 0.3, duration: 400.ms)
-                .fadeIn(duration: 300.ms),
-            const SizedBox(height: 24),
+
             ElevatedButton.icon(
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: Text(
@@ -942,9 +828,7 @@ class _FaqScreenState extends State<FaqScreen>
                     ),
                   ),
                   onPressed: () {
-                    _searchController.clear();
                     setState(() {
-                      searchQuery = '';
                       selectedCategory = 'All';
                       expandedIndex = null;
                     });
@@ -971,8 +855,6 @@ class _FaqScreenState extends State<FaqScreen>
     );
   }
 }
-
-// ─── DATA MODEL ──────────────────────────────────────────────────────────────
 
 class FaqItem {
   final String category;

@@ -47,6 +47,7 @@ class RoutesHelper {
   static String helpAndSupportScreen = "/help_and_support_screen";
 
   static String loanApplicationsScreen = '/loan-applications';
+  static String updateLoanApplication = '/update-loan-application';
   static String loanApplicationDetailsScreen = '/loan-application-details';
   // Add this line with your other loan application routes
   static const String loanApplicationUploadScreen = "/loan-application-upload";
