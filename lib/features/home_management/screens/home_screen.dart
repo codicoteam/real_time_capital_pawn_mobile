@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:get/get.dart';
+import 'package:real_time_pawn/features/home_management/controllers/home_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,7 +15,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final String userName = "John";
+  late final HomeController _homeController;
   int _carouselIndex = 0;
 
   final List<CarouselItem> _carouselItems = [
@@ -69,6 +71,31 @@ class _HomePageState extends State<HomePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _homeController = Get.put(HomeController());
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  String _formatCurrency(num amount) {
+    final format = NumberFormat.currency(locale: 'en_US', symbol: '\$');
+    return format.format(amount);
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('MMM dd, yyyy').format(date);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -96,213 +123,358 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Welcome Section with Green Background
-            SliverToBoxAdapter(
-              child:
-                  Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(24),
-                            bottomRight: Radius.circular(24),
-                          ),
+        child: Obx(() {
+          if (_homeController.isLoading.value) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryColor),
+            );
+          }
+
+          if (_homeController.errorMessage.value.isNotEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppColors.errorColor,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load data',
+                      style: GoogleFonts.nunito(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _homeController.errorMessage.value,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.nunito(
+                        fontSize: 14,
+                        color: AppColors.subtextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => _homeController.refreshData(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Welcome Section
+              SliverToBoxAdapter(
+                child:
+                    Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor,
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(24),
+                              bottomRight: Radius.circular(24),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Welcome back,',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _homeController.getUserName,
+                                style: GoogleFonts.nunito(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              if (_homeController
+                                  .getUserPhone()
+                                  .isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.phone_outlined,
+                                      size: 14,
+                                      color: Colors.white.withOpacity(0.8),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _homeController.getUserPhone(),
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 12,
+                                        color: Colors.white.withOpacity(0.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: -0.2, duration: 600.ms),
+              ),
+
+              // Main Content
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+
+                    // Promotional Carousel
+                    _buildCarousel(),
+
+                    const SizedBox(height: 15),
+
+                    // Quick Stats Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child:
+                          Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      title: 'Active Loans',
+                                      value: _homeController
+                                          .activeLoansCount
+                                          .value
+                                          .toString(),
+                                      icon: Icons.credit_card,
+                                      color: AppColors.primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      title: 'Total Balance',
+                                      value: _formatCurrency(
+                                        _homeController.totalDueAmount.value,
+                                      ),
+                                      icon: Icons.account_balance_wallet,
+                                      color: AppColors.warningColor,
+                                    ),
+                                  ),
+                                ],
+                              )
+                              .animate()
+                              .fadeIn(duration: 600.ms, delay: 200.ms)
+                              .slideY(begin: 0.2, duration: 600.ms),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // Loan Types Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child:
+                          Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Apply for Loan',
+                                    style: GoogleFonts.nunito(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Choose your collateral type',
+                                    style: GoogleFonts.nunito(
+                                      fontSize: 14,
+                                      color: AppColors.subtextColor,
+                                    ),
+                                  ),
+                                ],
+                              )
+                              .animate()
+                              .fadeIn(duration: 600.ms, delay: 400.ms)
+                              .slideY(begin: 0.2, duration: 600.ms),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Loan Type Grid
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child:
+                          GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 0.9,
+                                    ),
+                                itemCount: loanTypes.length,
+                                itemBuilder: (context, index) {
+                                  return _buildLoanTypeCard(
+                                    icon: loanTypes[index]['icon'] as IconData,
+                                    title: loanTypes[index]['title'] as String,
+                                    color: loanTypes[index]['color'] as Color,
+                                    route: loanTypes[index]['route'] as String,
+                                  );
+                                },
+                              )
+                              .animate()
+                              .fadeIn(duration: 600.ms, delay: 600.ms)
+                              .slideY(begin: 0.3, duration: 600.ms),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // Quick Actions Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Quick Actions',
+                            style: GoogleFonts.nunito(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Quick Actions Grid
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child:
+                          GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 1.5,
+                                    ),
+                                itemCount: quickActions.length,
+                                itemBuilder: (context, index) {
+                                  return _buildQuickActionCard(
+                                    icon:
+                                        quickActions[index]['icon'] as IconData,
+                                    title:
+                                        quickActions[index]['title'] as String,
+                                    route:
+                                        quickActions[index]['route'] as String,
+                                  );
+                                },
+                              )
+                              .animate()
+                              .fadeIn(duration: 600.ms, delay: 800.ms)
+                              .slideY(begin: 0.3, duration: 600.ms),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // Active Auctions Section
+                    if (_homeController.activeAuctions.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Welcome,',
+                              'Live Auctions',
                               style: GoogleFonts.nunito(
-                                fontSize: 14,
-                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textColor,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              userName,
-                              style: GoogleFonts.nunito(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                            TextButton(
+                              onPressed: () {
+                                Get.toNamed('/auctions');
+                              },
+                              child: Text(
+                                'View All (${_homeController.activeAuctions.length})',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryColor,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 500.ms)
-                      .slideY(begin: -0.2, duration: 600.ms),
-            ),
-
-            // Main Content
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-
-                  // Promotional Carousel
-                  _buildCarousel(),
-
-                  const SizedBox(height: 15),
-
-                  // Quick Stats Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child:
-                        Row(
-                              children: [
-                                Expanded(
-                                  child: _buildStatCard(
-                                    title: 'Active Loans',
-                                    value: '3',
-                                    icon: Icons.credit_card,
-                                    color: AppColors.primaryColor,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildStatCard(
-                                    title: 'Due Soon',
-                                    value: '\$1,200',
-                                    icon: Icons.access_time,
-                                    color: AppColors.warningColor,
-                                  ),
-                                ),
-                              ],
-                            )
-                            .animate()
-                            .fadeIn(duration: 600.ms, delay: 200.ms)
-                            .slideY(begin: 0.2, duration: 600.ms),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  // Loan Types Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child:
-                        Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Apply for Loan',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Choose your collateral type',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 14,
-                                    color: AppColors.subtextColor,
-                                  ),
-                                ),
-                              ],
-                            )
-                            .animate()
-                            .fadeIn(duration: 600.ms, delay: 400.ms)
-                            .slideY(begin: 0.2, duration: 600.ms),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Loan Type Grid
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child:
-                        GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    childAspectRatio: 0.9,
-                                  ),
-                              itemCount: loanTypes.length,
-                              itemBuilder: (context, index) {
-                                return _buildLoanTypeCard(
-                                  icon: loanTypes[index]['icon'] as IconData,
-                                  title: loanTypes[index]['title'] as String,
-                                  color: loanTypes[index]['color'] as Color,
-                                  route: loanTypes[index]['route'] as String,
-                                );
-                              },
-                            )
-                            .animate()
-                            .fadeIn(duration: 600.ms, delay: 600.ms)
-                            .slideY(begin: 0.3, duration: 600.ms),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  // Quick Actions Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Quick Actions',
-                          style: GoogleFonts.nunito(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textColor,
-                          ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: SizedBox(
+                          height: 170, // Fixed height for horizontal list
+                          child:
+                              ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount:
+                                        _homeController.activeAuctions.length >
+                                            3
+                                        ? 3
+                                        : _homeController.activeAuctions.length,
+                                    itemBuilder: (context, index) {
+                                      final auction =
+                                          _homeController.activeAuctions[index];
+                                      return _buildAuctionItem(auction);
+                                    },
+                                  )
+                                  .animate()
+                                  .fadeIn(duration: 600.ms, delay: 900.ms)
+                                  .slideX(begin: 0.3, duration: 600.ms),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
-                  const SizedBox(height: 8),
-
-                  // Quick Actions Grid
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child:
-                        GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    childAspectRatio: 1.5,
-                                  ),
-                              itemCount: quickActions.length,
-                              itemBuilder: (context, index) {
-                                return _buildQuickActionCard(
-                                  icon: quickActions[index]['icon'] as IconData,
-                                  title: quickActions[index]['title'] as String,
-                                  route: quickActions[index]['route'] as String,
-                                );
-                              },
-                            )
-                            .animate()
-                            .fadeIn(duration: 600.ms, delay: 800.ms)
-                            .slideY(begin: 0.3, duration: 600.ms),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  // Active Loans Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                    // Active Loans Section
+                    if (_homeController.latestLoans.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
@@ -318,6 +490,66 @@ class _HomePageState extends State<HomePage> {
                                 Get.toNamed('/all-loans');
                               },
                               child: Text(
+                                'View All (${_homeController.latestLoans.length})',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child:
+                            ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount:
+                                      _homeController.latestLoans.length > 3
+                                      ? 3
+                                      : _homeController.latestLoans.length,
+                                  itemBuilder: (context, index) {
+                                    final loan =
+                                        _homeController.latestLoans[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: _buildLoanItemFromApi(loan),
+                                    );
+                                  },
+                                )
+                                .animate()
+                                .fadeIn(duration: 600.ms, delay: 1000.ms)
+                                .slideY(begin: 0.3, duration: 600.ms),
+                      ),
+                    ],
+
+                    // Recent Loan Applications Section
+                    if (_homeController.latestLoanApplications.isNotEmpty) ...[
+                      const SizedBox(height: 15),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Recent Applications',
+                              style: GoogleFonts.nunito(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Get.toNamed('/applications');
+                              },
+                              child: Text(
                                 'View All',
                                 style: GoogleFonts.nunito(
                                   fontSize: 14,
@@ -328,57 +560,47 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child:
+                            ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount:
+                                      _homeController
+                                              .latestLoanApplications
+                                              .length >
+                                          2
+                                      ? 2
+                                      : _homeController
+                                            .latestLoanApplications
+                                            .length,
+                                  itemBuilder: (context, index) {
+                                    final application = _homeController
+                                        .latestLoanApplications[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: _buildApplicationItem(application),
+                                    );
+                                  },
+                                )
+                                .animate()
+                                .fadeIn(duration: 600.ms, delay: 1100.ms)
+                                .slideY(begin: 0.3, duration: 600.ms),
+                      ),
+                    ],
 
-                  // Active Loans List
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child:
-                        ListView(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              children: [
-                                _buildLoanItem(
-                                  title: 'Toyota Camry 2020',
-                                  type: 'Motor Vehicle',
-                                  amount: '\$15,000',
-                                  progress: 0.65,
-                                  dueDate: '2024-02-15',
-                                  route: '/loan-details/1',
-                                ),
-                                const SizedBox(height: 12),
-                                _buildLoanItem(
-                                  title: 'MacBook Pro M2',
-                                  type: 'Electronics',
-                                  amount: '\$2,500',
-                                  progress: 0.30,
-                                  dueDate: '2024-01-30',
-                                  route: '/loan-details/2',
-                                ),
-                                const SizedBox(height: 12),
-                                _buildLoanItem(
-                                  title: 'Gold Necklace',
-                                  type: 'Jewelry',
-                                  amount: '\$3,200',
-                                  progress: 0.80,
-                                  dueDate: '2024-02-10',
-                                  route: '/loan-details/3',
-                                ),
-                              ],
-                            )
-                            .animate()
-                            .fadeIn(duration: 600.ms, delay: 1000.ms)
-                            .slideY(begin: 0.3, duration: 600.ms),
-                  ),
-
-                  const SizedBox(height: 40),
-                ],
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -411,7 +633,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: Stack(
                     children: [
-                      // Gradient overlay
                       Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
@@ -423,7 +644,6 @@ class _HomePageState extends State<HomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Top content
                             Row(
                               children: [
                                 Icon(item.icon, color: Colors.white, size: 30),
@@ -451,11 +671,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             ),
-
-                            // Spacer to push button to bottom
                             const Spacer(),
-
-                            // Button at bottom
                             Align(
                               alignment: Alignment.bottomRight,
                               child: GestureDetector(
@@ -513,9 +729,6 @@ class _HomePageState extends State<HomePage> {
               children: _carouselItems.asMap().entries.map((entry) {
                 return GestureDetector(
                   onTap: () {
-                    // Navigate to specific carousel item
-                    // We don't need controller for this simple implementation
-                    // Just update the index directly
                     setState(() {
                       _carouselIndex = entry.key;
                     });
@@ -696,17 +909,183 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildLoanItem({
-    required String title,
-    required String type,
-    required String amount,
-    required double progress,
-    required String dueDate,
-    required String route,
-  }) {
+  Widget _buildAuctionItem(Map<String, dynamic> auction) {
+    final auctionNo = auction['auction_no'] ?? 'Auction';
+    final startingBid =
+        (auction['starting_bid_amount'] as num?)?.toDouble() ?? 0;
+    final winningBid = (auction['winning_bid_amount'] as num?)?.toDouble();
+    final status = auction['status'] ?? 'unknown';
+    final endsAt = auction['ends_at'] ?? '';
+
+    Color statusColor;
+    String statusText;
+    switch (status) {
+      case 'live':
+        statusColor = Colors.green;
+        statusText = 'LIVE';
+        break;
+      case 'ended':
+        statusColor = Colors.red;
+        statusText = 'ENDED';
+        break;
+      case 'upcoming':
+        statusColor = Colors.orange;
+        statusText = 'UPCOMING';
+        break;
+      default:
+        statusColor = AppColors.subtextColor;
+        statusText = status.toUpperCase();
+    }
+
+    return Container(
+      width: 260,
+      height: 160, // FIXED HEIGHT - This is the key!
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  auctionNo,
+                  style: GoogleFonts.nunito(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  statusText,
+                  style: GoogleFonts.nunito(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Starting Bid',
+            style: GoogleFonts.nunito(
+              fontSize: 10,
+              color: AppColors.subtextColor,
+            ),
+          ),
+          Text(
+            _formatCurrency(startingBid),
+            style: GoogleFonts.nunito(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textColor,
+            ),
+          ),
+          if (winningBid != null) ...[
+            Text(
+              'Current: ${_formatCurrency(winningBid)}',
+              style: GoogleFonts.nunito(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Colors.green,
+              ),
+            ),
+          ],
+          const Spacer(),
+          if (endsAt.isNotEmpty) ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 11,
+                  color: AppColors.subtextColor,
+                ),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    'Ends: ${_formatDate(endsAt)}',
+                    style: GoogleFonts.nunito(
+                      fontSize: 9,
+                      color: AppColors.subtextColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+          ],
+          Align(
+            alignment: Alignment.bottomRight,
+            child: GestureDetector(
+              onTap: () {
+                Get.toNamed('/auction-details/${auction['_id']}');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'View',
+                  style: GoogleFonts.nunito(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoanItemFromApi(Map<String, dynamic> loan) {
+    final loanNo = loan['loan_no'] ?? 'Loan';
+    final principal = (loan['principal_amount'] as num?)?.toDouble() ?? 0;
+    final balance = (loan['current_balance'] as num?)?.toDouble() ?? 0;
+    final dueDate = loan['due_date'] ?? '';
+    final category = loan['collateral_category'] ?? 'Loan';
+
+    double progress = 0.0;
+    if (principal > 0) {
+      progress = ((principal - balance) / principal).clamp(0.0, 1.0);
+    }
+
     return GestureDetector(
       onTap: () {
-        Get.toNamed(route);
+        Get.toNamed('/loan-details/${loan['_id']}');
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -730,7 +1109,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: Text(
-                    title,
+                    loanNo,
                     style: GoogleFonts.nunito(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -750,7 +1129,13 @@ class _HomePageState extends State<HomePage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    type,
+                    category
+                        .toString()
+                        .split('_')
+                        .map(
+                          (word) => word[0].toUpperCase() + word.substring(1),
+                        )
+                        .join(' '),
                     style: GoogleFonts.nunito(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -761,13 +1146,55 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              amount,
-              style: GoogleFonts.nunito(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textColor,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Principal',
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          color: AppColors.subtextColor,
+                        ),
+                      ),
+                      Text(
+                        _formatCurrency(principal),
+                        style: GoogleFonts.nunito(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Balance',
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          color: AppColors.subtextColor,
+                        ),
+                      ),
+                      Text(
+                        _formatCurrency(balance),
+                        style: GoogleFonts.nunito(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: balance > 0
+                              ? AppColors.warningColor
+                              : Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Column(
@@ -777,7 +1204,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Progress',
+                      'Repayment Progress',
                       style: GoogleFonts.nunito(
                         fontSize: 12,
                         color: AppColors.subtextColor,
@@ -807,50 +1234,160 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 14,
-                  color: AppColors.subtextColor,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Due: $dueDate',
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
+            if (dueDate.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    size: 14,
                     color: AppColors.subtextColor,
                   ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () {
-                    Get.toNamed('/payment/$title');
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Pay Now',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryColor,
-                      ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Due: ${_formatDate(dueDate)}',
+                    style: GoogleFonts.nunito(
+                      fontSize: 12,
+                      color: AppColors.subtextColor,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const Spacer(),
+                  if (balance > 0)
+                    GestureDetector(
+                      onTap: () {
+                        Get.toNamed('/payment/${loan['_id']}');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Pay Now',
+                          style: GoogleFonts.nunito(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildApplicationItem(Map<String, dynamic> application) {
+    final appNo = application['application_no'] ?? 'Application';
+    final amount =
+        (application['requested_loan_amount'] as num?)?.toDouble() ?? 0;
+    final status = application['status'] ?? 'draft';
+    final date = application['created_at'] ?? '';
+
+    Color statusColor;
+    switch (status) {
+      case 'approved':
+        statusColor = Colors.green;
+        break;
+      case 'pending':
+        statusColor = Colors.orange;
+        break;
+      case 'rejected':
+        statusColor = Colors.red;
+        break;
+      case 'draft':
+        statusColor = AppColors.subtextColor;
+        break;
+      default:
+        statusColor = AppColors.subtextColor;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.description_outlined,
+              color: AppColors.primaryColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appNo,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Amount: ${_formatCurrency(amount)}',
+                  style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    color: AppColors.textColor,
+                  ),
+                ),
+                if (date.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Submitted: ${_formatDate(date)}',
+                    style: GoogleFonts.nunito(
+                      fontSize: 11,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              status.toUpperCase(),
+              style: GoogleFonts.nunito(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: statusColor,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

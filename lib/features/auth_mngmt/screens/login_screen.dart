@@ -20,7 +20,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final AuthHelper _authHelper = AuthHelper(); // Initialize helper
+  // Initialize helper
 
   @override
   void dispose() {
@@ -31,7 +31,6 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.sizeOf(context).width;
     double screenHeight = MediaQuery.sizeOf(context).height;
 
     return Scaffold(

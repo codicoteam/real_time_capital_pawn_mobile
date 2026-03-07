@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,7 +13,6 @@ import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
-import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/helpers/attached_files_mngmt_helper.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/services/attached_files_mngmt_service.dart';
 import 'package:real_time_pawn/features/loan_mngmt/controllers/loan_mngmt_controller.dart';
@@ -27,6 +27,142 @@ import '../helpers/profile_mngmt_helper.dart';
 // ✅ ADD THE ENUM HERE
 enum DocumentType { national_id, passport, proof_of_address }
 
+// Custom scroll visibility widget to trigger animations when elements come into view
+// Custom scroll visibility widget to trigger animations when elements come into view
+class ScrollVisibilityAnimation extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  final Duration delay;
+  final double slideOffset;
+  final bool slideHorizontal;
+
+  const ScrollVisibilityAnimation({
+    super.key,
+    required this.child,
+    this.duration = const Duration(milliseconds: 600),
+    this.delay = Duration.zero,
+    this.slideOffset = 30,
+    this.slideHorizontal = false,
+  });
+
+  @override
+  State<ScrollVisibilityAnimation> createState() =>
+      _ScrollVisibilityAnimationState();
+}
+
+class _ScrollVisibilityAnimationState extends State<ScrollVisibilityAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+  late Animation<double> _slideAnimation;
+  bool _hasAnimated = false;
+  final GlobalKey _widgetKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+
+    _opacityAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    if (widget.slideHorizontal) {
+      _slideAnimation = Tween<double>(
+        begin: -widget.slideOffset,
+        end: 0,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    } else {
+      _slideAnimation = Tween<double>(
+        begin: widget.slideOffset,
+        end: 0,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    }
+
+    // Check initial visibility after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isWidgetVisible() && !_hasAnimated) {
+        Future.delayed(widget.delay, () {
+          if (mounted) {
+            _controller.forward();
+            setState(() => _hasAnimated = true);
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollNotification) {
+        if (!_hasAnimated && _isWidgetVisible()) {
+          Future.delayed(widget.delay, () {
+            if (mounted) {
+              _controller.forward();
+              setState(() => _hasAnimated = true);
+            }
+          });
+        }
+        return false;
+      },
+      child: Container(
+        key: _widgetKey,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _opacityAnimation.value,
+              child: widget.slideHorizontal
+                  ? Transform.translate(
+                      offset: Offset(_slideAnimation.value, 0),
+                      child: widget.child,
+                    )
+                  : Transform.translate(
+                      offset: Offset(0, _slideAnimation.value),
+                      child: widget.child,
+                    ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  bool _isWidgetVisible() {
+    final RenderObject? renderObject = _widgetKey.currentContext
+        ?.findRenderObject();
+    if (renderObject == null || !renderObject.attached) return false;
+
+    final RenderBox renderBox = renderObject as RenderBox;
+
+    // Get the scrollable state
+    final ScrollableState? scrollable = Scrollable.of(context);
+    if (scrollable == null) return false;
+
+    // Get the scroll position and viewport dimensions
+    final double viewportHeight = scrollable.position.viewportDimension;
+
+    // Get the element's position in the viewport
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final double elementTop = offset.dy;
+    final double elementBottom = elementTop + renderBox.size.height;
+
+    // Check if element is visible in viewport (with a small buffer)
+    // Element is visible if it's within the viewport bounds
+    final bool isVisible = elementTop < viewportHeight && elementBottom > 0;
+
+    return isVisible;
+  }
+}
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -36,12 +172,16 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ProfileController _profileController = Get.put(ProfileController());
+  final ScrollController _scrollController = ScrollController();
 
   bool isEditing = false;
   bool isLoading = false;
   bool hasError = false;
   String errorMessage = '';
   final ImagePicker _imagePicker = ImagePicker();
+
+  // Add this to track when profile is loaded
+  bool _profileLoaded = false;
 
   // ✅ UPDATED: Only controllers for fields that exist
   late TextEditingController firstNameCtrl;
@@ -65,6 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       isLoading = true;
       hasError = false;
       errorMessage = '';
+      _profileLoaded = false;
     });
 
     try {
@@ -85,7 +226,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         errorMessage = 'Authentication error: $e';
       });
     } finally {
-      setState(() => isLoading = false);
+      setState(() {
+        isLoading = false;
+        _profileLoaded = true;
+      });
     }
   }
 
@@ -140,6 +284,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     firstNameCtrl.dispose();
     lastNameCtrl.dispose();
     phoneCtrl.dispose();
@@ -1527,8 +1672,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               )
             else
               Column(
-                children: user.documents.map((document) {
-                  return _buildDocumentItem(document);
+                children: user.documents.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  Document document = entry.value;
+                  return ScrollVisibilityAnimation(
+                    key: ValueKey('doc_${document.id}'),
+                    delay: Duration(milliseconds: index * 100),
+                    slideOffset: 20,
+                    child: _buildDocumentItem(document),
+                  );
                 }).toList(),
               ),
           ],
@@ -1560,67 +1712,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
 
             // Log Out
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(8),
+            ScrollVisibilityAnimation(
+              delay: const Duration(milliseconds: 100),
+              slideOffset: 20,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.logout_outlined,
+                    color: Color(0xFF6B7280),
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.logout_outlined,
-                  color: Color(0xFF6B7280),
-                  size: 20,
+                title: Text(
+                  'Log Out',
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF1F2933),
+                  ),
                 ),
-              ),
-              title: Text(
-                'Log Out',
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1F2933),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF9CA3AF),
                 ),
+                onTap: logout,
               ),
-              trailing: const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF9CA3AF),
-              ),
-              onTap: logout,
             ),
 
             const Divider(height: 16),
 
             // Delete Account
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(8),
+            ScrollVisibilityAnimation(
+              delay: const Duration(milliseconds: 200),
+              slideOffset: 20,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                  size: 20,
+                title: Text(
+                  'Delete Account',
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.red,
+                  ),
                 ),
-              ),
-              title: Text(
-                'Delete Account',
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.red,
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF9CA3AF),
                 ),
+                onTap: _requestAccountDeletion,
               ),
-              trailing: const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF9CA3AF),
-              ),
-              onTap: _requestAccountDeletion,
             ),
           ],
         ),
@@ -1632,211 +1792,195 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _profileController.userProfile.value;
     if (user == null) return const SizedBox();
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Background color
-        Container(color: const Color(0xFFF9FAFB)),
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollNotification) {
+        // This ensures scroll notifications are captured
+        return false;
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Background color
+          Container(color: const Color(0xFFF9FAFB)),
 
-        // Main content
-        SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            children: [
-              // Curved header (no animation needed)
-              TCurvedEdgeWidget(
-                child: Container(
-                  height: 180,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFF2F855A), Color(0xFF38A169)],
+          // Main content
+          SingleChildScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // Curved header (no animation needed)
+                TCurvedEdgeWidget(
+                  child: Container(
+                    height: 180,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF2F855A), Color(0xFF38A169)],
+                      ),
                     ),
-                  ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                color: Colors.white,
-                                size: 18,
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
                               ),
-                              onPressed: () => Get.back(),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                onPressed: () => Get.back(),
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          Container(width: 40, height: 40),
-                        ],
+                            const Spacer(),
+                            Container(width: 40, height: 40),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              // Profile picture - positioned to overlap
-              Transform.translate(
-                offset: const Offset(0, -50),
-                child: Column(
-                  children: [
-                    // Profile avatar with animation
-                    GestureDetector(
-                          onTap: _pickProfileImage,
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 4),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  spreadRadius: 0,
-                                  offset: const Offset(0, 4),
+                // Profile picture - positioned to overlap
+                Transform.translate(
+                  offset: const Offset(0, -50),
+                  child: Column(
+                    children: [
+                      // Profile avatar with animation
+                      GestureDetector(
+                            onTap: _pickProfileImage,
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
                                 ),
-                              ],
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    spreadRadius: 0,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: AppColors.primaryColor
+                                    .withOpacity(0.1),
+                                backgroundImage: user.profilePicUrl != null
+                                    ? CachedNetworkImageProvider(
+                                        user.profilePicUrl!,
+                                      )
+                                    : null,
+                                child: user.profilePicUrl == null
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: AppColors.primaryColor,
+                                      )
+                                    : null,
+                              ),
                             ),
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor: AppColors.primaryColor
-                                  .withOpacity(0.1),
-                              backgroundImage: user.profilePicUrl != null
-                                  ? CachedNetworkImageProvider(
-                                      user.profilePicUrl!,
-                                    )
-                                  : null,
-                              child: user.profilePicUrl == null
-                                  ? Icon(
-                                      Icons.person,
-                                      size: 50,
-                                      color: AppColors.primaryColor,
-                                    )
-                                  : null,
-                            ),
+                          )
+                          .animate()
+                          .fadeIn(duration: 400.ms)
+                          .scale(delay: 200.ms, duration: 400.ms),
+
+                      const SizedBox(height: 12),
+
+                      // Name and email with animation
+                      Column(
+                            children: [
+                              Text(
+                                user.fullNameDisplay,
+                                style: GoogleFonts.nunito(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1F2933),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                user.email,
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  color: const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          )
+                          .animate()
+                          .fadeIn(delay: 300.ms)
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: 300.ms,
+                            duration: 500.ms,
                           ),
-                        )
-                        .animate()
-                        .fadeIn(duration: 400.ms)
-                        .scale(delay: 200.ms, duration: 400.ms),
-
-                    const SizedBox(height: 12),
-
-                    // Name and email with animation
-                    Column(
-                          children: [
-                            Text(
-                              user.fullNameDisplay,
-                              style: GoogleFonts.nunito(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1F2933),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              user.email,
-                              style: GoogleFonts.nunito(
-                                fontSize: 14,
-                                color: const Color(0xFF6B7280),
-                              ),
-                            ),
-                          ],
-                        )
-                        .animate()
-                        .fadeIn(delay: 300.ms)
-                        .slideY(
-                          begin: 0.2,
-                          end: 0,
-                          delay: 300.ms,
-                          duration: 500.ms,
-                        ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // Content sections
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    // Stats row with animation
-                    _buildStatsRow(user)
-                        .animate()
-                        .fadeIn(delay: 400.ms)
-                        .slideX(
-                          begin: -0.1,
-                          end: 0,
-                          delay: 400.ms,
-                          duration: 500.ms,
-                        ),
+                // Content sections
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      // Stats row with animation
+                      ScrollVisibilityAnimation(
+                        delay: const Duration(milliseconds: 100),
+                        slideHorizontal: true,
+                        slideOffset: 20,
+                        child: _buildStatsRow(user),
+                      ),
 
-                    // Profile completion with animation
-                    _buildProfileCompletionSection(user)
-                        .animate()
-                        .fadeIn(delay: 500.ms)
-                        .slideX(
-                          begin: -0.1,
-                          end: 0,
-                          delay: 500.ms,
-                          duration: 500.ms,
-                        ),
+                      // Profile completion with animation
+                      ScrollVisibilityAnimation(
+                        delay: const Duration(milliseconds: 200),
+                        slideHorizontal: true,
+                        slideOffset: 20,
+                        child: _buildProfileCompletionSection(user),
+                      ),
 
-                    // Personal Information with animation
-                    _buildInfoSection()
-                        .animate()
-                        .fadeIn(delay: 600.ms)
-                        .slideY(
-                          begin: 0.1,
-                          end: 0,
-                          delay: 600.ms,
-                          duration: 500.ms,
-                        ),
+                      // Personal Information with animation
+                      ScrollVisibilityAnimation(
+                        delay: const Duration(milliseconds: 300),
+                        slideOffset: 30,
+                        child: _buildInfoSection(),
+                      ),
 
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                    // Uploaded Documents with animation
-                    _buildDocumentsSection()
-                        .animate()
-                        .fadeIn(delay: 700.ms)
-                        .slideY(
-                          begin: 0.1,
-                          end: 0,
-                          delay: 700.ms,
-                          duration: 500.ms,
-                        ),
+                      // Uploaded Documents with animation
+                      _buildDocumentsSection(),
 
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                    // Account Actions with animation
-                    _buildAccountActions()
-                        .animate()
-                        .fadeIn(delay: 800.ms)
-                        .slideY(
-                          begin: 0.1,
-                          end: 0,
-                          delay: 800.ms,
-                          duration: 500.ms,
-                        ),
-                  ],
+                      // Account Actions with animation
+                      _buildAccountActions(),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1850,17 +1994,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildLoadingScreen()
           else if (hasError)
             _buildErrorScreen()
+          else if (_profileLoaded &&
+              _profileController.userProfile.value != null)
+            _buildProfileContent()
           else
-            _buildProfileContent(),
-
-          // Global loading overlay for actions
-          if (isLoading && _profileController.userProfile.value != null)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryColor),
-              ),
-            ),
+            const SizedBox.shrink(),
         ],
       ),
     );
