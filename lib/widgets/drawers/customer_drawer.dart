@@ -192,7 +192,9 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () => _navigateAndClose(
                       context,
                       RoutesHelper.loanApplicationsScreen,
-                      arguments: "69679408a4d065b5cd86e6fa",
+                      arguments: {
+                        "customerUserId": userId,
+                      }, // ✅ Correct - passes Map with userId
                     ),
                   ).animate().fadeIn(delay: 520.ms),
 

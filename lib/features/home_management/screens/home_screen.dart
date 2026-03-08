@@ -3,9 +3,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:real_time_pawn/features/home_management/controllers/home_controller.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
+import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_step1.dart';
+import 'package:real_time_pawn/models/loan_application_model.dart';
+import 'package:real_time_pawn/models/loan_mngmt_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,21 +29,21 @@ class _HomePageState extends State<HomePage> {
       subtitle: 'Apply for quick loans against your assets',
       icon: Icons.assignment,
       buttonText: 'Apply Loan',
-      route: '/apply-loan',
+      route: '/apply-loan', // Change this to a string route
     ),
     CarouselItem(
       title: 'Live Auctions',
       subtitle: 'Bid on premium assets up for auction',
       icon: Icons.gavel,
       buttonText: 'Join Now',
-      route: '/live-auctions',
+      route: RoutesHelper.liveAuctionsScreen,
     ),
     CarouselItem(
       title: 'Loan Repayment',
       subtitle: 'Make payments for your existing loans',
       icon: Icons.payment,
       buttonText: 'Pay Now',
-      route: '/pay-loan',
+      route: RoutesHelper.CustomerPaymentsScreen,
     ),
   ];
 
@@ -61,13 +66,6 @@ class _HomePageState extends State<HomePage> {
       'color': Colors.amber,
       'route': '/jewelry-loan',
     },
-  ];
-
-  final List<Map<String, dynamic>> quickActions = [
-    {'icon': Icons.add_chart, 'title': 'New Loan', 'route': '/new-loan'},
-    {'icon': Icons.gavel, 'title': 'Auctions', 'route': '/auctions'},
-    {'icon': Icons.description, 'title': 'Reports', 'route': '/reports'},
-    {'icon': Icons.history, 'title': 'Applications', 'route': '/applications'},
   ];
 
   @override
@@ -93,6 +91,136 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       return dateString;
     }
+  }
+
+  String _timeAgo(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+      } else {
+        return 'just now';
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  String _getTimeRemaining(String endDateString) {
+    try {
+      final endDate = DateTime.parse(endDateString);
+      final now = DateTime.now();
+      final difference = endDate.difference(now);
+
+      if (difference.isNegative) {
+        return 'Ended';
+      } else if (difference.inDays > 0) {
+        return '${difference.inDays}d ${difference.inHours % 24}h remaining';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours}h ${difference.inMinutes % 60}m remaining';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m remaining';
+      } else {
+        return 'Ending soon';
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  void _showPlaceBidDialog(Map<String, dynamic> auction) {
+    final bidController = TextEditingController();
+    final currentBid =
+        (auction['winning_bid_amount'] as num?)?.toDouble() ??
+        (auction['starting_bid_amount'] as num?)?.toDouble() ??
+        0;
+
+    Get.dialog(
+      AlertDialog(
+        title: Text(
+          'Place Bid',
+          style: GoogleFonts.nunito(fontWeight: FontWeight.w700),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Auction: ${auction['auction_no']}',
+              style: GoogleFonts.nunito(fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Current Bid: ${_formatCurrency(currentBid)}',
+              style: GoogleFonts.nunito(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: bidController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Your Bid Amount',
+                prefixText: '\$ ',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.primaryColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.nunito(color: AppColors.subtextColor),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (bidController.text.isNotEmpty) {
+                final bidAmount = double.tryParse(bidController.text) ?? 0;
+                if (bidAmount > currentBid) {
+                  // Call place bid method from controller
+                  _homeController.placeBid(auction['_id'], bidAmount);
+                  Get.back();
+                } else {
+                  Get.snackbar(
+                    'Invalid Bid',
+                    'Bid amount must be greater than current bid',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Place Bid'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -182,423 +310,413 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // Welcome Section
-              SliverToBoxAdapter(
-                child:
-                    Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor,
-                            borderRadius: const BorderRadius.only(
-                              bottomLeft: Radius.circular(24),
-                              bottomRight: Radius.circular(24),
+          return RefreshIndicator(
+            onRefresh: () => _homeController.refreshData(),
+            color: AppColors.primaryColor,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // Welcome Section
+                SliverToBoxAdapter(
+                  child:
+                      Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor,
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(24),
+                                bottomRight: Radius.circular(24),
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Welcome back,',
-                                style: GoogleFonts.nunito(
-                                  fontSize: 14,
-                                  color: Colors.white.withOpacity(0.9),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome back,',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 14,
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _homeController.getUserName,
-                                style: GoogleFonts.nunito(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              if (_homeController
-                                  .getUserPhone()
-                                  .isNotEmpty) ...[
                                 const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.phone_outlined,
-                                      size: 14,
-                                      color: Colors.white.withOpacity(0.8),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      _homeController.getUserPhone(),
-                                      style: GoogleFonts.nunito(
-                                        fontSize: 12,
+                                Text(
+                                  _homeController.getUserName,
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                if (_homeController
+                                    .getUserPhone()
+                                    .isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.phone_outlined,
+                                        size: 14,
                                         color: Colors.white.withOpacity(0.8),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _homeController.getUserPhone(),
+                                        style: GoogleFonts.nunito(
+                                          fontSize: 12,
+                                          color: Colors.white.withOpacity(0.8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          )
+                          .animate()
+                          .fadeIn(duration: 500.ms)
+                          .slideY(begin: -0.2, duration: 600.ms),
+                ),
+
+                // Main Content
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+
+                      // Promotional Carousel
+                      _buildCarousel(),
+
+                      const SizedBox(height: 15),
+
+                      // Quick Stats Section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child:
+                            Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        title: 'Recent Loans',
+                                        value: _homeController
+                                            .activeLoansCount
+                                            .value
+                                            .toString(),
+                                        icon: Icons.credit_card,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        title: 'Total Balance',
+                                        value: _formatCurrency(
+                                          _homeController.totalDueAmount.value,
+                                        ),
+                                        icon: Icons.account_balance_wallet,
+                                        color: AppColors.warningColor,
                                       ),
                                     ),
                                   ],
+                                )
+                                .animate()
+                                .fadeIn(duration: 600.ms, delay: 200.ms)
+                                .slideY(begin: 0.2, duration: 600.ms),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      // Loan Types Section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child:
+                            Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Apply for Loan',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Choose your collateral type',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 14,
+                                        color: AppColors.subtextColor,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                .animate()
+                                .fadeIn(duration: 600.ms, delay: 400.ms)
+                                .slideY(begin: 0.2, duration: 600.ms),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Loan Type Grid
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child:
+                            GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                        childAspectRatio: 0.9,
+                                      ),
+                                  itemCount: loanTypes.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildLoanTypeCard(
+                                      icon:
+                                          loanTypes[index]['icon'] as IconData,
+                                      title:
+                                          loanTypes[index]['title'] as String,
+                                      color: loanTypes[index]['color'] as Color,
+                                      route:
+                                          loanTypes[index]['route'] as String,
+                                    );
+                                  },
+                                )
+                                .animate()
+                                .fadeIn(duration: 600.ms, delay: 600.ms)
+                                .slideY(begin: 0.3, duration: 600.ms),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      // Active Auctions Section
+                      if (_homeController.activeAuctions.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Live Auctions',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textColor,
                                 ),
-                              ],
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Get.toNamed('/auctions');
+                                },
+                                child: Text(
+                                  'View All (${_homeController.activeAuctions.length})',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                        )
-                        .animate()
-                        .fadeIn(duration: 500.ms)
-                        .slideY(begin: -0.2, duration: 600.ms),
-              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: SizedBox(
+                            height: 200,
+                            child:
+                                ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount:
+                                          _homeController
+                                                  .activeAuctions
+                                                  .length >
+                                              3
+                                          ? 3
+                                          : _homeController
+                                                .activeAuctions
+                                                .length,
+                                      itemBuilder: (context, index) {
+                                        final auction = _homeController
+                                            .activeAuctions[index];
+                                        return _buildAuctionItem(auction);
+                                      },
+                                    )
+                                    .animate()
+                                    .fadeIn(duration: 600.ms, delay: 900.ms)
+                                    .slideX(begin: 0.3, duration: 600.ms),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
-              // Main Content
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-
-                    // Promotional Carousel
-                    _buildCarousel(),
-
-                    const SizedBox(height: 15),
-
-                    // Quick Stats Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child:
-                          Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      title: 'Active Loans',
-                                      value: _homeController
-                                          .activeLoansCount
-                                          .value
-                                          .toString(),
-                                      icon: Icons.credit_card,
-                                      color: AppColors.primaryColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      title: 'Total Balance',
-                                      value: _formatCurrency(
-                                        _homeController.totalDueAmount.value,
-                                      ),
-                                      icon: Icons.account_balance_wallet,
-                                      color: AppColors.warningColor,
-                                    ),
-                                  ),
-                                ],
-                              )
-                              .animate()
-                              .fadeIn(duration: 600.ms, delay: 200.ms)
-                              .slideY(begin: 0.2, duration: 600.ms),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    // Loan Types Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child:
-                          Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Apply for Loan',
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Choose your collateral type',
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 14,
-                                      color: AppColors.subtextColor,
-                                    ),
-                                  ),
-                                ],
-                              )
-                              .animate()
-                              .fadeIn(duration: 600.ms, delay: 400.ms)
-                              .slideY(begin: 0.2, duration: 600.ms),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Loan Type Grid
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child:
-                          GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      crossAxisSpacing: 12,
-                                      mainAxisSpacing: 12,
-                                      childAspectRatio: 0.9,
-                                    ),
-                                itemCount: loanTypes.length,
-                                itemBuilder: (context, index) {
-                                  return _buildLoanTypeCard(
-                                    icon: loanTypes[index]['icon'] as IconData,
-                                    title: loanTypes[index]['title'] as String,
-                                    color: loanTypes[index]['color'] as Color,
-                                    route: loanTypes[index]['route'] as String,
-                                  );
-                                },
-                              )
-                              .animate()
-                              .fadeIn(duration: 600.ms, delay: 600.ms)
-                              .slideY(begin: 0.3, duration: 600.ms),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    // Quick Actions Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Quick Actions',
+                      // Latest Bid Section
+                      ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(
+                            'Latest Bid Activity',
                             style: GoogleFonts.nunito(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textColor,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _buildLatestBidCard(
+                            _homeController.latestBid.value,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
-                    const SizedBox(height: 8),
-
-                    // Quick Actions Grid
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child:
-                          GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 12,
-                                      mainAxisSpacing: 12,
-                                      childAspectRatio: 1.5,
-                                    ),
-                                itemCount: quickActions.length,
-                                itemBuilder: (context, index) {
-                                  return _buildQuickActionCard(
-                                    icon:
-                                        quickActions[index]['icon'] as IconData,
-                                    title:
-                                        quickActions[index]['title'] as String,
-                                    route:
-                                        quickActions[index]['route'] as String,
-                                  );
-                                },
-                              )
-                              .animate()
-                              .fadeIn(duration: 600.ms, delay: 800.ms)
-                              .slideY(begin: 0.3, duration: 600.ms),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    // Active Auctions Section
-                    if (_homeController.activeAuctions.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Live Auctions',
-                              style: GoogleFonts.nunito(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Get.toNamed('/auctions');
-                              },
-                              child: Text(
-                                'View All (${_homeController.activeAuctions.length})',
+                      // Active Loans Section
+                      if (_homeController.latestLoans.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                ' Latest Loans',
                                 style: GoogleFonts.nunito(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textColor,
                                 ),
                               ),
-                            ),
-                          ],
+                              TextButton(
+                                onPressed: () {
+                                  Get.toNamed(RoutesHelper.LoansScreen);
+                                },
+                                child: Text(
+                                  'View All (${_homeController.latestLoans.length})',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
-                          height: 170, // Fixed height for horizontal list
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           child:
                               ListView.builder(
-                                    scrollDirection: Axis.horizontal,
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount:
-                                        _homeController.activeAuctions.length >
-                                            3
+                                        _homeController.latestLoans.length > 3
                                         ? 3
-                                        : _homeController.activeAuctions.length,
+                                        : _homeController.latestLoans.length,
                                     itemBuilder: (context, index) {
-                                      final auction =
-                                          _homeController.activeAuctions[index];
-                                      return _buildAuctionItem(auction);
+                                      final loan =
+                                          _homeController.latestLoans[index];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        child: _buildLoanItemFromApi(loan),
+                                      );
                                     },
                                   )
                                   .animate()
-                                  .fadeIn(duration: 600.ms, delay: 900.ms)
-                                  .slideX(begin: 0.3, duration: 600.ms),
+                                  .fadeIn(duration: 600.ms, delay: 1000.ms)
+                                  .slideY(begin: 0.3, duration: 600.ms),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                      ],
 
-                    // Active Loans Section
-                    if (_homeController.latestLoans.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Active Loans',
-                              style: GoogleFonts.nunito(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Get.toNamed('/all-loans');
-                              },
-                              child: Text(
-                                'View All (${_homeController.latestLoans.length})',
+                      // Recent Loan Applications Section
+                      if (_homeController
+                          .latestLoanApplications
+                          .isNotEmpty) ...[
+                        const SizedBox(height: 15),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Recent Applications',
                                 style: GoogleFonts.nunito(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textColor,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child:
-                            ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount:
-                                      _homeController.latestLoans.length > 3
-                                      ? 3
-                                      : _homeController.latestLoans.length,
-                                  itemBuilder: (context, index) {
-                                    final loan =
-                                        _homeController.latestLoans[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
-                                      ),
-                                      child: _buildLoanItemFromApi(loan),
-                                    );
-                                  },
-                                )
-                                .animate()
-                                .fadeIn(duration: 600.ms, delay: 1000.ms)
-                                .slideY(begin: 0.3, duration: 600.ms),
-                      ),
-                    ],
-
-                    // Recent Loan Applications Section
-                    if (_homeController.latestLoanApplications.isNotEmpty) ...[
-                      const SizedBox(height: 15),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Recent Applications',
-                              style: GoogleFonts.nunito(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Get.toNamed('/applications');
-                              },
-                              child: Text(
-                                'View All',
-                                style: GoogleFonts.nunito(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryColor,
+                              TextButton(
+                                onPressed: () {
+                                  Get.toNamed(
+                                    RoutesHelper.loanApplicationsScreen,
+                                    arguments: _homeController.getUserId(),
+                                  );
+                                },
+                                child: Text(
+                                  'View All',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryColor,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child:
-                            ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount:
-                                      _homeController
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child:
+                              ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount:
+                                        _homeController
+                                                .latestLoanApplications
+                                                .length >
+                                            2
+                                        ? 2
+                                        : _homeController
                                               .latestLoanApplications
-                                              .length >
-                                          2
-                                      ? 2
-                                      : _homeController
-                                            .latestLoanApplications
-                                            .length,
-                                  itemBuilder: (context, index) {
-                                    final application = _homeController
-                                        .latestLoanApplications[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
-                                      ),
-                                      child: _buildApplicationItem(application),
-                                    );
-                                  },
-                                )
-                                .animate()
-                                .fadeIn(duration: 600.ms, delay: 1100.ms)
-                                .slideY(begin: 0.3, duration: 600.ms),
-                      ),
-                    ],
+                                              .length,
+                                    itemBuilder: (context, index) {
+                                      final application = _homeController
+                                          .latestLoanApplications[index];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        child: _buildApplicationItem(
+                                          application,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                  .animate()
+                                  .fadeIn(duration: 600.ms, delay: 1100.ms)
+                                  .slideY(begin: 0.3, duration: 600.ms),
+                        ),
+                      ],
 
-                    const SizedBox(height: 40),
-                  ],
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         }),
       ),
@@ -676,7 +794,19 @@ class _HomePageState extends State<HomePage> {
                               alignment: Alignment.bottomRight,
                               child: GestureDetector(
                                 onTap: () {
-                                  Get.toNamed(item.route);
+                                  if (item.title == 'Loan Application') {
+                                    // Use Navigator.push like the bottom nav button
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const LoanApplicationScreen(),
+                                      ),
+                                    );
+                                  } else {
+                                    // Use Get.toNamed for other routes
+                                    Get.toNamed(item.route);
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -815,7 +945,13 @@ class _HomePageState extends State<HomePage> {
   }) {
     return GestureDetector(
       onTap: () {
-        Get.toNamed(route);
+        // Navigate to the same LoanApplicationScreen for all loan types
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoanApplicationScreen(),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -857,58 +993,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildQuickActionCard({
-    required IconData icon,
-    required String title,
-    required String route,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        Get.toNamed(route);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderColor),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 24, color: AppColors.primaryColor),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildAuctionItem(Map<String, dynamic> auction) {
     final auctionNo = auction['auction_no'] ?? 'Auction';
     final startingBid =
@@ -916,6 +1000,11 @@ class _HomePageState extends State<HomePage> {
     final winningBid = (auction['winning_bid_amount'] as num?)?.toDouble();
     final status = auction['status'] ?? 'unknown';
     final endsAt = auction['ends_at'] ?? '';
+    final winnerUserId = auction['winner_user'];
+    final currentUserId = _homeController.userId.value;
+
+    final bool isUserWinning =
+        winnerUserId == currentUserId && winningBid != null;
 
     Color statusColor;
     String statusText;
@@ -938,8 +1027,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Container(
-      width: 260,
-      height: 160, // FIXED HEIGHT - This is the key!
+      width: 280,
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1006,68 +1094,264 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           if (winningBid != null) ...[
-            Text(
-              'Current: ${_formatCurrency(winningBid)}',
-              style: GoogleFonts.nunito(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: Colors.green,
-              ),
-            ),
-          ],
-          const Spacer(),
-          if (endsAt.isNotEmpty) ...[
+            const SizedBox(height: 2),
             Row(
               children: [
-                Icon(
-                  Icons.access_time,
-                  size: 11,
-                  color: AppColors.subtextColor,
-                ),
-                const SizedBox(width: 3),
-                Expanded(
-                  child: Text(
-                    'Ends: ${_formatDate(endsAt)}',
-                    style: GoogleFonts.nunito(
-                      fontSize: 9,
-                      color: AppColors.subtextColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-          ],
-          Align(
-            alignment: Alignment.bottomRight,
-            child: GestureDetector(
-              onTap: () {
-                Get.toNamed('/auction-details/${auction['_id']}');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'View',
+                Text(
+                  'Current: ${_formatCurrency(winningBid)}',
                   style: GoogleFonts.nunito(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primaryColor,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                if (isUserWinning)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '🎉 You\'re winning!',
+                      style: GoogleFonts.nunito(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          const Spacer(),
+          Row(
+            children: [
+              Icon(Icons.access_time, size: 11, color: AppColors.subtextColor),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Text(
+                  _getTimeRemaining(endsAt),
+                  style: GoogleFonts.nunito(
+                    fontSize: 9,
+                    color: AppColors.subtextColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (isUserWinning)
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Winning',
+                      style: GoogleFonts.nunito(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              else if (status == 'live')
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      _showPlaceBidDialog(auction);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Place Bid',
+                        style: GoogleFonts.nunito(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: () {
+                  Get.toNamed('/auction-details/${auction['_id']}');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Details',
+                    style: GoogleFonts.nunito(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryColor,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLatestBidCard(Map<String, dynamic> bid) {
+    final amount = (bid['amount'] as num?)?.toDouble() ?? 0;
+    final placedAt = bid['placed_at'] ?? '';
+    final dispute = bid['dispute'] as Map<String, dynamic>?;
+    final paymentStatus = bid['payment_status'] ?? '';
+
+    Color disputeColor = AppColors.subtextColor;
+    String disputeText = '';
+    if (dispute != null) {
+      final status = dispute['status'] ?? '';
+      if (status == 'resolved_valid') {
+        disputeColor = Colors.green;
+        disputeText = 'Resolved - Valid';
+      } else if (status == 'resolved_invalid') {
+        disputeColor = Colors.red;
+        disputeText = 'Resolved - Invalid';
+      } else if (status == 'pending') {
+        disputeColor = Colors.orange;
+        disputeText = 'Dispute Pending';
+      }
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed('/bid-details/${bid['_id']}');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.gavel, color: AppColors.primaryColor, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        _formatCurrency(amount),
+                        style: GoogleFonts.nunito(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: paymentStatus == 'paid'
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          paymentStatus.toUpperCase(),
+                          style: GoogleFonts.nunito(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: paymentStatus == 'paid'
+                                ? Colors.green
+                                : Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Placed ${_timeAgo(placedAt)}',
+                    style: GoogleFonts.nunito(
+                      fontSize: 12,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+                  if (disputeText.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 12, color: disputeColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          disputeText,
+                          style: GoogleFonts.nunito(
+                            fontSize: 11,
+                            color: disputeColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.subtextColor),
+          ],
+        ),
+      ).animate().fadeIn(duration: 600.ms).slideX(begin: 0.2, duration: 600.ms),
     );
   }
 
@@ -1076,16 +1360,65 @@ class _HomePageState extends State<HomePage> {
     final principal = (loan['principal_amount'] as num?)?.toDouble() ?? 0;
     final balance = (loan['current_balance'] as num?)?.toDouble() ?? 0;
     final dueDate = loan['due_date'] ?? '';
-    final category = loan['collateral_category'] ?? 'Loan';
+    final status = loan['status'] ?? 'draft';
 
     double progress = 0.0;
     if (principal > 0) {
       progress = ((principal - balance) / principal).clamp(0.0, 1.0);
     }
 
+    Color statusColor;
+    switch (status) {
+      case 'active':
+        statusColor = Colors.green;
+        break;
+      case 'draft':
+        statusColor = AppColors.subtextColor;
+        break;
+      case 'overdue':
+        statusColor = Colors.red;
+        break;
+      case 'paid':
+        statusColor = Colors.blue;
+        break;
+      default:
+        statusColor = AppColors.subtextColor;
+    }
+
     return GestureDetector(
       onTap: () {
-        Get.toNamed('/loan-details/${loan['_id']}');
+        // Convert the map to a LoanModel with proper type casting
+        final loanModel = LoanModel(
+          id: loan['_id'],
+          loanNo: loan['loan_no'],
+          principalAmount: (loan['principal_amount'] as num?)?.toInt() ?? 0,
+          currentBalance: (loan['current_balance'] as num?)?.toInt() ?? 0,
+          status: loan['status'],
+          dueDate: loan['due_date'] != null
+              ? DateTime.parse(loan['due_date'])
+              : null,
+          createdAt: loan['created_at'] != null
+              ? DateTime.parse(loan['created_at'])
+              : null,
+          collateralCategory: loan['collateral_category'],
+          customerUser: null,
+          // Add any other fields your LoanModel needs
+          currency: loan['currency'],
+          interestRatePercent: (loan['interest_rate_percent'] as num?)
+              ?.toDouble(),
+          interestPeriodDays: (loan['interest_period_days'] as num?)
+              ?.toDouble(),
+          storageChargePercent: (loan['storage_charge_percent'] as num?)
+              ?.toDouble(),
+          penaltyPercent: (loan['penalty_percent'] as num?)?.toInt(),
+          graceDays: (loan['grace_days'] as num?)?.toInt(),
+          startDate: loan['start_date'] != null
+              ? DateTime.parse(loan['start_date'])
+              : null,
+          v: loan['__v'] as int?,
+        );
+
+        Get.toNamed(RoutesHelper.LoanDetailsScreen, arguments: loanModel);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -1125,21 +1458,15 @@ class _HomePageState extends State<HomePage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    category
-                        .toString()
-                        .split('_')
-                        .map(
-                          (word) => word[0].toUpperCase() + word.substring(1),
-                        )
-                        .join(' '),
+                    status.toUpperCase(),
                     style: GoogleFonts.nunito(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primaryColor,
+                      color: statusColor,
                     ),
                   ),
                 ),
@@ -1252,10 +1579,17 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   const Spacer(),
-                  if (balance > 0)
+                  if (balance > 0 && status != 'paid')
                     GestureDetector(
                       onTap: () {
-                        Get.toNamed('/payment/${loan['_id']}');
+                        Get.toNamed(
+                          RoutesHelper.CreatePaymentScreen,
+                          arguments: {
+                            'loanId': loan['_id'],
+                            'loanNo':
+                                loan['loan_no'], // Pass the loan number too
+                          },
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -1291,13 +1625,26 @@ class _HomePageState extends State<HomePage> {
         (application['requested_loan_amount'] as num?)?.toDouble() ?? 0;
     final status = application['status'] ?? 'draft';
     final date = application['created_at'] ?? '';
+    final smallLoanDetails =
+        application['small_loan_details'] as Map<String, dynamic>?;
+
+    String collateralInfo = '';
+    if (smallLoanDetails != null) {
+      final type = smallLoanDetails['type'] ?? '';
+      final model = smallLoanDetails['model'] ?? '';
+      if (type.isNotEmpty && model.isNotEmpty) {
+        collateralInfo = '$type - $model';
+      } else if (type.isNotEmpty) {
+        collateralInfo = type;
+      }
+    }
 
     Color statusColor;
     switch (status) {
       case 'approved':
         statusColor = Colors.green;
         break;
-      case 'pending':
+      case 'processing':
         statusColor = Colors.orange;
         break;
       case 'rejected':
@@ -1310,84 +1657,159 @@ class _HomePageState extends State<HomePage> {
         statusColor = AppColors.subtextColor;
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        final loanAppModel = LoanApplicationModel.fromMap(application);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                LoanApplicationDetailsScreen(application: loanAppModel),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(
-              Icons.description_outlined,
-              color: AppColors.primaryColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  appNo,
-                  style: GoogleFonts.nunito(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textColor,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.description_outlined,
+                    color: AppColors.primaryColor,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Amount: ${_formatCurrency(amount)}',
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    color: AppColors.textColor,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appNo,
+                        style: GoogleFonts.nunito(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Amount: ${_formatCurrency(amount)}',
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          color: AppColors.textColor,
+                        ),
+                      ),
+                      if (collateralInfo.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Collateral: $collateralInfo',
+                          style: GoogleFonts.nunito(
+                            fontSize: 11,
+                            color: AppColors.subtextColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (date.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Submitted: ${_formatDate(date)}',
-                    style: GoogleFonts.nunito(
-                      fontSize: 11,
-                      color: AppColors.subtextColor,
-                    ),
-                  ),
-                ],
               ],
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    if (date.isNotEmpty) ...[
+                      Icon(
+                        Icons.calendar_today,
+                        size: 12,
+                        color: AppColors.subtextColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDate(date),
+                        style: GoogleFonts.nunito(
+                          fontSize: 11,
+                          color: AppColors.subtextColor,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (status == 'draft')
+                  GestureDetector(
+                    onTap: () {
+                      Get.toNamed(
+                        '/continue-application/${application['_id']}',
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Continue',
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      status.toUpperCase(),
+                      style: GoogleFonts.nunito(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            child: Text(
-              status.toUpperCase(),
-              style: GoogleFonts.nunito(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -267,7 +267,10 @@ class _LoansScreenState extends State<LoansScreen>
                             index: index,
                             onTap: () {
                               _controller.selectLoan(loan);
-                              Get.toNamed(RoutesHelper.LoanDetailsScreen, arguments: loan);
+                              Get.toNamed(
+                                RoutesHelper.LoanDetailsScreen,
+                                arguments: loan,
+                              );
                             },
                           );
                         }, childCount: filteredLoans.length),
