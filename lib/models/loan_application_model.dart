@@ -102,7 +102,15 @@ class LoanApplicationModel {
         applicationNo: json["application_no"],
         customerUser: json["customer_user"] == null
             ? null
-            : CustomerUser.fromMap(json["customer_user"]),
+            : (json["customer_user"] is Map
+                  ? CustomerUser.fromMap(json["customer_user"])
+                  : CustomerUser(
+                      id: json["customer_user"] as String?,
+                      email: null,
+                      phone: null,
+                      firstName: null,
+                      lastName: null,
+                    )),
         fullName: json["full_name"],
         nationalIdNumber: json["national_id_number"],
         gender: json["gender"],
@@ -114,31 +122,21 @@ class LoanApplicationModel {
         alternativeNumber: json["alternative_number"],
         emailAddress: json["email_address"],
         homeAddress: json["home_address"],
-
-        // New document URL fields
         nationalIdUrl: json["national_id_url"],
         passportUrl: json["passport_url"],
         proofOfResidentUrl: json["proof_of_resident_url"],
         proofOfEmploymentUrl: json["proof_of_employment_url"],
-
-        // Next of kin
         nextOfKin: json["next_of_kin"] == null
             ? null
             : NextOfKin.fromMap(json["next_of_kin"]),
-
-        // Employment
         employment: json["employment"] == null
             ? null
             : Employment.fromMap(json["employment"]),
-
-        // Basic information
         requestedLoanAmount: json["requested_loan_amount"],
         collateralCategory: json["collateral_category"],
         collateralDescription: json["collateral_description"],
         suretyDescription: json["surety_description"],
         declaredAssetValue: json["declared_asset_value"],
-
-        // Collateral-specific details
         smallLoanDetails: json["small_loan_details"] == null
             ? null
             : SmallLoanDetails.fromMap(json["small_loan_details"]),
@@ -148,15 +146,11 @@ class LoanApplicationModel {
         jewelleryDetails: json["jewellery_details"] == null
             ? null
             : JewelleryDetails.fromMap(json["jewellery_details"]),
-
-        // Declaration
         declarationText: json["declaration_text"],
         declarationSignedAt: json["declaration_signed_at"] == null
             ? null
             : DateTime.parse(json["declaration_signed_at"]),
         declarationSignatureName: json["declaration_signature_name"],
-
-        // Workflow
         status: json["status"],
         debtorCheck: json["debtor_check"] == null
             ? null

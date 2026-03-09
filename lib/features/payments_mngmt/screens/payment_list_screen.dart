@@ -1,3 +1,5 @@
+// features/payments_mngmt/screens/payment_list_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -105,10 +107,10 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // SIMPLE HEADER - NO COMPLEX SIZING
+            // SIMPLE HEADER
             _buildHeader(),
 
-            // CONTENT AREA - TAKES REMAINING SPACE
+            // CONTENT AREA
             Expanded(
               child: Obx(() {
                 // LOADING STATE
@@ -122,7 +124,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                   return _buildErrorState();
                 }
 
-                // EMPTY STATE - SIMPLE, NO OVERFLOW
+                // EMPTY STATE
                 if (_controller.payments.isEmpty) {
                   return _buildEmptyState();
                 }
@@ -182,6 +184,46 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
               ],
             ),
           ),
+
+          // Show pending count with auto-refresh indicator
+          Obx(() {
+            if (_controller.pendingPaymentsCount == 0) return const SizedBox();
+
+            return Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: RealTimeColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        RealTimeColors.warning,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_controller.pendingPaymentsCount} pending',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: RealTimeColors.warning,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          // Simple refresh button (optional, not needed but kept for manual trigger)
           IconButton(
             onPressed: () async {
               setState(() => _isRefreshing = true);
@@ -239,14 +281,13 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
     );
   }
 
-  // 🔴 SIMPLE EMPTY STATE - NO OVERFLOW POSSIBLE
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min, // THIS PREVENTS OVERFLOW
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.payments_outlined,
@@ -299,7 +340,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
   Widget _buildPaymentsList() {
     return Column(
       children: [
-        // STATS BAR - ONLY SHOW WHEN THERE ARE PAYMENTS
+        // STATS BAR
         if (!_controller.isLoading.value && _controller.payments.isNotEmpty)
           _buildStatsBar(),
 
@@ -396,7 +437,6 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
       color: AppColors.surfaceColor,
       child: InkWell(
         onTap: () {
-          // 🔴 FIX: Use addPostFrameCallback to navigate AFTER build is complete
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Get.toNamed(
               RoutesHelper.PaymentDetailsScreen,
@@ -440,25 +480,41 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(
-                        payment.paymentStatus,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      payment.paymentStatus.toUpperCase(),
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: _getStatusColor(payment.paymentStatus),
+                  Row(
+                    children: [
+                      // Show loading indicator for pending payments
+                      if (payment.isPending || payment.isProcessing)
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          child: const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+
+                      // Status chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(
+                            payment.paymentStatus,
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          payment.paymentStatus.toUpperCase(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: _getStatusColor(payment.paymentStatus),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
