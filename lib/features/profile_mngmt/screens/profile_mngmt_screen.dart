@@ -4,25 +4,164 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
+import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/helpers/attached_files_mngmt_helper.dart';
 import 'package:real_time_pawn/features/attached_files_mngmt/services/attached_files_mngmt_service.dart';
+import 'package:real_time_pawn/features/loan_mngmt/controllers/loan_mngmt_controller.dart';
+import 'package:real_time_pawn/features/test/curved_edges_widget.dart';
 import 'package:real_time_pawn/models/profile_mngmt_model.dart';
 import 'package:real_time_pawn/widgets/custom_button/general_button.dart';
-import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../widgets/profile_widgets/profile_widgets.dart';
 import '../controllers/profile_mngmt_controller.dart';
 import '../helpers/profile_mngmt_helper.dart';
 
 // ✅ ADD THE ENUM HERE
 enum DocumentType { national_id, passport, proof_of_address }
+
+// Custom scroll visibility widget to trigger animations when elements come into view
+// Custom scroll visibility widget to trigger animations when elements come into view
+class ScrollVisibilityAnimation extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  final Duration delay;
+  final double slideOffset;
+  final bool slideHorizontal;
+
+  const ScrollVisibilityAnimation({
+    super.key,
+    required this.child,
+    this.duration = const Duration(milliseconds: 600),
+    this.delay = Duration.zero,
+    this.slideOffset = 30,
+    this.slideHorizontal = false,
+  });
+
+  @override
+  State<ScrollVisibilityAnimation> createState() =>
+      _ScrollVisibilityAnimationState();
+}
+
+class _ScrollVisibilityAnimationState extends State<ScrollVisibilityAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+  late Animation<double> _slideAnimation;
+  bool _hasAnimated = false;
+  final GlobalKey _widgetKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+
+    _opacityAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    if (widget.slideHorizontal) {
+      _slideAnimation = Tween<double>(
+        begin: -widget.slideOffset,
+        end: 0,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    } else {
+      _slideAnimation = Tween<double>(
+        begin: widget.slideOffset,
+        end: 0,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    }
+
+    // Check initial visibility after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isWidgetVisible() && !_hasAnimated) {
+        Future.delayed(widget.delay, () {
+          if (mounted) {
+            _controller.forward();
+            setState(() => _hasAnimated = true);
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollNotification) {
+        if (!_hasAnimated && _isWidgetVisible()) {
+          Future.delayed(widget.delay, () {
+            if (mounted) {
+              _controller.forward();
+              setState(() => _hasAnimated = true);
+            }
+          });
+        }
+        return false;
+      },
+      child: Container(
+        key: _widgetKey,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _opacityAnimation.value,
+              child: widget.slideHorizontal
+                  ? Transform.translate(
+                      offset: Offset(_slideAnimation.value, 0),
+                      child: widget.child,
+                    )
+                  : Transform.translate(
+                      offset: Offset(0, _slideAnimation.value),
+                      child: widget.child,
+                    ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  bool _isWidgetVisible() {
+    final RenderObject? renderObject = _widgetKey.currentContext
+        ?.findRenderObject();
+    if (renderObject == null || !renderObject.attached) return false;
+
+    final RenderBox renderBox = renderObject as RenderBox;
+
+    // Get the scrollable state
+    final ScrollableState? scrollable = Scrollable.of(context);
+    if (scrollable == null) return false;
+
+    // Get the scroll position and viewport dimensions
+    final double viewportHeight = scrollable.position.viewportDimension;
+
+    // Get the element's position in the viewport
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final double elementTop = offset.dy;
+    final double elementBottom = elementTop + renderBox.size.height;
+
+    // Check if element is visible in viewport (with a small buffer)
+    // Element is visible if it's within the viewport bounds
+    final bool isVisible = elementTop < viewportHeight && elementBottom > 0;
+
+    return isVisible;
+  }
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,6 +172,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ProfileController _profileController = Get.put(ProfileController());
+  final ScrollController _scrollController = ScrollController();
 
   bool isEditing = false;
   bool isLoading = false;
@@ -40,15 +180,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String errorMessage = '';
   final ImagePicker _imagePicker = ImagePicker();
 
+  // Add this to track when profile is loaded
+  bool _profileLoaded = false;
+
   // ✅ UPDATED: Only controllers for fields that exist
   late TextEditingController firstNameCtrl;
   late TextEditingController lastNameCtrl;
   late TextEditingController phoneCtrl;
-
-  // ❌ REMOVED: Controllers for non-existent fields
-  // late TextEditingController dateOfBirthCtrl;
-  // late TextEditingController addressCtrl;
-  // late TextEditingController locationCtrl;
 
   // For account deletion
   final TextEditingController otpController = TextEditingController();
@@ -58,17 +196,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _initializeControllers();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadProfile();
+      _checkAuthAndLoadProfile();
     });
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _checkAuthAndLoadProfile() async {
     setState(() {
       isLoading = true;
       hasError = false;
       errorMessage = '';
+      _profileLoaded = false;
     });
 
+    try {
+      // Check if token exists
+      final token = await CacheUtils.checkToken();
+
+      if (token == null || token.isEmpty) {
+        // No token - redirect to login
+        Get.offAllNamed('/login');
+        return;
+      }
+
+      // Token exists - load profile
+      await _loadProfile();
+    } catch (e) {
+      setState(() {
+        hasError = true;
+        errorMessage = 'Authentication error: $e';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+        _profileLoaded = true;
+      });
+    }
+  }
+
+  Future<void> _loadProfile() async {
     try {
       // 1. Fetch user profile
       final success = await ProfileMngmtHelper.fetchUserProfile();
@@ -76,7 +241,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (success && _profileController.userProfile.value != null) {
         _updateControllers();
 
-        // 2. ALSO FETCH ATTACHMENTS FROM ATTACHMENTS API
+        // 2. Fetch loans if controller exists
+        if (Get.isRegistered<LoanController>()) {
+          final loanController = Get.find<LoanController>();
+          await loanController.fetchCustomerLoans();
+        }
+
+        // 3. ALSO FETCH ATTACHMENTS FROM ATTACHMENTS API
         await _profileController.fetchUserAttachments();
       } else {
         setState(() {
@@ -91,8 +262,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         hasError = true;
         errorMessage = 'An error occurred: $e';
       });
-    } finally {
-      setState(() => isLoading = false);
     }
   }
 
@@ -100,7 +269,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     firstNameCtrl = TextEditingController();
     lastNameCtrl = TextEditingController();
     phoneCtrl = TextEditingController();
-    // ❌ NO dateOfBirthCtrl, addressCtrl, or locationCtrl
   }
 
   void _updateControllers() {
@@ -110,17 +278,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         firstNameCtrl.text = user.firstName;
         lastNameCtrl.text = user.lastName;
         phoneCtrl.text = user.phone ?? '';
-        // ❌ NO dateOfBirth, address, or location fields to update
       });
     }
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     firstNameCtrl.dispose();
     lastNameCtrl.dispose();
     phoneCtrl.dispose();
-    // ❌ NO dateOfBirthCtrl, addressCtrl, or locationCtrl to dispose
     otpController.dispose();
     super.dispose();
   }
@@ -225,11 +392,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _uploadProfileImage(File imageFile) async {
     try {
       // TODO: IMPLEMENT ACTUAL IMAGE UPLOAD TO YOUR STORAGE SERVICE
-      // 1. Upload to AWS S3 / Firebase Storage / etc.
-      // 2. Get the public URL
-      // 3. Update profile with the URL
-
-      // For now, we'll just update the profile without the image
       Get.snackbar(
         'Info',
         'Image upload feature requires storage integration',
@@ -237,14 +399,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.blue,
         colorText: Colors.white,
       );
-
-      // If you have the URL, call:
-      // await ProfileMngmtHelper.updateProfile(
-      //   firstName: firstNameCtrl.text.trim(),
-      //   lastName: lastNameCtrl.text.trim(),
-      //   phone: phoneCtrl.text.trim(),
-      //   profilePicUrl: imageUrl, // <- ACTUAL IMAGE URL HERE
-      // );
     } catch (e) {
       Get.snackbar(
         'Upload Failed',
@@ -290,12 +444,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => isLoading = true);
 
     try {
-      // ✅ UPDATED: Only pass fields that exist
       final success = await ProfileMngmtHelper.updateProfile(
         firstName: firstNameCtrl.text.trim(),
         lastName: lastNameCtrl.text.trim(),
         phone: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
-        // ❌ NO dateOfBirth, address, or location parameters
       );
 
       if (success) {
@@ -392,22 +544,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         publicUrl = supabase.storage.from('attachments').getPublicUrl(filePath);
       }
 
-      // Map DocumentType to API category (must match dropdown values)
+      // Map DocumentType to API category
       String apiCategory;
       switch (documentType) {
         case DocumentType.national_id:
-          apiCategory = 'national_id'; // ✅ Valid dropdown value
+          apiCategory = 'national_id';
           break;
         case DocumentType.passport:
-          apiCategory = 'other'; // ✅ 'passport' not in dropdown, use 'other'
+          apiCategory = 'other';
           break;
         case DocumentType.proof_of_address:
-          apiCategory = 'proof_of_residence'; // ✅ Valid dropdown value
+          apiCategory = 'proof_of_residence';
           break;
-        // ✅ Fallback to 'other'
       }
 
-      // ✅ Create proper JSON metadata
+      // Create proper JSON metadata
       final metaData = json.encode({
         'document_type': documentType.toString().split('.').last,
         'uploaded_at': DateTime.now().toIso8601String(),
@@ -417,22 +568,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'purpose': 'profile_verification',
       });
 
-      print('DEBUG: entityId = ${user.id}');
-      print('DEBUG: entityType = User');
-      print('DEBUG: category = $apiCategory');
-      print('DEBUG: storage = url');
-
-      // ✅ CORRECTED: Use API-compliant values
       final attachmentModel = await AttachmentHelper.uploadAttachment(
-        entityType:
-            'User', // ✅ Must be 'User' (from dropdown: {LoanApplication, Loan, Asset, User, Ticket, DebtorRecord, Other})
-        entityId: user.id, // ✅ Actual user ID (MongoDB ObjectId)
-        category:
-            apiCategory, // ✅ Must be from dropdown: {other, national_id, loan_request_form, pawn_ticket, contract, proof_of_residence, asset_photos}
+        entityType: 'User',
+        entityId: user.id,
+        category: apiCategory,
         filename: fileName,
         mimeType: 'image/jpeg',
-        storage:
-            'url', // ✅ Must be 'url' (from dropdown: {url, local, s3, gridfs})
+        storage: 'url',
         url: publicUrl,
         meta: metaData,
       );
@@ -506,11 +648,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) {
       setState(() => isLoading = true);
       try {
-        // Use AttachmentService for deletion (not ProfileMngmtHelper)
         final response = await AttachmentService.deleteAttachment(document.id);
 
         if (response.success) {
-          // Refresh the profile to update UI
           await _loadProfile();
           Get.snackbar(
             'Success',
@@ -578,21 +718,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) {
       setState(() => isLoading = true);
       try {
-        // TODO: Implement proper logout logic
-        // 1. Clear cache/tokens
-        // 2. Navigate to login
+        // Clear all user data from cache
+        await CacheUtils.clearAllUserData();
 
-        await Future.delayed(const Duration(seconds: 1));
-
-        Get.snackbar(
-          'Info',
-          'Logout functionality needs cache clearing implementation',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.blue,
-          colorText: Colors.white,
-        );
-
-        // Get.offAllNamed('/login'); // Uncomment when ready
+        // Navigate to login
+        Get.offAllNamed('/login');
       } catch (e) {
         Get.snackbar(
           'Error',
@@ -606,9 +736,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
-
-  // ❌ REMOVED: selectDateOfBirth method since no date field exists
-  // Future<void> selectDateOfBirth() async { ... }
 
   Future<void> _requestAccountDeletion() async {
     final user = _profileController.userProfile.value;
@@ -752,7 +879,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
 
                 if (success) {
-                  // Account deleted successfully
+                  // Clear all user data and navigate to login
+                  await CacheUtils.clearAllUserData();
                   Get.offAllNamed('/login');
                 }
               } catch (e) {
@@ -778,6 +906,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  // Calculate profile completion percentage
+  double _calculateCompletion(UserProfile user) {
+    int totalFields = 0;
+    int completedFields = 0;
+
+    // Check phone
+    totalFields++;
+    if (user.phone != null && user.phone!.isNotEmpty) completedFields++;
+
+    // Check email verified
+    totalFields++;
+    if (user.isEmailVerified) completedFields++;
+
+    // Check documents
+    totalFields++;
+    if (user.documents.isNotEmpty) completedFields++;
+
+    return completedFields / totalFields;
+  }
+
+  int _getDocumentsCount(UserProfile user) {
+    return user.documents.length;
+  }
+
+  String _getMemberSince(UserProfile user) {
+    return 'Since ${DateFormat('yyyy').format(user.createdAt)}';
+  }
+
+  // Get missing fields for display
+  List<String> _getMissingFieldsList(UserProfile user) {
+    List<String> missing = [];
+
+    if (user.phone == null || user.phone!.isEmpty) {
+      missing.add('Phone Number');
+    }
+
+    if (!user.isEmailVerified) {
+      missing.add('Email Verification');
+    }
+
+    if (user.documents.isEmpty) {
+      missing.add('Documents');
+    }
+
+    return missing;
   }
 
   Widget _buildLoadingScreen() {
@@ -823,17 +998,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            GeneralButton(
-              btnColor: AppColors.primaryColor,
-              borderRadius: 8,
-              onTap: _loadProfile,
-              child: Text(
-                'Try Again',
-                style: GoogleFonts.nunito(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GeneralButton(
+                  btnColor: Colors.grey,
+                  borderRadius: 8,
+                  width: 120,
+                  onTap: () => Get.back(),
+                  child: Text(
+                    'Go Back',
+                    style: GoogleFonts.nunito(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                GeneralButton(
+                  btnColor: AppColors.primaryColor,
+                  borderRadius: 8,
+                  width: 120,
+                  onTap: _checkAuthAndLoadProfile,
+                  child: Text(
+                    'Try Again',
+                    style: GoogleFonts.nunito(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -865,10 +1060,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             body: Center(
               child: CachedNetworkImage(
                 imageUrl: document.url,
-                placeholder: (context, url) =>
-                    CircularProgressIndicator(color: AppColors.primaryColor),
+                placeholder: (context, url) => const CircularProgressIndicator(
+                  color: AppColors.primaryColor,
+                ),
                 errorWidget: (context, url, error) =>
-                    Icon(Icons.error_outline, color: Colors.red),
+                    const Icon(Icons.error_outline, color: Colors.red),
                 fit: BoxFit.contain,
               ),
             ),
@@ -899,14 +1095,423 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _buildInfoSection() {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.borderColor, width: 1),
+  // Redesigned DocumentItem
+  Widget _buildDocumentItem(Document document) {
+    // Get icon and color based on file type
+    IconData icon;
+    Color iconColor;
+    String fileTypeLabel;
+
+    if (document.mimeType.startsWith('image/')) {
+      icon = Icons.image_outlined;
+      iconColor = Colors.blue;
+      fileTypeLabel = 'JPG';
+    } else if (document.mimeType == 'application/pdf') {
+      icon = Icons.picture_as_pdf_outlined;
+      iconColor = Colors.red;
+      fileTypeLabel = 'PDF';
+    } else {
+      icon = Icons.insert_drive_file_outlined;
+      iconColor = AppColors.primaryColor;
+      fileTypeLabel = 'DOC';
+    }
+
+    return GestureDetector(
+      onTap: () => _openDocument(document),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Icon(icon, size: 24, color: iconColor),
+            const SizedBox(width: 12),
+
+            // Document details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    document.typeString,
+                    style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F2933),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    document.fileName,
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      color: const Color(0xFF6B7280),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // File type badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                fileTypeLabel,
+                style: GoogleFonts.nunito(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: iconColor,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-      margin: const EdgeInsets.only(top: 16),
+    );
+  }
+
+  Widget _buildStatsRow(UserProfile user) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: const Color(0xFFE5E7EB), width: 1),
+          bottom: BorderSide(color: const Color(0xFFE5E7EB), width: 1),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem('${_getDocumentsCount(user)}', 'Documents'),
+          _buildStatItem(_getMemberSince(user), ''),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.nunito(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF1F2933),
+          ),
+        ),
+        if (label.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.nunito(
+              fontSize: 12,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildProfileCompletionSection(UserProfile user) {
+    double completionPercentage = _calculateCompletion(user) * 100;
+    List<String> missingFields = _getMissingFieldsList(user);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Profile Completion',
+                style: GoogleFonts.nunito(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2933),
+                ),
+              ),
+              Text(
+                '${completionPercentage.toInt()}% Complete',
+                style: GoogleFonts.nunito(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: RealTimeColors.primaryGreen,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: _calculateCompletion(user),
+              backgroundColor: const Color(0xFFC6F6D5),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                RealTimeColors.primaryGreen,
+              ),
+              minHeight: 6,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (missingFields.isNotEmpty)
+            Text(
+              '✔️ Complete missing information for faster applications',
+              style: GoogleFonts.nunito(
+                fontSize: 13,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoSection() {
+    final user = _profileController.userProfile.value;
+    if (user == null) return const SizedBox();
+
+    if (isEditing) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Personal Information',
+                style: GoogleFonts.nunito(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1F2933),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Form fields
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'First Name',
+                              style: GoogleFonts.nunito(
+                                fontSize: 13,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            TextField(
+                              controller: firstNameCtrl,
+                              decoration: InputDecoration(
+                                hintText: 'Enter first name',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: RealTimeColors.primaryGreen,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Last Name',
+                              style: GoogleFonts.nunito(
+                                fontSize: 13,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            TextField(
+                              controller: lastNameCtrl,
+                              decoration: InputDecoration(
+                                hintText: 'Enter last name',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: RealTimeColors.primaryGreen,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Phone',
+                        style: GoogleFonts.nunito(
+                          fontSize: 13,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          hintText: 'Enter phone number',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: RealTimeColors.primaryGreen,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: toggleEdit,
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF6B7280),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: const Color(0xFFE5E7EB)),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.nunito(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: RealTimeColors.primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Save Changes',
+                        style: GoogleFonts.nunito(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // View mode
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -915,78 +1520,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               'Personal Information',
               style: GoogleFonts.nunito(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textColor,
+                color: const Color(0xFF1F2933),
               ),
             ),
             const SizedBox(height: 16),
 
-            CustomTextField(
-              controller: firstNameCtrl,
-              labelText: 'First Name',
-              enabled: isEditing,
-              focusedBorderColor: AppColors.primaryColor,
-              fillColor: isEditing ? Colors.white : Colors.grey.shade50,
-            ),
-            const SizedBox(height: 12),
+            // Info rows
+            _buildInfoRow('First Name:', user.firstName),
+            _buildInfoRow('Last Name:', user.lastName),
+            _buildInfoRow('Phone:', user.phone ?? 'Not provided'),
 
-            CustomTextField(
-              controller: lastNameCtrl,
-              labelText: 'Last Name',
-              enabled: isEditing,
-              focusedBorderColor: AppColors.primaryColor,
-              fillColor: isEditing ? Colors.white : Colors.grey.shade50,
-            ),
-            const SizedBox(height: 12),
-
-            CustomTextField(
-              controller: phoneCtrl,
-              labelText: 'Phone Number (Optional)',
-              enabled: isEditing,
-              keyboardType: TextInputType.phone,
-              focusedBorderColor: AppColors.primaryColor,
-              fillColor: isEditing ? Colors.white : Colors.grey.shade50,
-            ),
             const SizedBox(height: 20),
 
-            Row(
-              children: [
-                Expanded(
-                  child: GeneralButton(
-                    btnColor: isEditing ? Colors.grey : AppColors.primaryColor,
-                    borderRadius: 8,
-                    onTap: toggleEdit,
-                    child: Text(
-                      isEditing ? 'Cancel' : 'Edit Profile',
-                      style: GoogleFonts.nunito(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+            // Edit button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: toggleEdit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: RealTimeColors.primaryGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: RealTimeColors.primaryGreen),
                   ),
                 ),
-                if (isEditing) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GeneralButton(
-                      btnColor: AppColors.primaryColor,
-                      borderRadius: 8,
-                      onTap: saveProfile,
-                      child: Text(
-                        'Save Changes',
-                        style: GoogleFonts.nunito(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                child: Text(
+                  'Edit Profile',
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ],
+                ),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF1F2933),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -995,102 +1598,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _profileController.userProfile.value;
     if (user == null) return const SizedBox();
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.borderColor, width: 1),
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
       ),
-      margin: const EdgeInsets.only(top: 16),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Uploaded Documents',
-                  style: GoogleFonts.nunito(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textColor,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${user.documents.length}',
-                    style: GoogleFonts.nunito(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryColor,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              'Uploaded Documents',
+              style: GoogleFonts.nunito(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1F2933),
+              ),
             ),
             const SizedBox(height: 16),
 
-            GeneralButton(
-              btnColor: AppColors.surfaceColor,
-              borderRadius: 8,
-              boxBorder: Border.all(color: AppColors.primaryColor, width: 1.5),
-              onTap: uploadDocument,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.upload_outlined,
-                    size: 18,
-                    color: AppColors.primaryColor,
+            // Upload button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: uploadDocument,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: RealTimeColors.primaryGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: RealTimeColors.primaryGreen),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Upload Document',
-                    style: GoogleFonts.nunito(
-                      color: AppColors.primaryColor,
-                      fontWeight: FontWeight.w600,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.upload_outlined,
+                      size: 18,
+                      color: RealTimeColors.primaryGreen,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      'Upload Document',
+                      style: GoogleFonts.nunito(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: RealTimeColors.primaryGreen,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
             const SizedBox(height: 20),
 
             if (user.documents.isEmpty)
-              Column(
-                children: [
-                  Icon(
-                    Icons.folder_open_outlined,
-                    size: 60,
-                    color: AppColors.borderColor,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
                     'No documents uploaded yet',
                     style: GoogleFonts.nunito(
                       fontSize: 14,
-                      color: AppColors.subtextColor,
+                      color: const Color(0xFF6B7280),
                     ),
                   ),
-                ],
+                ),
               )
             else
               Column(
-                children: user.documents.map((document) {
-                  return DocumentItem(
-                    document: document,
-                    onTap: () => _openDocument(document),
+                children: user.documents.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  Document document = entry.value;
+                  return ScrollVisibilityAnimation(
+                    key: ValueKey('doc_${document.id}'),
+                    delay: Duration(milliseconds: index * 100),
+                    slideOffset: 20,
+                    child: _buildDocumentItem(document),
                   );
                 }).toList(),
               ),
@@ -1101,13 +1690,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildAccountActions() {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.borderColor, width: 1),
+    return Container(
+      margin: const EdgeInsets.only(top: 12, bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
       ),
-      margin: const EdgeInsets.only(top: 16, bottom: 40),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1116,63 +1704,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               'Account Actions',
               style: GoogleFonts.nunito(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textColor,
+                color: const Color(0xFF1F2933),
               ),
             ),
             const SizedBox(height: 16),
 
             // Log Out
-            GeneralButton(
-              btnColor: AppColors.surfaceColor,
-              borderRadius: 8,
-              boxBorder: Border.all(color: AppColors.borderColor, width: 1.5),
-              onTap: logout,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
+            ScrollVisibilityAnimation(
+              delay: const Duration(milliseconds: 100),
+              slideOffset: 20,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
                     Icons.logout_outlined,
-                    size: 18,
-                    color: AppColors.textColor,
+                    color: Color(0xFF6B7280),
+                    size: 20,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Log Out',
-                    style: GoogleFonts.nunito(
-                      color: AppColors.textColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                title: Text(
+                  'Log Out',
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF1F2933),
                   ),
-                ],
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF9CA3AF),
+                ),
+                onTap: logout,
               ),
             ),
-            const SizedBox(height: 12),
+
+            const Divider(height: 16),
 
             // Delete Account
-            GeneralButton(
-              btnColor: Colors.white,
-              borderRadius: 8,
-              boxBorder: Border.all(color: AppColors.errorColor, width: 1.5),
-              onTap: _requestAccountDeletion,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
+            ScrollVisibilityAnimation(
+              delay: const Duration(milliseconds: 200),
+              slideOffset: 20,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
                     Icons.delete_outline,
-                    size: 18,
-                    color: AppColors.errorColor,
+                    color: Colors.red,
+                    size: 20,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Delete Account',
-                    style: GoogleFonts.nunito(
-                      color: AppColors.errorColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                title: Text(
+                  'Delete Account',
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.red,
                   ),
-                ],
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF9CA3AF),
+                ),
+                onTap: _requestAccountDeletion,
               ),
             ),
           ],
@@ -1185,23 +1792,192 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _profileController.userProfile.value;
     if (user == null) return const SizedBox();
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollNotification) {
+        // This ensures scroll notifications are captured
+        return false;
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          ProfileHeader(
-            user: user,
-            onTap: _pickProfileImage,
-          ).animate().fadeIn(duration: 300.ms),
-          _buildInfoSection().animate().fadeIn(duration: 400.ms, delay: 100.ms),
-          _buildDocumentsSection().animate().fadeIn(
-            duration: 500.ms,
-            delay: 200.ms,
-          ),
-          _buildAccountActions().animate().fadeIn(
-            duration: 600.ms,
-            delay: 300.ms,
+          // Background color
+          Container(color: const Color(0xFFF9FAFB)),
+
+          // Main content
+          SingleChildScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // Curved header (no animation needed)
+                TCurvedEdgeWidget(
+                  child: Container(
+                    height: 180,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF2F855A), Color(0xFF38A169)],
+                      ),
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                onPressed: () => Get.back(),
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(width: 40, height: 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Profile picture - positioned to overlap
+                Transform.translate(
+                  offset: const Offset(0, -50),
+                  child: Column(
+                    children: [
+                      // Profile avatar with animation
+                      GestureDetector(
+                            onTap: _pickProfileImage,
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    spreadRadius: 0,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: AppColors.primaryColor
+                                    .withOpacity(0.1),
+                                backgroundImage: user.profilePicUrl != null
+                                    ? CachedNetworkImageProvider(
+                                        user.profilePicUrl!,
+                                      )
+                                    : null,
+                                child: user.profilePicUrl == null
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: AppColors.primaryColor,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          )
+                          .animate()
+                          .fadeIn(duration: 400.ms)
+                          .scale(delay: 200.ms, duration: 400.ms),
+
+                      const SizedBox(height: 12),
+
+                      // Name and email with animation
+                      Column(
+                            children: [
+                              Text(
+                                user.fullNameDisplay,
+                                style: GoogleFonts.nunito(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1F2933),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                user.email,
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  color: const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          )
+                          .animate()
+                          .fadeIn(delay: 300.ms)
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: 300.ms,
+                            duration: 500.ms,
+                          ),
+                    ],
+                  ),
+                ),
+
+                // Content sections
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      // Stats row with animation
+                      ScrollVisibilityAnimation(
+                        delay: const Duration(milliseconds: 100),
+                        slideHorizontal: true,
+                        slideOffset: 20,
+                        child: _buildStatsRow(user),
+                      ),
+
+                      // Profile completion with animation
+                      ScrollVisibilityAnimation(
+                        delay: const Duration(milliseconds: 200),
+                        slideHorizontal: true,
+                        slideOffset: 20,
+                        child: _buildProfileCompletionSection(user),
+                      ),
+
+                      // Personal Information with animation
+                      ScrollVisibilityAnimation(
+                        delay: const Duration(milliseconds: 300),
+                        slideOffset: 30,
+                        child: _buildInfoSection(),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Uploaded Documents with animation
+                      _buildDocumentsSection(),
+
+                      const SizedBox(height: 12),
+
+                      // Account Actions with animation
+                      _buildAccountActions(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1211,51 +1987,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfaceColor,
-        elevation: 0,
-        title: Text(
-          'Profile',
-          style: GoogleFonts.nunito(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textColor,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          if (isLoading)
-            Container(
-              padding: const EdgeInsets.only(right: 16),
-              child: const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-            ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF9FAFB),
       body: Stack(
         children: [
           if (isLoading && _profileController.userProfile.value == null)
             _buildLoadingScreen()
           else if (hasError)
             _buildErrorScreen()
+          else if (_profileLoaded &&
+              _profileController.userProfile.value != null)
+            _buildProfileContent()
           else
-            _buildProfileContent(),
-
-          // Global loading overlay for actions
-          if (isLoading && _profileController.userProfile.value != null)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryColor),
-              ),
-            ),
+            const SizedBox.shrink(),
         ],
       ),
     );

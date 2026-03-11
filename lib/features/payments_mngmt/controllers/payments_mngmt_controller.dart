@@ -1,9 +1,14 @@
-// features/payments_mngmt/controllers/payments_mngmt_controller.dart - COMPLETE MERGED VERSION
+// features/payments_mngmt/controllers/payments_mngmt_controller.dart
 
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/features/payments_mngmt/services/payments_mngmt_service.dart';
 import 'package:real_time_pawn/models/payment_mngmt_model.dart';
+import 'dart:async';
 
 class PaymentController extends GetxController {
   // State
@@ -36,15 +41,89 @@ class PaymentController extends GetxController {
   // Payment status polling
   final RxMap<String, bool> isPollingStatus = <String, bool>{}.obs;
 
-  // Singleton instance getter
-  static PaymentController get instance {
-    return Get.find<PaymentController>();
+  // Auto-refresh timer for pending payments
+  Timer? _autoRefreshTimer;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _startAutoRefresh();
   }
 
   @override
   void onClose() {
+    _autoRefreshTimer?.cancel();
     clearAll();
     super.onClose();
+  }
+
+  // Start auto-refresh for pending payments (every 10 seconds)
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _refreshPendingPayments();
+    });
+  }
+
+  // Auto-refresh only pending payments
+  Future<void> _refreshPendingPayments() async {
+    // Get all pending payments from current lists
+    final allPendingPayments = <PaymentModel>[];
+
+    // Check main payments list
+    allPendingPayments.addAll(
+      payments.where((p) => p.isPending || p.isProcessing).toList(),
+    );
+
+    // Check selected payment if pending
+    if (selectedPayment.value != null &&
+        (selectedPayment.value!.isPending ||
+            selectedPayment.value!.isProcessing)) {
+      if (!allPendingPayments.any((p) => p.id == selectedPayment.value!.id)) {
+        allPendingPayments.add(selectedPayment.value!);
+      }
+    }
+
+    // Check loan payments
+    for (final loanId in loanPayments.keys) {
+      allPendingPayments.addAll(
+        loanPayments[loanId]!
+            .where((p) => p.isPending || p.isProcessing)
+            .toList(),
+      );
+    }
+
+    // Check payments by loan
+    for (final loanId in paymentsByLoan.keys) {
+      allPendingPayments.addAll(
+        paymentsByLoan[loanId]!
+            .where((p) => p.isPending || p.isProcessing)
+            .toList(),
+      );
+    }
+
+    // Remove duplicates
+    final uniquePendingIds = <String>{};
+    final uniquePendingPayments = <PaymentModel>[];
+
+    for (var payment in allPendingPayments) {
+      if (uniquePendingIds.add(payment.id)) {
+        uniquePendingPayments.add(payment);
+      }
+    }
+
+    if (uniquePendingPayments.isNotEmpty) {
+      print(
+        '🔄 Auto-refreshing ${uniquePendingPayments.length} pending payments',
+      );
+
+      for (var payment in uniquePendingPayments) {
+        await checkPaymentStatus(payment.id, showNotification: true);
+        await Future.delayed(
+          const Duration(milliseconds: 500),
+        ); // Small delay to avoid rate limiting
+      }
+    }
   }
 
   // Statistics
@@ -139,10 +218,10 @@ class PaymentController extends GetxController {
           loanPayments[loanId] = fetchedPayments;
         }
 
-        // ✅ Update the main payments list
+        // Update the main payments list
         payments.value = fetchedPayments;
 
-        // ✅ Update pagination values
+        // Update pagination values
         totalPayments.value = response.data!.pagination.total;
         totalPages.value = response.data!.pagination.totalPages;
         hasNextPage.value = response.data!.pagination.hasNextPage;
@@ -151,6 +230,9 @@ class PaymentController extends GetxController {
         print(
           '📊 Pagination - Page: ${currentPage.value}, HasNext: $hasNextPage, Total: $totalPayments',
         );
+
+        // Check status of any pending payments in this list
+        _checkPendingPaymentsInList(fetchedPayments);
       } else {
         errorMessage.value = response.message ?? 'Failed to load payments';
         print('❌ Error: $errorMessage');
@@ -222,6 +304,9 @@ class PaymentController extends GetxController {
         print(
           '📊 Pagination - Page: ${currentPage.value}, Total: $totalPayments, HasNext: $hasNextPage',
         );
+
+        // Check status of any pending payments in this list
+        _checkPendingPaymentsInList(fetchedPayments);
       } else {
         errorMessage.value = response.message ?? 'Failed to load payments';
         print('❌ Error: $errorMessage');
@@ -233,6 +318,26 @@ class PaymentController extends GetxController {
       Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Check pending payments in a list and queue them for status check
+  void _checkPendingPaymentsInList(List<PaymentModel> paymentList) {
+    final pendingPayments = paymentList
+        .where((p) => p.isPending || p.isProcessing)
+        .toList();
+
+    if (pendingPayments.isNotEmpty) {
+      print(
+        '🔍 Found ${pendingPayments.length} pending payments, will check status',
+      );
+
+      // Check each pending payment after a short delay
+      for (var i = 0; i < pendingPayments.length; i++) {
+        Future.delayed(Duration(seconds: 2 + i), () {
+          checkPaymentStatus(pendingPayments[i].id, showNotification: false);
+        });
+      }
     }
   }
 
@@ -287,6 +392,9 @@ class PaymentController extends GetxController {
           hasNextPage.value = response.data!.pagination.hasNextPage;
           totalPages.value = response.data!.pagination.totalPages;
           print('✅ Loaded ${response.data!.payments.length} more payments');
+
+          // Check pending payments in new batch
+          _checkPendingPaymentsInList(response.data!.payments);
         } else {
           currentPage.value--;
         }
@@ -314,6 +422,9 @@ class PaymentController extends GetxController {
           hasNextPage.value = response.data!.pagination.hasNextPage;
           totalPages.value = response.data!.pagination.totalPages;
           print('✅ Loaded ${response.data!.payments.length} more payments');
+
+          // Check pending payments in new batch
+          _checkPendingPaymentsInList(response.data!.payments);
         } else {
           print('❌ Failed to load more payments: ${response.message}');
           currentPage.value--;
@@ -375,13 +486,11 @@ class PaymentController extends GetxController {
         // Refresh payments list
         await fetchPaymentsByLoan(loanId: loanId, refresh: true);
 
-        // If payment has pollUrl, start polling for status
-        if (response.data!.containsKey('pollUrl') &&
-            response.data!['pollUrl'] != null) {
-          final paymentId = response.data!['_id'];
-          if (paymentId != null) {
-            startPaymentStatusPolling(paymentId);
-          }
+        // Start automatic polling for status
+        final paymentId =
+            response.data!['_id'] ?? response.data!['payment']?['_id'];
+        if (paymentId != null) {
+          startPaymentStatusPolling(paymentId);
         }
 
         return response.data;
@@ -414,6 +523,12 @@ class PaymentController extends GetxController {
       if (response.success && response.data != null) {
         print('✅ Payment details loaded successfully');
         selectedPayment.value = response.data;
+
+        // If payment is pending, start auto-refresh
+        if (response.data!.isPending || response.data!.isProcessing) {
+          startPaymentStatusPolling(paymentId);
+        }
+
         return response.data;
       } else {
         errorMessage.value =
@@ -431,30 +546,70 @@ class PaymentController extends GetxController {
   }
 
   // ============================================
-  // METHOD 6: Check payment status
+  // METHOD 6: Check payment status (FIXED with proper error handling)
   // ============================================
-  Future<Map<String, dynamic>?> checkPaymentStatus(String paymentId) async {
+  Future<Map<String, dynamic>?> checkPaymentStatus(
+    String paymentId, {
+    bool showNotification = true,
+  }) async {
     try {
       isPollingStatus[paymentId] = true;
+
+      print('🔍 Checking payment status for: $paymentId');
 
       final response = await PaymentService.checkPaymentStatus(paymentId);
 
       if (response.success && response.data != null) {
-        // Update payment in list if found
-        final index = payments.indexWhere((p) => p.id == paymentId);
-        if (index != -1) {
-          // Create updated payment
-          final updatedPayment = PaymentModel.fromMap(response.data!);
-          payments[index] = updatedPayment;
+        final gatewayStatus = response.data!['gateway_status']?.toString();
+        final paymentData = response.data!['payment'];
+
+        print('✅ Payment status check successful');
+        print('📊 Gateway status: $gatewayStatus');
+
+        if (paymentData != null) {
+          // Create updated payment model
+          final updatedPayment = PaymentModel.fromMap(paymentData);
+
+          // Track if notification should be shown
+          bool shouldShowNotification = false;
+
+          // Update in main payments list
+          final index = payments.indexWhere((p) => p.id == paymentId);
+          if (index != -1) {
+            final oldStatus = payments[index].paymentStatus;
+            payments[index] = updatedPayment;
+            payments.refresh();
+            print(
+              '✅ Updated payment in main list: $oldStatus → ${updatedPayment.paymentStatus}',
+            );
+
+            // Check if status changed and not pending
+            if (showNotification && oldStatus != updatedPayment.paymentStatus) {
+              if (!updatedPayment.isPending && !updatedPayment.isProcessing) {
+                shouldShowNotification = true;
+              }
+            }
+          }
 
           // Update selected payment if it's the same
           if (selectedPayment.value != null &&
               selectedPayment.value!.id == paymentId) {
+            final oldStatus = selectedPayment.value!.paymentStatus;
             selectedPayment.value = updatedPayment;
+            print(
+              '✅ Updated selected payment: $oldStatus → ${updatedPayment.paymentStatus}',
+            );
+
+            // Check if status changed and not pending
+            if (showNotification && oldStatus != updatedPayment.paymentStatus) {
+              if (!updatedPayment.isPending && !updatedPayment.isProcessing) {
+                shouldShowNotification = true;
+              }
+            }
           }
 
           // Update loan payments
-          for (final loanId in loanPayments.keys) {
+          for (final loanId in loanPayments.keys.toList()) {
             final loanPaymentIndex = loanPayments[loanId]!.indexWhere(
               (p) => p.id == paymentId,
             );
@@ -465,7 +620,7 @@ class PaymentController extends GetxController {
           }
 
           // Update payments by loan
-          for (final loanId in paymentsByLoan.keys) {
+          for (final loanId in paymentsByLoan.keys.toList()) {
             final loanPaymentIndex = paymentsByLoan[loanId]!.indexWhere(
               (p) => p.id == paymentId,
             );
@@ -474,15 +629,37 @@ class PaymentController extends GetxController {
               paymentsByLoan.refresh();
             }
           }
+
+          // Show notification if needed
+          if (shouldShowNotification) {
+            _showStatusNotification(updatedPayment);
+          }
         }
 
         return response.data;
       } else {
-        print('DEBUG: Payment status check failed: ${response.message}');
+        // Handle the validation error gracefully
+        if (response.message?.contains('validation failed') == true ||
+            response.message?.contains('not a valid enum value') == true) {
+          print('⚠️ Backend validation error: ${response.message}');
+
+          // Check if this is the "sent" status issue
+          if (response.message?.contains('sent') == true) {
+            print(
+              '📌 Payment is in "sent" state - this is a temporary state, continuing to poll',
+            );
+
+            // Don't treat as failure - the payment is still processing
+            // Just return null and continue polling
+            return null;
+          }
+        } else {
+          print('❌ Payment status check failed: ${response.message}');
+        }
         return null;
       }
     } catch (e) {
-      print('DEBUG: Error checking payment status: $e');
+      print('❌ Error checking payment status: $e');
       return null;
     } finally {
       isPollingStatus[paymentId] = false;
@@ -490,28 +667,75 @@ class PaymentController extends GetxController {
     }
   }
 
+  // Show notification to user about payment status change
+  void _showStatusNotification(PaymentModel payment) {
+    String message;
+    Color color;
+
+    switch (payment.paymentStatus.toLowerCase()) {
+      case 'paid':
+      case 'completed':
+      case 'successful':
+        message = '✅ Payment successful! Reference: ${payment.reference}';
+        color = RealTimeColors.success;
+        break;
+      case 'cancelled':
+        message = '❌ Payment was cancelled. Please try again.';
+        color = RealTimeColors.warning;
+        break;
+      case 'failed':
+        message = '❌ Payment failed. Insufficient funds or transaction error.';
+        color = RealTimeColors.error;
+        break;
+      default:
+        return; // Don't show notification for other statuses
+    }
+
+    Get.snackbar(
+      'Payment Update',
+      message,
+      backgroundColor: color,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 4),
+    );
+  }
+
   // ============================================
-  // METHOD 7: Start payment status polling
+  // METHOD 7: Start automatic payment status polling
   // ============================================
   void startPaymentStatusPolling(String paymentId) {
     if (isPollingStatus[paymentId] == true) return;
 
-    // Poll every 5 seconds for up to 2 minutes
+    print('🔄 Starting automatic payment status polling for: $paymentId');
+
     int pollCount = 0;
     const maxPolls = 24; // 24 * 5 seconds = 2 minutes
 
     Future.doWhile(() async {
-      if (pollCount >= maxPolls) return false;
+      if (pollCount >= maxPolls) {
+        print('⏱️ Polling stopped after $maxPolls attempts');
+        return false;
+      }
 
       await Future.delayed(const Duration(seconds: 5));
 
-      final statusResult = await checkPaymentStatus(paymentId);
+      final statusResult = await checkPaymentStatus(
+        paymentId,
+        showNotification: true,
+      );
 
       if (statusResult != null) {
-        final status = statusResult['payment_status'];
+        final paymentData = statusResult['payment'];
+        final paymentStatus = paymentData?['payment_status']
+            ?.toString()
+            .toLowerCase();
+
+        print('📊 Poll #${pollCount + 1}: Status = $paymentStatus');
+
         // Stop polling if payment is no longer pending/processing
-        if (status != 'pending' && status != 'processing') {
-          Get.snackbar('Payment Status', 'Payment is now $status');
+        if (paymentStatus != 'pending' && paymentStatus != 'processing') {
+          print('✅ Payment reached final state: $paymentStatus');
           return false;
         }
       }

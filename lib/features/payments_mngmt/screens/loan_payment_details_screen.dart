@@ -1,4 +1,4 @@
-// features/payments_mngmt/screens/loan_payment_details_screen.dart - CORRECTED VERSION
+// features/payments_mngmt/screens/loan_payment_details_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -114,6 +114,8 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildHeader() {
+    final PaymentController controller = Get.find<PaymentController>();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -159,33 +161,51 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
               ],
             ),
           ),
-          GetBuilder<PaymentController>(
-            builder: (controller) {
-              if (controller.selectedPayment.value == null)
-                return const SizedBox();
-              final payment = controller.selectedPayment.value!;
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(
-                    payment.paymentStatus,
-                  ).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  payment.paymentStatus.toUpperCase(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _getStatusColor(payment.paymentStatus),
+
+          // Status chip with auto-refresh indicator
+          Obx(() {
+            final payment = controller.selectedPayment.value;
+            if (payment == null) return const SizedBox();
+
+            final isPolling = controller.isPollingStatus[payment.id] == true;
+
+            return Row(
+              children: [
+                // Show loading indicator if polling
+                if (isPolling && (payment.isPending || payment.isProcessing))
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+
+                // Status chip
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(
+                      payment.paymentStatus,
+                    ).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    payment.paymentStatus.toUpperCase(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _getStatusColor(payment.paymentStatus),
+                    ),
                   ),
                 ),
-              );
-            },
-          ),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -371,7 +391,6 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
     );
   }
 
-  // 🔴 FIXED: Changed payment.paymentDate to payment.paidAt
   Widget _buildInfoSection(PaymentModel payment) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -400,8 +419,7 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
             _buildInfoRow('Provider', payment.provider!.toUpperCase()),
           _buildInfoRow('Currency', payment.currency),
           _buildInfoRow('Created', _formatDate(payment.createdAt)),
-          if (payment.paidAt !=
-              null) // ✅ FIX: Use paidAt instead of paymentDate
+          if (payment.paidAt != null)
             _buildInfoRow('Payment Date', _formatDate(payment.paidAt!)),
         ],
       ),
@@ -533,7 +551,6 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
     );
   }
 
-  // 🔴 UPDATED: Match the date format from the model
   String _formatDate(DateTime date) {
     final monthNames = [
       'Jan',

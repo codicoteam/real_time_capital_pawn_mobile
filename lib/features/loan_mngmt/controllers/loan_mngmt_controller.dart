@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/utils/api_response.dart';
 import '../../../core/utils/logs.dart';
 import '../../../models/loan_mngmt_model.dart';
 import '../services/loan_mngmt_service.dart';

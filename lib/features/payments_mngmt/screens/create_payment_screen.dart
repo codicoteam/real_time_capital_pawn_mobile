@@ -399,7 +399,9 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                           ),
                         ),
                         Text(
-                          'Loan ${widget.loanId.length > 8 ? '${widget.loanId.substring(0, 8)}...' : widget.loanId}',
+                          Get.arguments['loanNo'] != null
+                              ? 'Loan ${Get.arguments['loanNo']}'
+                              : 'Loan ${widget.loanId.length > 8 ? '${widget.loanId.substring(0, 8)}...' : widget.loanId}',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: AppColors.subtextColor,

@@ -22,12 +22,10 @@ class LoanDetailsScreen extends StatefulWidget {
 }
 
 class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
-  // Controllers
-  final LoanController _loanController = Get.find<LoanController>();
-  final AttachmentController _attachmentController =
-      Get.find<AttachmentController>();
-  final LoanTermsController _loanTermsController =
-      Get.find<LoanTermsController>();
+  // Controllers - declare them late
+  late final LoanController _loanController;
+  late final AttachmentController _attachmentController;
+  late final LoanTermsController _loanTermsController;
 
   // Local state for loan (allows refresh)
   late LoanModel _loan;
@@ -36,6 +34,12 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Initialize controllers in initState - same pattern as Login screen
+    _loanController = Get.put(LoanController());
+    _attachmentController = Get.put(AttachmentController());
+    _loanTermsController = Get.put(LoanTermsController());
+
     _loan = widget.loan;
     _loadAttachments();
     _loadLoanTerms();
@@ -227,8 +231,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                       // Attachments
                       _buildAttachmentsSection(),
                       const SizedBox(height: 16),
-
-
 
                       // Status Management (if applicable)
                       if (_loan.status?.toLowerCase() == 'active' ||
@@ -734,8 +736,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
       ),
     );
   }
-
-
 
   Widget _buildStatusManagement() {
     return Container(

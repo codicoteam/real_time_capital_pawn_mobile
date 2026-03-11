@@ -35,7 +35,6 @@ import 'package:real_time_pawn/features/support_mngmt/screens/ticket_list_screen
 import 'package:real_time_pawn/features/payments_mngmt/screens/welcome_page/splash_screen.dart';
 import 'package:real_time_pawn/core/utils/page_transitions_classes.dart';
 import 'package:real_time_pawn/models/loan_mngmt_model.dart';
-import 'package:real_time_pawn/models/loan_terms_model.dart';
 import 'package:real_time_pawn/models/support_ticket_model.dart';
 import 'features/auth_mngmt/screens/account_verification_screen.dart';
 import 'features/auth_mngmt/screens/confirm_email_screen.dart';
