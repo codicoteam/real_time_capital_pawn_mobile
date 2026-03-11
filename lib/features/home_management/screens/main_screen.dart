@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
-import 'package:real_time_pawn/widgets/drawers/customer_drawer.dart';
-import 'package:real_time_pawn/widgets/drawers/customer_drawer.dart'
-    show CustomDrawer;
+import 'package:real_time_pawn/features/auctions_mngmt/screens/auctions_list_screen.dart'
+    show AuctionsListScreen;
 
+import '../../../config/routers/router.dart';
 import '../../../core/utils/pallete.dart';
+import '../../../global/user_controller.dart';
+import '../../../widgets/drawers/customer_drawer.dart';
+import '../../loan_application_mngmt/screens/loan_application_step1.dart';
+
+import '../../loan_mngmt/screens/loan_mngmt_screen.dart';
 import '../../profile_mngmt/screens/profile_mngmt_screen.dart' as MyProfile;
 import 'home_screen.dart';
-import '../../loan_application_mngmt/screens/loan_application_step1.dart'; // ADD THIS
 
 class MainHomePage extends StatefulWidget {
   const MainHomePage({super.key});
@@ -22,28 +27,17 @@ class _MainHomePageState extends State<MainHomePage> {
   );
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // List of pages for bottom navigation
+  final UserController userController = Get.find<UserController>();
+
+  // Actual screens for each tab
   final List<Widget> _pages = [
-    HomePage(),
-
+    const HomePage(),
+    const LoansScreen(), // Loans tab now shows real LoansScreen
     Container(
       color: AppColors.backgroundColor,
-      child: const Center(
-        child: Text('Loans Page', style: TextStyle(fontSize: 24)),
-      ),
-    ),
-
-    // 👇 EMPTY CONTAINER - We'll navigate instead
-    Container(color: AppColors.backgroundColor),
-
-    Container(
-      color: AppColors.backgroundColor,
-      child: const Center(
-        child: Text('Notifications', style: TextStyle(fontSize: 24)),
-      ),
-    ),
-
-    MyProfile.ProfileScreen(),
+    ), // Apply placeholder (navigation only)
+    const AuctionsListScreen(), // Auction tab shows real AuctionsListScreen
+    const MyProfile.ProfileScreen(),
   ];
 
   @override
@@ -51,15 +45,15 @@ class _MainHomePageState extends State<MainHomePage> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: CustomDrawer(
-        userName: 'Guest',
-        userEmail: 'guest@example.com',
-        userId: '',
+        userName: userController.user?.fullName ?? 'Guest',
+        userEmail: userController.user?.email ?? 'guest@example.com',
+        userId: userController.user?.userId ?? '',
       ),
       body: PersistentTabView(
         context,
         controller: _tabController,
         screens: _pages,
-        items: _navBarsItems(),
+        items: _navBarItems(),
         backgroundColor: AppColors.surfaceColor,
         navBarStyle: NavBarStyle.style15,
         navBarHeight: 65,
@@ -83,25 +77,20 @@ class _MainHomePageState extends State<MainHomePage> {
         resizeToAvoidBottomInset: true,
         stateManagement: true,
         onItemSelected: (index) {
+          // Only the Apply tab (index 2) triggers navigation + reset
           if (index == 2) {
-            // Center "Apply" button
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const LoanApplicationScreen(),
-              ),
-            );
-            // Reset to home tab
-            Future.delayed(Duration.zero, () {
-              _tabController.index = 0;
-            });
+            // Immediately jump back to Home to avoid visual flicker
+            _tabController.jumpToTab(0);
+            // Navigate to the loan application screen
+            Get.toNamed(RoutesHelper.createLoanApplication);
           }
+          // All other tabs (0,1,3,4) simply stay on their screen – no extra navigation
         },
       ),
     );
   }
 
-  List<PersistentBottomNavBarItem> _navBarsItems() {
+  List<PersistentBottomNavBarItem> _navBarItems() {
     return [
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.home_rounded, size: 24),
@@ -117,7 +106,6 @@ class _MainHomePageState extends State<MainHomePage> {
         inactiveColorPrimary: AppColors.subtextColor,
         activeColorSecondary: AppColors.primaryColor,
       ),
-      // 👇 APPLY LOAN (CENTER BUTTON)
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.add_circle, size: 40),
         title: "Apply",
@@ -127,7 +115,7 @@ class _MainHomePageState extends State<MainHomePage> {
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.notifications_rounded, size: 24),
-        title: "Alerts",
+        title: "Auction",
         activeColorPrimary: AppColors.primaryColor,
         inactiveColorPrimary: AppColors.subtextColor,
         activeColorSecondary: AppColors.primaryColor,
