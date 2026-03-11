@@ -139,7 +139,8 @@ class LoanApplicationControllerTwo extends GetxController {
   void onInit() {
     super.onInit();
     _setupListeners();
-    _autoFillUserData();
+    _autoFillUserData(); // from profile
+    _autoFillFromLastApplication(); // from last saved application
   }
 
   void _setupListeners() {
@@ -264,6 +265,111 @@ class LoanApplicationControllerTwo extends GetxController {
       showAutoFillBanner.value = true;
       _showAutoFillFeedback(data);
     }
+  }
+
+  /// Retrieve and populate from last saved application
+  Future<void> _autoFillFromLastApplication() async {
+    final userId = await CacheUtils.getUserId();
+    if (userId == null) return;
+    final lastApp = await CacheUtils.getLastLoanApplication(userId);
+    if (lastApp != null) {
+      _populateFromLastApplication(lastApp);
+    }
+  }
+
+  /// Fill all controllers and reactive variables from stored payload
+  void _populateFromLastApplication(Map<String, dynamic> data) {
+    // Personal info
+    fullNameController.text = data['full_name'] ?? '';
+    nationalIdController.text = data['national_id_number'] ?? '';
+    selectedGender.value = data['gender'];
+    // Date of birth: parse ISO string to dd/MM/yyyy
+    if (data['date_of_birth'] != null) {
+      try {
+        final date = DateTime.parse(data['date_of_birth']);
+        dateOfBirthController.text =
+            "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+      } catch (_) {}
+    }
+    selectedMaritalStatus.value = data['marital_status'];
+    phoneController.text = data['contact_details'] ?? '';
+    altPhoneController.text = data['alternative_number'] ?? '';
+    emailController.text = data['email_address'] ?? '';
+    addressController.text = data['home_address'] ?? '';
+
+    // Employment
+    if (data['employment'] != null) {
+      final emp = data['employment'] as Map<String, dynamic>;
+      selectedEmploymentType.value = emp['employment_type'];
+      jobTitleController.text = emp['title'] ?? '';
+      selectedEmploymentDuration.value = emp['duration'];
+      workLocationController.text = emp['location'] ?? '';
+      employerContactController.text = emp['contacts'] ?? '';
+    }
+
+    // Loan details
+    loanAmountController.text = data['requested_loan_amount']?.toString() ?? '';
+    final categoryType = data['collateral_category'];
+    if (categoryType != null) {
+      // Find title from type
+      final matched = loanCategories.firstWhereOrNull(
+        (cat) => cat['type'] == categoryType,
+      );
+      if (matched != null) {
+        selectedLoanCategory.value = matched['title'] as String?;
+        selectedLoanCategoryType.value = categoryType;
+      }
+    }
+    collateralDescController.text = data['collateral_description'] ?? '';
+    suretyDescController.text = data['surety_description'] ?? '';
+    assetValueController.text = data['declared_asset_value']?.toString() ?? '';
+
+    // Documents URLs (files are not restored, only URLs)
+    nationalIdUrl.value = data['national_id_url'];
+    passportUrl.value = data['passport_url'];
+    proofOfResidentUrl.value = data['proof_of_resident_url'];
+    proofOfEmploymentUrl.value = data['proof_of_employment_url'];
+
+    // Next of kin
+    if (data['next_of_kin'] != null) {
+      final nok = data['next_of_kin'] as Map<String, dynamic>;
+      nextOfKinNameController.text = nok['full_name'] ?? '';
+      nextOfKinRelationshipController.text = nok['relationship'] ?? '';
+      nextOfKinPhoneController.text = nok['phone_number'] ?? '';
+      nextOfKinEmailController.text = nok['email'] ?? '';
+      nextOfKinAddressController.text = nok['address'] ?? '';
+    }
+
+    // Category specific fields
+    if (categoryType == 'motor_vehicle' &&
+        data['motor_vehicle_details'] != null) {
+      final veh = data['motor_vehicle_details'] as Map<String, dynamic>;
+      vehicleMakeController.text = veh['make'] ?? '';
+      vehicleModelController.text = veh['model'] ?? '';
+      vehicleRegController.text = veh['registration_no'] ?? '';
+      vehicleCcSerialController.text = veh['cc_serial_no'] ?? '';
+      vehicleEngineController.text = veh['engine_no'] ?? '';
+      vehicleChassisController.text = veh['chassis_no'] ?? '';
+      vehicleYearController.text = veh['year']?.toString() ?? '';
+    } else if (categoryType == 'small_loans' &&
+        data['small_loan_details'] != null) {
+      final elec = data['small_loan_details'] as Map<String, dynamic>;
+      electronicTypeController.text = elec['type'] ?? '';
+      electronicModelController.text = elec['model'] ?? '';
+      electronicSerialController.text = elec['serial_no'] ?? '';
+    } else if (categoryType == 'jewellery' &&
+        data['jewellery_details'] != null) {
+      final jew = data['jewellery_details'] as Map<String, dynamic>;
+      jewelTypeController.text = jew['type'] ?? '';
+      jewelDescController.text = jew['description'] ?? '';
+      jewelWeightController.text = jew['weight']?.toString() ?? '';
+      jewelPurityController.text = jew['purity'] ?? '';
+      jewelEstimatedValueController.text =
+          jew['estimated_value']?.toString() ?? '';
+    }
+
+    // Re-check validity after filling
+    _checkFormValidity();
   }
 
   void _showAutoFillFeedback(Map<String, dynamic> data) {
@@ -597,6 +703,9 @@ class LoanApplicationControllerTwo extends GetxController {
         );
         return;
       }
+
+      // Store this successful application as the last one for auto-fill
+      await CacheUtils.storeLastLoanApplication(currentUserId, payload);
 
       Get.to(
         () => LoanApplicationUploadScreen(

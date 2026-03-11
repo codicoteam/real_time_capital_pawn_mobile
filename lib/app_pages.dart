@@ -43,6 +43,7 @@ import 'features/auth_mngmt/screens/reset_password_screen.dart'
 import 'features/faq_mngmt/screens/faq_mngmt_screen.dart';
 import 'features/home_management/screens/home_screen.dart';
 import 'features/home_management/screens/main_screen.dart';
+import 'features/loan_application_mngmt/screens/loan_application_step1.dart' show LoanApplicationScreen;
 import 'features/loan_application_mngmt/screens/update_loan_application_screen.dart'
     show UpdateLoanApplicationScreen;
 import 'models/loan_application_model.dart';
@@ -145,6 +146,13 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
+    GetPage(
+      name: RoutesHelper.createLoanApplication,
+      page: () => const LoanApplicationScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
     GetPage(
       name: RoutesHelper.loanApplicationsScreen,
       page: () {
