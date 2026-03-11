@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'logs.dart';
 
@@ -5,6 +7,7 @@ class CacheUtils {
   static const _onboardingCacheKey = 'hasSeenOnboarding';
   static const _tokenKey = 'token';
   static const _userIdKey = 'userId'; // Add this constant
+  static const _lastLoanAppPrefix = 'lastLoanApplication_'; // new
 
   static Future<bool> checkOnBoardingStatus() async {
     try {
@@ -101,6 +104,46 @@ class CacheUtils {
       DevLogs.logSuccess('Cleared all user data from cache');
     } catch (e) {
       DevLogs.logError('Error clearing all user data: $e');
+    }
+  }
+
+  static Future<void> storeLastLoanApplication(
+    String userId,
+    Map<String, dynamic> applicationData,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String jsonString = jsonEncode(applicationData);
+      await prefs.setString('$_lastLoanAppPrefix$userId', jsonString);
+      DevLogs.logSuccess('Stored last loan application for user $userId');
+    } catch (e) {
+      DevLogs.logError('Error storing last loan application: $e');
+    }
+  }
+
+  // New: retrieve the last loan application for a user
+  static Future<Map<String, dynamic>?> getLastLoanApplication(
+    String userId,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? jsonString = prefs.getString('$_lastLoanAppPrefix$userId');
+      if (jsonString != null) {
+        return jsonDecode(jsonString) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      DevLogs.logError('Error getting last loan application: $e');
+    }
+    return null;
+  }
+
+  // New: clear the last loan application for a user
+  static Future<void> clearLastLoanApplication(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$_lastLoanAppPrefix$userId');
+    } catch (e) {
+      DevLogs.logError('Error clearing last loan application: $e');
     }
   }
 }
