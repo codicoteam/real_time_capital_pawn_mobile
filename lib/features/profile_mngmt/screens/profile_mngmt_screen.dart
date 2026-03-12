@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,142 +26,6 @@ import '../helpers/profile_mngmt_helper.dart';
 // ✅ ADD THE ENUM HERE
 enum DocumentType { national_id, passport, proof_of_address }
 
-// Custom scroll visibility widget to trigger animations when elements come into view
-// Custom scroll visibility widget to trigger animations when elements come into view
-class ScrollVisibilityAnimation extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-  final Duration delay;
-  final double slideOffset;
-  final bool slideHorizontal;
-
-  const ScrollVisibilityAnimation({
-    super.key,
-    required this.child,
-    this.duration = const Duration(milliseconds: 600),
-    this.delay = Duration.zero,
-    this.slideOffset = 30,
-    this.slideHorizontal = false,
-  });
-
-  @override
-  State<ScrollVisibilityAnimation> createState() =>
-      _ScrollVisibilityAnimationState();
-}
-
-class _ScrollVisibilityAnimationState extends State<ScrollVisibilityAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
-  late Animation<double> _slideAnimation;
-  bool _hasAnimated = false;
-  final GlobalKey _widgetKey = GlobalKey();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-
-    _opacityAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-
-    if (widget.slideHorizontal) {
-      _slideAnimation = Tween<double>(
-        begin: -widget.slideOffset,
-        end: 0,
-      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    } else {
-      _slideAnimation = Tween<double>(
-        begin: widget.slideOffset,
-        end: 0,
-      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    }
-
-    // Check initial visibility after build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _isWidgetVisible() && !_hasAnimated) {
-        Future.delayed(widget.delay, () {
-          if (mounted) {
-            _controller.forward();
-            setState(() => _hasAnimated = true);
-          }
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (scrollNotification) {
-        if (!_hasAnimated && _isWidgetVisible()) {
-          Future.delayed(widget.delay, () {
-            if (mounted) {
-              _controller.forward();
-              setState(() => _hasAnimated = true);
-            }
-          });
-        }
-        return false;
-      },
-      child: Container(
-        key: _widgetKey,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _opacityAnimation.value,
-              child: widget.slideHorizontal
-                  ? Transform.translate(
-                      offset: Offset(_slideAnimation.value, 0),
-                      child: widget.child,
-                    )
-                  : Transform.translate(
-                      offset: Offset(0, _slideAnimation.value),
-                      child: widget.child,
-                    ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  bool _isWidgetVisible() {
-    final RenderObject? renderObject = _widgetKey.currentContext
-        ?.findRenderObject();
-    if (renderObject == null || !renderObject.attached) return false;
-
-    final RenderBox renderBox = renderObject as RenderBox;
-
-    // Get the scrollable state
-    final ScrollableState? scrollable = Scrollable.of(context);
-    if (scrollable == null) return false;
-
-    // Get the scroll position and viewport dimensions
-    final double viewportHeight = scrollable.position.viewportDimension;
-
-    // Get the element's position in the viewport
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    final double elementTop = offset.dy;
-    final double elementBottom = elementTop + renderBox.size.height;
-
-    // Check if element is visible in viewport (with a small buffer)
-    // Element is visible if it's within the viewport bounds
-    final bool isVisible = elementTop < viewportHeight && elementBottom > 0;
-
-    return isVisible;
-  }
-}
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -181,9 +44,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _imagePicker = ImagePicker();
 
   // Add this to track when profile is loaded
-  bool _profileLoaded = false;
 
-  // ✅ UPDATED: Only controllers for fields that exist
+  // Controllers for fields
   late TextEditingController firstNameCtrl;
   late TextEditingController lastNameCtrl;
   late TextEditingController phoneCtrl;
@@ -205,7 +67,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       isLoading = true;
       hasError = false;
       errorMessage = '';
-      _profileLoaded = false;
     });
 
     try {
@@ -228,7 +89,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       setState(() {
         isLoading = false;
-        _profileLoaded = true;
       });
     }
   }
@@ -391,7 +251,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _uploadProfileImage(File imageFile) async {
     try {
-      // TODO: IMPLEMENT ACTUAL IMAGE UPLOAD TO YOUR STORAGE SERVICE
       Get.snackbar(
         'Info',
         'Image upload feature requires storage integration',
@@ -420,7 +279,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> saveProfile() async {
-    // Check form validation
     if (firstNameCtrl.text.trim().isEmpty) {
       Get.snackbar(
         'Validation Error',
@@ -474,7 +332,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> uploadDocument() async {
-    // Show document type selection
     final documentType = await Get.dialog<DocumentType>(
       AlertDialog(
         title: const Text('Select Document Type'),
@@ -500,7 +357,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (documentType == null) return;
 
-    // Pick file
     final XFile? pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
     );
@@ -522,11 +378,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       String publicUrl;
 
       if (kIsWeb) {
-        // WEB: Use dummy URL for testing
         publicUrl = 'https://dummyimage.com/600x400/000/fff.jpg&text=$fileName';
-        print('WEB MODE: Testing with dummy URL: $publicUrl');
       } else {
-        // ANDROID: Real Supabase upload
         final supabase = Supabase.instance.client;
         final filePath = 'profile_documents/$fileName';
 
@@ -544,7 +397,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         publicUrl = supabase.storage.from('attachments').getPublicUrl(filePath);
       }
 
-      // Map DocumentType to API category
       String apiCategory;
       switch (documentType) {
         case DocumentType.national_id:
@@ -558,7 +410,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           break;
       }
 
-      // Create proper JSON metadata
       final metaData = json.encode({
         'document_type': documentType.toString().split('.').last,
         'uploaded_at': DateTime.now().toIso8601String(),
@@ -580,9 +431,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (attachmentModel != null) {
-        // Refresh user profile to show new document
         await _loadProfile();
-
         Get.snackbar(
           'Success',
           'Document uploaded successfully',
@@ -718,10 +567,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) {
       setState(() => isLoading = true);
       try {
-        // Clear all user data from cache
         await CacheUtils.clearAllUserData();
-
-        // Navigate to login
         Get.offAllNamed('/login');
       } catch (e) {
         Get.snackbar(
@@ -879,7 +725,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
 
                 if (success) {
-                  // Clear all user data and navigate to login
                   await CacheUtils.clearAllUserData();
                   Get.offAllNamed('/login');
                 }
@@ -908,20 +753,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Calculate profile completion percentage
   double _calculateCompletion(UserProfile user) {
     int totalFields = 0;
     int completedFields = 0;
 
-    // Check phone
     totalFields++;
     if (user.phone != null && user.phone!.isNotEmpty) completedFields++;
 
-    // Check email verified
     totalFields++;
     if (user.isEmailVerified) completedFields++;
 
-    // Check documents
     totalFields++;
     if (user.documents.isNotEmpty) completedFields++;
 
@@ -936,7 +777,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return 'Since ${DateFormat('yyyy').format(user.createdAt)}';
   }
 
-  // Get missing fields for display
   List<String> _getMissingFieldsList(UserProfile user) {
     List<String> missing = [];
 
@@ -956,18 +796,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLoadingScreen() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(color: AppColors.primaryColor),
-          const SizedBox(height: 20),
-          Text(
-            'Loading your profile...',
-            style: GoogleFonts.nunito(fontSize: 16, color: AppColors.textColor),
-          ),
-        ],
-      ),
+    return const Center(
+      child: CircularProgressIndicator(color: AppColors.primaryColor),
     );
   }
 
@@ -1037,7 +867,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _openDocument(Document document) async {
-    // Check if URL is valid
     if (document.url.isEmpty || document.url == 'string') {
       Get.snackbar(
         'Error',
@@ -1052,7 +881,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final uri = Uri.parse(document.url);
 
-      // For images, open in PhotoView
       if (document.mimeType.startsWith('image/')) {
         Get.to(
           () => Scaffold(
@@ -1071,7 +899,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       } else {
-        // For other files, try to open in browser
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
@@ -1095,9 +922,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Redesigned DocumentItem
   Widget _buildDocumentItem(Document document) {
-    // Get icon and color based on file type
     IconData icon;
     Color iconColor;
     String fileTypeLabel;
@@ -1105,7 +930,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (document.mimeType.startsWith('image/')) {
       icon = Icons.image_outlined;
       iconColor = Colors.blue;
-      fileTypeLabel = 'JPG';
+      fileTypeLabel = 'IMG';
     } else if (document.mimeType == 'application/pdf') {
       icon = Icons.picture_as_pdf_outlined;
       iconColor = Colors.red;
@@ -1128,11 +953,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Row(
           children: [
-            // Icon
             Icon(icon, size: 24, color: iconColor),
             const SizedBox(width: 12),
-
-            // Document details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1158,8 +980,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-
-            // File type badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -1271,7 +1091,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
           if (missingFields.isNotEmpty)
             Text(
-              '✔️ Complete missing information for faster applications',
+              'Complete missing information for faster applications',
               style: GoogleFonts.nunito(
                 fontSize: 13,
                 color: const Color(0xFF6B7280),
@@ -1307,8 +1127,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Form fields
               Column(
                 children: [
                   Row(
@@ -1333,19 +1151,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: BorderSide(
                                     color: const Color(0xFFE5E7EB),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: const Color(0xFFE5E7EB),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: RealTimeColors.primaryGreen,
-                                    width: 2,
                                   ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -1378,19 +1183,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: BorderSide(
                                     color: const Color(0xFFE5E7EB),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: const Color(0xFFE5E7EB),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: RealTimeColors.primaryGreen,
-                                    width: 2,
                                   ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -1427,19 +1219,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: const Color(0xFFE5E7EB),
                             ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: const Color(0xFFE5E7EB),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: RealTimeColors.primaryGreen,
-                              width: 2,
-                            ),
-                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 12,
@@ -1450,10 +1229,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 24),
-
-              // Action buttons
               Row(
                 children: [
                   Expanded(
@@ -1505,7 +1281,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    // View mode
     return Container(
       margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
@@ -1526,15 +1301,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Info rows
             _buildInfoRow('First Name:', user.firstName),
             _buildInfoRow('Last Name:', user.lastName),
             _buildInfoRow('Phone:', user.phone ?? 'Not provided'),
-
             const SizedBox(height: 20),
-
-            // Edit button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -1618,8 +1388,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Upload button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -1654,33 +1422,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
             if (user.documents.isEmpty)
-              Center(
+              const Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: EdgeInsets.symmetric(vertical: 24),
                   child: Text(
                     'No documents uploaded yet',
-                    style: GoogleFonts.nunito(
-                      fontSize: 14,
-                      color: const Color(0xFF6B7280),
-                    ),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
                   ),
                 ),
               )
             else
               Column(
-                children: user.documents.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  Document document = entry.value;
-                  return ScrollVisibilityAnimation(
-                    key: ValueKey('doc_${document.id}'),
-                    delay: Duration(milliseconds: index * 100),
-                    slideOffset: 20,
-                    child: _buildDocumentItem(document),
-                  );
+                children: user.documents.map((document) {
+                  return _buildDocumentItem(document);
                 }).toList(),
               ),
           ],
@@ -1710,77 +1466,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Log Out
-            ScrollVisibilityAnimation(
-              delay: const Duration(milliseconds: 100),
-              slideOffset: 20,
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.logout_outlined,
-                    color: Color(0xFF6B7280),
-                    size: 20,
-                  ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                title: Text(
-                  'Log Out',
-                  style: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF1F2933),
-                  ),
+                child: const Icon(
+                  Icons.logout_outlined,
+                  color: Color(0xFF6B7280),
+                  size: 20,
                 ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF9CA3AF),
-                ),
-                onTap: logout,
               ),
+              title: Text(
+                'Log Out',
+                style: GoogleFonts.nunito(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF1F2933),
+                ),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF9CA3AF),
+              ),
+              onTap: logout,
             ),
-
             const Divider(height: 16),
-
-            // Delete Account
-            ScrollVisibilityAnimation(
-              delay: const Duration(milliseconds: 200),
-              slideOffset: 20,
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                    size: 20,
-                  ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                title: Text(
-                  'Delete Account',
-                  style: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.red,
-                  ),
+                child: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                  size: 20,
                 ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF9CA3AF),
-                ),
-                onTap: _requestAccountDeletion,
               ),
+              title: Text(
+                'Delete Account',
+                style: GoogleFonts.nunito(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                ),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF9CA3AF),
+              ),
+              onTap: _requestAccountDeletion,
             ),
           ],
         ),
@@ -1792,29 +1535,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _profileController.userProfile.value;
     if (user == null) return const SizedBox();
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (scrollNotification) {
-        // This ensures scroll notifications are captured
-        return false;
-      },
-      child: Stack(
-        clipBehavior: Clip.none,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: Stack(
         children: [
-          // Background color
-          Container(color: const Color(0xFFF9FAFB)),
-
-          // Main content
           SingleChildScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                // Curved header (no animation needed)
+                // Header - No animation needed
                 TCurvedEdgeWidget(
                   child: Container(
                     height: 180,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [Color(0xFF2F855A), Color(0xFF38A169)],
@@ -1852,12 +1587,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
-                // Profile picture - positioned to overlap
+                // Profile picture with fade and scale animation
                 Transform.translate(
                   offset: const Offset(0, -50),
                   child: Column(
                     children: [
-                      // Profile avatar with animation
                       GestureDetector(
                             onTap: _pickProfileImage,
                             child: Container(
@@ -1899,11 +1633,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           )
                           .animate()
                           .fadeIn(duration: 400.ms)
-                          .scale(delay: 200.ms, duration: 400.ms),
+                          .scale(
+                            delay: 200.ms,
+                            duration: 400.ms,
+                            begin: const Offset(0.8, 0.8),
+                            end: const Offset(1, 1),
+                          ),
 
                       const SizedBox(height: 12),
 
-                      // Name and email with animation
+                      // Name and email with slide animation
                       Column(
                             children: [
                               Text(
@@ -1936,43 +1675,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
-                // Content sections
+                // Content sections with staggered animations
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      // Stats row with animation
-                      ScrollVisibilityAnimation(
-                        delay: const Duration(milliseconds: 100),
-                        slideHorizontal: true,
-                        slideOffset: 20,
-                        child: _buildStatsRow(user),
-                      ),
+                      // Stats row
+                      _buildStatsRow(user)
+                          .animate()
+                          .fadeIn(delay: 400.ms, duration: 500.ms)
+                          .slideX(
+                            begin: -0.1,
+                            end: 0,
+                            delay: 400.ms,
+                            duration: 500.ms,
+                          ),
 
-                      // Profile completion with animation
-                      ScrollVisibilityAnimation(
-                        delay: const Duration(milliseconds: 200),
-                        slideHorizontal: true,
-                        slideOffset: 20,
-                        child: _buildProfileCompletionSection(user),
-                      ),
+                      // Profile completion
+                      _buildProfileCompletionSection(user)
+                          .animate()
+                          .fadeIn(delay: 500.ms, duration: 500.ms)
+                          .slideX(
+                            begin: 0.1,
+                            end: 0,
+                            delay: 500.ms,
+                            duration: 500.ms,
+                          ),
 
-                      // Personal Information with animation
-                      ScrollVisibilityAnimation(
-                        delay: const Duration(milliseconds: 300),
-                        slideOffset: 30,
-                        child: _buildInfoSection(),
-                      ),
+                      // Personal Information
+                      _buildInfoSection()
+                          .animate()
+                          .fadeIn(delay: 600.ms, duration: 500.ms)
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: 600.ms,
+                            duration: 500.ms,
+                          ),
 
                       const SizedBox(height: 12),
 
-                      // Uploaded Documents with animation
-                      _buildDocumentsSection(),
+                      // Uploaded Documents
+                      _buildDocumentsSection()
+                          .animate()
+                          .fadeIn(delay: 700.ms, duration: 500.ms)
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: 700.ms,
+                            duration: 500.ms,
+                          ),
 
                       const SizedBox(height: 12),
 
-                      // Account Actions with animation
-                      _buildAccountActions(),
+                      // Account Actions
+                      _buildAccountActions()
+                          .animate()
+                          .fadeIn(delay: 800.ms, duration: 500.ms)
+                          .slideY(
+                            begin: 0.2,
+                            end: 0,
+                            delay: 800.ms,
+                            duration: 500.ms,
+                          ),
                     ],
                   ),
                 ),
@@ -1988,19 +1753,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      body: Stack(
-        children: [
-          if (isLoading && _profileController.userProfile.value == null)
-            _buildLoadingScreen()
-          else if (hasError)
-            _buildErrorScreen()
-          else if (_profileLoaded &&
-              _profileController.userProfile.value != null)
-            _buildProfileContent()
-          else
-            const SizedBox.shrink(),
-        ],
-      ),
+      body: Obx(() {
+        final user = _profileController.userProfile.value;
+        final isLoading = _profileController.isLoading.value;
+
+        if (isLoading && user == null) {
+          return _buildLoadingScreen();
+        } else if (hasError) {
+          return _buildErrorScreen();
+        } else if (user != null) {
+          return _buildProfileContent();
+        } else {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'No profile data available',
+                  style: GoogleFonts.nunito(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _checkAuthAndLoadProfile,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+      }),
     );
   }
 }
