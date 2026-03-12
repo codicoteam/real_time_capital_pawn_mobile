@@ -11,6 +11,7 @@ import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_appl
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_step1.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
 import 'package:real_time_pawn/models/loan_mngmt_model.dart';
+import 'package:real_time_pawn/widgets/loading_widgets/home_page_shimmer_loader.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -45,27 +46,6 @@ class _HomePageState extends State<HomePage> {
       buttonText: 'Pay Now',
       route: RoutesHelper.CustomerPaymentsScreen,
     ),
-  ];
-
-  final List<Map<String, dynamic>> loanTypes = [
-    {
-      'icon': Icons.directions_car,
-      'title': 'Motor Vehicle',
-      'color': Colors.blue,
-      'route': '/motor-vehicle-loan',
-    },
-    {
-      'icon': Icons.devices,
-      'title': 'Electronics',
-      'color': Colors.purple,
-      'route': '/electronics-loan',
-    },
-    {
-      'icon': Icons.diamond,
-      'title': 'Jewelry',
-      'color': Colors.amber,
-      'route': '/jewelry-loan',
-    },
   ];
 
   @override
@@ -253,9 +233,7 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Obx(() {
           if (_homeController.isLoading.value) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
-            );
+            return const HomePageShimmerLoader();
           }
 
           if (_homeController.errorMessage.value.isNotEmpty) {
@@ -426,70 +404,6 @@ class _HomePageState extends State<HomePage> {
                       ),
 
                       const SizedBox(height: 15),
-
-                      // Loan Types Section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child:
-                            Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Apply for Loan',
-                                      style: GoogleFonts.nunito(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Choose your collateral type',
-                                      style: GoogleFonts.nunito(
-                                        fontSize: 14,
-                                        color: AppColors.subtextColor,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                                .animate()
-                                .fadeIn(duration: 600.ms, delay: 400.ms)
-                                .slideY(begin: 0.2, duration: 600.ms),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Loan Type Grid
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child:
-                            GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
-                                        crossAxisSpacing: 12,
-                                        mainAxisSpacing: 12,
-                                        childAspectRatio: 0.9,
-                                      ),
-                                  itemCount: loanTypes.length,
-                                  itemBuilder: (context, index) {
-                                    return _buildLoanTypeCard(
-                                      icon:
-                                          loanTypes[index]['icon'] as IconData,
-                                      title:
-                                          loanTypes[index]['title'] as String,
-                                      color: loanTypes[index]['color'] as Color,
-                                      route:
-                                          loanTypes[index]['route'] as String,
-                                    );
-                                  },
-                                )
-                                .animate()
-                                .fadeIn(duration: 600.ms, delay: 600.ms)
-                                .slideY(begin: 0.3, duration: 600.ms),
-                      ),
 
                       const SizedBox(height: 15),
 
@@ -933,62 +847,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLoanTypeCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required String route,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to the same LoanApplicationScreen for all loan types
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoanApplicationScreen(),
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderColor),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 28, color: color),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: GoogleFonts.nunito(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textColor,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
