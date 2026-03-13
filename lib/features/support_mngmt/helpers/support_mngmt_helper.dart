@@ -135,12 +135,25 @@ class SupportTicketHelper {
     }
   }
 
-  /// ADD ATTACHMENT
-  static Future<bool> addAttachment({
+  /// ADD ATTACHMENT TO TICKET
+  static Future<bool> addTicketAttachment({
     required String ticketId,
     required String attachmentId,
+    bool showLoader = true,
   }) async {
-    showLoading('Adding attachment...');
+    if (ticketId.isEmpty) {
+      showError('Ticket ID is required');
+      return false;
+    }
+
+    if (attachmentId.isEmpty) {
+      showError('Attachment ID is required');
+      return false;
+    }
+
+    if (showLoader) {
+      showLoading('Adding attachment...');
+    }
 
     try {
       final success = await _controller.addAttachment(
@@ -148,7 +161,9 @@ class SupportTicketHelper {
         attachmentId: attachmentId,
       );
 
-      Get.back();
+      if (showLoader) {
+        Get.back();
+      }
 
       if (success) {
         showSuccess('Attachment added successfully');
@@ -158,7 +173,9 @@ class SupportTicketHelper {
         return false;
       }
     } catch (e) {
-      Get.back();
+      if (showLoader) {
+        Get.back();
+      }
       showError('Failed to add attachment: ${e.toString()}');
       return false;
     }

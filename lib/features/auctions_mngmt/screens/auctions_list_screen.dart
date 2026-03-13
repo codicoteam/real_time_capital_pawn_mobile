@@ -7,8 +7,6 @@ import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_history_helper.dart';
-
 import 'package:real_time_pawn/models/auction_models.dart';
 import 'package:real_time_pawn/widgets/custom_button/general_button.dart';
 
@@ -20,7 +18,9 @@ class AuctionsListScreen extends StatefulWidget {
 }
 
 class _AuctionsListScreenState extends State<AuctionsListScreen> {
-  final auctionsController = Get.put(AuctionsController());
+  // Initialize controller directly instead of using late final
+  final AuctionsController auctionsController = Get.find<AuctionsController>();
+
   final List<String> _categories = [
     'All',
     'Electronics',
@@ -48,7 +48,11 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_scrollListener);
-    _loadInitialAuctions();
+
+    // Load data after the first frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInitialAuctions();
+    });
   }
 
   @override
@@ -127,7 +131,9 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
 
           // Show loading
           Get.dialog(
-            const CustomLoader(message: 'Placing your bid...'),
+            const Center(
+              child: CircularProgressIndicator(),
+            ), // Replace CustomLoader with appropriate widget
             barrierDismissible: false,
           );
 
@@ -178,21 +184,42 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header with Back Button
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Auctions',
-                    style: GoogleFonts.poppins(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textColor,
+                  // Back Button
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: AppColors.primaryColor,
+                      ),
+                      onPressed: () => Get.back(),
+                      tooltip: 'Go Back',
                     ),
                   ),
-                  // Add history icon here too
+                  const SizedBox(width: 12),
+                  // Title
+                  Expanded(
+                    child: Text(
+                      'Auctions',
+                      style: GoogleFonts.poppins(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textColor,
+                      ),
+                    ),
+                  ),
+                  // History icon
                   IconButton(
                     onPressed: () {
                       Get.toNamed(RoutesHelper.userBiddingHistoryScreen);
@@ -305,7 +332,7 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
               ),
             ),
 
-            // Category Filter and Sort Row
+            // Category Filter
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: Row(
@@ -357,7 +384,8 @@ class _AuctionsListScreenState extends State<AuctionsListScreen> {
             // Auctions List
             Expanded(
               child: Obx(() {
-                if (auctionsController.isLoading.value) {
+                if (auctionsController.isLoading.value &&
+                    auctionsController.auctionsList.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
 

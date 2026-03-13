@@ -75,13 +75,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     });
   }
 
-  void _shakeOtpField() {
-    HapticFeedback.mediumImpact();
-    _shakeController.forward().then((_) {
-      _shakeController.reverse();
-    });
-  }
-
   @override
   void dispose() {
     otpController.dispose();
@@ -93,7 +86,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.sizeOf(context).width;
     double screenHeight = MediaQuery.sizeOf(context).height;
 
     final defaultPinTheme = PinTheme(

@@ -33,7 +33,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
   final FocusNode newPasswordFocus = FocusNode();
   final FocusNode confirmPasswordFocus = FocusNode();
 
-  final bool _isLoading = false;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -132,7 +131,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.sizeOf(context).width;
     double screenHeight = MediaQuery.sizeOf(context).height;
 
     return Scaffold(

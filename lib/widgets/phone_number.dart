@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../core/utils/pallete.dart';
 
+// ignore: must_be_immutable
 class CustomPhoneNumberField extends StatelessWidget {
   Color? fillColor;
   bool? filled;
@@ -51,7 +52,10 @@ class CustomPhoneNumberField extends StatelessWidget {
         fillColor: fillColor,
         filled: filled ?? false,
         counterText: '',
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         prefixIcon: prefixIcon,
         suffixIcon: suffixIconButton,
         border: OutlineInputBorder(
@@ -64,18 +68,17 @@ class CustomPhoneNumberField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide(color: focusedBoarderColor ?? AppColors.primaryColor),
+          borderSide: BorderSide(
+            color: focusedBoarderColor ?? AppColors.primaryColor,
+          ),
         ),
         labelText: labelText ?? '',
-        labelStyle: labelStyle ?? GoogleFonts.poppins(
-          color: Colors.grey,
-          fontSize: 12,
-        ),
+        labelStyle:
+            labelStyle ?? GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
       ),
-      style: inputTextStyle ?? TextStyle(
-        color: AppColors.primaryColor,
-        fontSize: 12,
-      ),
+      style:
+          inputTextStyle ??
+          TextStyle(color: AppColors.primaryColor, fontSize: 12),
     );
   }
 }

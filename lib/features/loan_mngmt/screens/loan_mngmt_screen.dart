@@ -909,7 +909,7 @@ class _LoansScreenState extends State<LoansScreen>
             ElevatedButton(
               onPressed: () {
                 // Navigate to loan application screen
-                // Get.toNamed(RoutesHelper.createLoanApplication);
+                Get.toNamed(RoutesHelper.createLoanApplication);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
@@ -949,7 +949,7 @@ class _LoansScreenState extends State<LoansScreen>
                 FloatingActionButton.extended(
                       onPressed: () {
                         // Navigate to loan application screen
-                        // Get.toNamed(RoutesHelper.createLoanApplication);
+                        Get.toNamed(RoutesHelper.createLoanApplication);
                       },
                       backgroundColor: AppColors.primaryColor,
                       elevation: 8,

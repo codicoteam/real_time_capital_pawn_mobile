@@ -38,6 +38,8 @@ class _AboutScreenState extends State<AboutScreen>
           'We maintain high standards of transparency in all our transactions, ensuring customers understand loan terms, interest rates, and asset valuations clearly.',
       'icon': Icons.visibility_outlined,
       'color': RealTimeColors.primaryGreen,
+      'fullDescription':
+          'At Real Time Capital, transparency is at the heart of everything we do. We believe that informed customers make better financial decisions. That\'s why we provide clear, upfront information about all loan terms, interest rates, fees, and asset valuations. No hidden charges, no fine print surprises. Our team takes the time to explain every aspect of your transaction, ensuring you understand exactly what to expect. We maintain open communication throughout the loan lifecycle, from initial assessment to final settlement. Your trust is earned through our commitment to honesty and clarity in every interaction.',
     },
     {
       'title': 'Integrity',
@@ -45,6 +47,8 @@ class _AboutScreenState extends State<AboutScreen>
           'We handle all assets with the utmost care and respect, maintaining the integrity of every item entrusted to us.',
       'icon': Icons.verified_outlined,
       'color': RealTimeColors.success,
+      'fullDescription':
+          'Integrity is the foundation of our business. When you entrust us with your valuable assets, we treat them with the same care and respect as if they were our own. Our secure storage facilities are monitored 24/7, and we follow strict handling procedures to ensure your items remain in pristine condition. We honor our commitments, keep our promises, and conduct business with the highest ethical standards. Our team members are trained to act with honesty and fairness in all situations. We believe that doing the right thing, even when no one is watching, is essential to building lasting relationships with our customers.',
     },
     {
       'title': 'Innovation',
@@ -52,6 +56,8 @@ class _AboutScreenState extends State<AboutScreen>
           'We embrace modern technology to streamline operations, enhance customer experiences, and provide innovative financial solutions.',
       'icon': Icons.lightbulb_outline,
       'color': RealTimeColors.warning,
+      'fullDescription':
+          'Innovation drives us forward. We continuously invest in modern technology to make your experience smoother, faster, and more convenient. Our digital platform allows you to apply for loans, track payments, and manage your account from anywhere, at any time. We use advanced valuation tools to ensure fair and accurate asset assessments. Behind the scenes, integrated systems streamline operations, reducing wait times and improving efficiency. We\'re constantly exploring new ways to enhance our services, from mobile payment options to automated notifications. By embracing innovation, we\'re redefining what a pawn service can be in the modern financial landscape.',
     },
     {
       'title': 'Customer Focus',
@@ -59,6 +65,8 @@ class _AboutScreenState extends State<AboutScreen>
           'We build strong relationships with clients through personalized service and a genuine commitment to meeting their financial needs.',
       'icon': Icons.people_outline,
       'color': RealTimeColors.darkGreen,
+      'fullDescription':
+          'Our customers are at the center of everything we do. We understand that financial needs can arise unexpectedly, and we\'re here to help with compassion and understanding. Our team takes the time to listen to your situation, answer your questions, and find solutions that work for you. We treat every customer with dignity and respect, regardless of their financial circumstances. From first-time borrowers to long-term clients, we provide personalized service tailored to individual needs. Your satisfaction and financial wellbeing are our top priorities. We\'re not just processing transactions; we\'re building relationships that last.',
     },
   ];
 
@@ -144,6 +152,143 @@ class _AboutScreenState extends State<AboutScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ─── CORE VALUE DIALOG ─────────────────────────────────────────────────────
+  void _showCoreValueDialog(Map<String, dynamic> value) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+            maxHeight:
+                MediaQuery.of(context).size.height *
+                0.8, // Limit height to 80% of screen
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceColor,
+                border: Border.all(
+                  color: (value['color'] as Color).withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with icon and title
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: (value['color'] as Color).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            value['icon'] as IconData,
+                            color: value['color'] as Color,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            value['title'] as String,
+                            style: GoogleFonts.poppins(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Full description
+                    Text(
+                      value['fullDescription'] as String,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: AppColors.subtextColor,
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Quote-like summary
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: (value['color'] as Color).withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: (value['color'] as Color).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.format_quote_rounded,
+                            color: (value['color'] as Color).withOpacity(0.5),
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              value['description'] as String,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Close button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: value['color'] as Color,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Close',
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -648,7 +793,6 @@ class _AboutScreenState extends State<AboutScreen>
         )
         .slideX(begin: slideDir);
   }
-
   // ─── CORE VALUES ─────────────────────────────────────────────────────────────
 
   Widget _buildCoreValuesSection() {
@@ -690,7 +834,7 @@ class _AboutScreenState extends State<AboutScreen>
             ],
           ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1),
           const SizedBox(height: 16),
-          // 2-column grid for values
+          // 2-column grid for values - REDESIGNED
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -698,86 +842,93 @@ class _AboutScreenState extends State<AboutScreen>
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: 1.0,
+              childAspectRatio: 0.9, // Adjusted for more compact layout
             ),
             itemCount: _coreValues.length,
             itemBuilder: (context, index) {
               final value = _coreValues[index];
-              final isExpanded = expandedValueIndex == index;
               final color = value['color'] as Color;
               return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    expandedValueIndex = isExpanded ? null : index;
-                    if (!isExpanded) HapticFeedback.lightImpact();
-                  });
-                },
-                child:
-                    AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: isExpanded
-                                ? color.withOpacity(0.1)
-                                : AppColors.backgroundColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isExpanded ? color : AppColors.borderColor,
-                              width: isExpanded ? 1.5 : 1,
+                    onTap: () {
+                      _showCoreValueDialog(value);
+                      HapticFeedback.lightImpact();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borderColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Icon with colored background
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              value['icon'] as IconData,
+                              color: color,
+                              size: 18,
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(height: 10),
+                          // Title
+                          Text(
+                            value['title'] as String,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          // Short description - just one line with ellipsis
+                          Text(
+                            value['description'] as String,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: AppColors.subtextColor,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          // "Tap to learn more" indicator
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(9),
-                                decoration: BoxDecoration(
-                                  color: color.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  value['icon'] as IconData,
-                                  color: color,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
                               Text(
-                                value['title'] as String,
+                                'Learn more',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textColor,
+                                  fontSize: 9,
+                                  color: color,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Expanded(
-                                child: Text(
-                                  isExpanded
-                                      ? value['description'] as String
-                                      : 'Tap to learn more',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10.5,
-                                    color: isExpanded
-                                        ? AppColors.subtextColor
-                                        : AppColors.subtextColor.withOpacity(
-                                            0.6,
-                                          ),
-                                    height: 1.45,
-                                  ),
-                                  overflow: TextOverflow.fade,
-                                ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: color,
+                                size: 8,
                               ),
                             ],
                           ),
-                        )
-                        .animate()
-                        .fadeIn(
-                          duration: 400.ms,
-                          delay: Duration(milliseconds: 600 + index * 90),
-                        )
-                        .scale(begin: const Offset(0.95, 0.95)),
-              );
+                        ],
+                      ),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(
+                    duration: 400.ms,
+                    delay: Duration(milliseconds: 600 + index * 90),
+                  )
+                  .scale(begin: const Offset(0.95, 0.95));
             },
           ),
         ],

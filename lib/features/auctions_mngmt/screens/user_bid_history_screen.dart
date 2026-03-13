@@ -111,7 +111,6 @@ class _UserBiddingHistoryScreenState extends State<UserBiddingHistoryScreen> {
   Widget _buildBidCard(UserBid bid) {
     final isWinning = UserBidsHelper.isWinningBid(bid);
     final dateFormat = DateFormat('MMM dd, yyyy');
-    final timeFormat = DateFormat('h:mm a');
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

@@ -395,38 +395,11 @@ class _FaqScreenState extends State<FaqScreen>
                           ),
                         ).animate(delay: 250.ms).fadeIn(duration: 400.ms),
                         const SizedBox(height: 10),
-            
                       ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _heroPill(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: Colors.white.withOpacity(0.9)),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],

@@ -524,20 +524,4 @@ class AuthServices {
       );
     }
   }
-
-  /// Extract the user info from the stored token
-  static Future<String?> _getUserFromToken() async {
-    final token = await CacheUtils.checkToken();
-    if (token != null && token.isNotEmpty) {
-      if (JwtDecoder.isExpired(token)) {
-        await CacheUtils.clearCachedToken();
-        return null; // Token expired
-      } else {
-        final decodedToken = JwtDecoder.decode(token);
-        DevLogs.logInfo("Decoded token: $decodedToken");
-        return decodedToken['user'] as String?;
-      }
-    }
-    return null; // No token found
-  }
 }

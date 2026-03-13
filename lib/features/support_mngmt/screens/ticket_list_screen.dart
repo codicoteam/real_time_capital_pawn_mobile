@@ -28,7 +28,6 @@ class _TicketListScreenState extends State<TicketListScreen>
   String _customerId = '';
   bool _isLoading = false;
 
-  String _selectedSortBy = 'created_at';
   bool _isAscending = false;
   String? _selectedStatus;
 
@@ -112,30 +111,14 @@ class _TicketListScreenState extends State<TicketListScreen>
       }).toList();
     }
 
+    // Sort by creation date only
     tickets.sort((a, b) {
-      int cmp;
-      if (_selectedSortBy == 'created_at') {
-        cmp = a.createdAt.compareTo(b.createdAt);
-      } else {
-        cmp = _priorityValue(a.priority).compareTo(_priorityValue(b.priority));
-      }
-      return _isAscending ? cmp : -cmp;
+      return _isAscending
+          ? a.createdAt.compareTo(b.createdAt)
+          : b.createdAt.compareTo(a.createdAt);
     });
 
     return tickets;
-  }
-
-  int _priorityValue(TicketPriority p) {
-    switch (p) {
-      case TicketPriority.urgent:
-        return 4;
-      case TicketPriority.high:
-        return 3;
-      case TicketPriority.medium:
-        return 2;
-      case TicketPriority.low:
-        return 1;
-    }
   }
 
   int get _openTicketsCount =>
@@ -243,7 +226,7 @@ class _TicketListScreenState extends State<TicketListScreen>
                                 onTap: () {
                                   Get.toNamed(
                                     RoutesHelper.ticketDetailsScreen,
-                                    arguments: ticket, 
+                                    arguments: ticket,
                                   );
                                 },
                               )
@@ -433,23 +416,14 @@ class _TicketListScreenState extends State<TicketListScreen>
     );
   }
 
-  // ---------- Control Row ----------
+  // ---------- Control Row (with only ascending/descending) ----------
   Widget _buildControlRow() {
-    final sortItems = [
-      {
-        'label': 'Date',
-        'value': 'created_at',
-        'icon': Icons.calendar_today_outlined,
-      },
-      {'label': 'Priority', 'value': 'priority', 'icon': Icons.flag_outlined},
-    ];
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Text(
-            'Sort',
+            '',
             style: GoogleFonts.poppins(
               color: AppColors.subtextColor,
               fontSize: 12,
@@ -458,64 +432,14 @@ class _TicketListScreenState extends State<TicketListScreen>
           ),
           const SizedBox(width: 10),
 
-          // Sort type chips
-          ...sortItems.map((item) {
-            final isSelected = _selectedSortBy == item['value'];
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () =>
-                    setState(() => _selectedSortBy = item['value'] as String),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryColor
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primaryColor.withOpacity(0.28),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : [],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        item['icon'] as IconData,
-                        size: 13,
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.subtextColor,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        item['label'] as String,
-                        style: GoogleFonts.poppins(
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textColor,
-                          fontSize: 12,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
+          Text(
+            '',
+            style: GoogleFonts.poppins(
+              color: AppColors.textColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
 
           const Spacer(),
 

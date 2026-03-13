@@ -74,7 +74,7 @@ class SupportTicket {
       description: json['description']?.toString() ?? '',
       status: _parseStatus(json['status']?.toString() ?? 'open'),
       priority: _parsePriority(json['priority']?.toString() ?? 'medium'),
-      attachments: List<String>.from(json['attachments'] ?? []),
+      attachments: _parseAttachments(json['attachments']),
       createdAt: DateTime.parse(
         json['created_at']?.toString() ?? DateTime.now().toIso8601String(),
       ),
@@ -125,6 +125,32 @@ class SupportTicket {
       default:
         return TicketPriority.medium;
     }
+  }
+
+  // ✅ MOVED THIS INSIDE THE CLASS
+  static List<String> _parseAttachments(dynamic attachments) {
+    if (attachments == null) return [];
+
+    // If it's already a List<String>
+    if (attachments is List && attachments.every((e) => e is String)) {
+      return List<String>.from(attachments);
+    }
+
+    // If it's a List of Maps (attachment objects)
+    if (attachments is List) {
+      return attachments.map((item) {
+        if (item is String) return item;
+        if (item is Map) {
+          // Return the ID or URL based on what you want to display
+          return item['_id']?.toString() ??
+              item['url']?.toString() ??
+              item.toString();
+        }
+        return item.toString();
+      }).toList();
+    }
+
+    return [];
   }
 }
 

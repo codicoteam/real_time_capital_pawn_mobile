@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/bid_mngmnt/controllers/bid_mngmt_controller.dart';
 import 'package:real_time_pawn/features/bid_mngmnt/helpers/bid_mngmt_helper.dart';

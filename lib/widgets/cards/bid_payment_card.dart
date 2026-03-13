@@ -28,10 +28,8 @@ class PaymentCard extends StatelessWidget {
             onTap ??
             () {
               Get.toNamed(
-                RoutesHelper.paymentDetailsScreen.replaceFirst(
-                  ':id',
-                  payment.id,
-                ),
+                RoutesHelper.bidPaymentDetailsScreen,
+                arguments: {'paymentId': payment.id},
               );
             },
         child: Padding(

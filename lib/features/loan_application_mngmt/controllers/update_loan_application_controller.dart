@@ -1,13 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
-import 'package:real_time_pawn/core/utils/shared_pref_methods.dart'
-    show CacheUtils;
 import 'package:real_time_pawn/models/loan_application_model.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/services/loan_application_mngmt_service.dart'
     show LoanApplicationService;

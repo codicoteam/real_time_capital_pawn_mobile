@@ -230,12 +230,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
 
                       // Attachments
                       _buildAttachmentsSection(),
-                      const SizedBox(height: 16),
-
-                      // Status Management (if applicable)
-                      if (_loan.status?.toLowerCase() == 'active' ||
-                          _loan.status?.toLowerCase() == 'overdue')
-                        _buildStatusManagement(),
                       const SizedBox(height: 24),
                     ],
                   ]),
@@ -657,15 +651,9 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
       children: [
         _buildInfoRow('Storage Charge', '${_loan.storageChargePercent ?? 0}%'),
         _buildInfoRow('Penalty Rate', '${_loan.penaltyPercent ?? 0}%'),
-        _buildInfoRow('Created By', _loan.createdBy ?? 'N/A'),
         _buildInfoRow('Created Date', _formatDateFull(_loan.createdAt)),
-        _buildInfoRow('Last Updated', _formatDateFull(_loan.updatedAt)),
-        if (_loan.approvedBy != null)
-          _buildInfoRow('Approved By', _loan.approvedBy!),
         if (_loan.disbursedAt != null)
           _buildInfoRow('Disbursed At', _formatDateFull(_loan.disbursedAt)),
-        if (_loan.processedBy != null)
-          _buildInfoRow('Processed By', _loan.processedBy!),
       ],
     );
   }
@@ -733,70 +721,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                 const Icon(Icons.error, color: Colors.white, size: 50),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusManagement() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Loan Status Management',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () async {
-              final confirmed = await Get.dialog<bool>(
-                AlertDialog(
-                  title: const Text('Settle Loan'),
-                  content: const Text(
-                    'Are you sure you want to mark this loan as settled?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Get.back(result: false),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Get.back(result: true),
-                      child: const Text('Settle'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirmed == true) {
-                final success = await _loanController.updateLoanStatus(
-                  loanId: _loan.id!,
-                  status: 'settled',
-                  notes: 'Loan settled from mobile app',
-                );
-                if (success) {
-                  _refreshLoan();
-                  Get.snackbar('Success', 'Loan marked as settled');
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: RealTimeColors.success,
-              minimumSize: const Size(double.infinity, 45),
-            ),
-            child: const Text('Mark as Settled'),
-          ),
-        ],
       ),
     );
   }
