@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/features/about_mngmt/screens/about_mngmt_screen.dart';
@@ -29,6 +30,7 @@ import 'package:real_time_pawn/features/payments_mngmt/screens/create_payment_sc
 import 'package:real_time_pawn/features/payments_mngmt/screens/customer_payments_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/loan_payment_details_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/payment_list_screen.dart';
+import 'package:real_time_pawn/features/profile_mngmt/screens/profile_mngmt_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/create_ticket_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/ticket_detail_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/ticket_list_screen.dart';
@@ -43,7 +45,8 @@ import 'features/auth_mngmt/screens/reset_password_screen.dart'
 import 'features/faq_mngmt/screens/faq_mngmt_screen.dart';
 import 'features/home_management/screens/home_screen.dart';
 import 'features/home_management/screens/main_screen.dart';
-import 'features/loan_application_mngmt/screens/loan_application_step1.dart' show LoanApplicationScreen;
+import 'features/loan_application_mngmt/screens/loan_application_step1.dart'
+    show LoanApplicationScreen;
 import 'features/loan_application_mngmt/screens/update_loan_application_screen.dart'
     show UpdateLoanApplicationScreen;
 import 'models/loan_application_model.dart';
@@ -354,13 +357,40 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
-    // Auction Bids Screen - With parameter extraction
-    // ✅ BID PAYMENT DETAILS - CORRECT
+    // ✅ BID PAYMENT DETAILS - FIXED with null safety
     GetPage(
-      name: RoutesHelper.bidPaymentDetailsScreen, // ← USE DIFFERENT ROUTE NAME
+      name: RoutesHelper.bidPaymentDetailsScreen,
       page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        return BidPaymentDetailsScreen(paymentId: arguments['paymentId'] ?? '');
+        // Safely handle arguments
+        final args = Get.arguments;
+
+        // If no arguments are passed, return error screen
+        if (args == null) {
+          return const Scaffold(
+            body: Center(child: Text('Error: Payment ID not provided')),
+          );
+        }
+
+        // Safely cast to Map
+        Map<String, dynamic> arguments;
+        if (args is Map) {
+          arguments = Map<String, dynamic>.from(args);
+        } else {
+          return const Scaffold(
+            body: Center(child: Text('Error: Invalid arguments format')),
+          );
+        }
+
+        // Extract paymentId with fallback
+        final paymentId = arguments['paymentId']?.toString() ?? '';
+
+        if (paymentId.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('Error: Payment ID is empty')),
+          );
+        }
+
+        return BidPaymentDetailsScreen(paymentId: paymentId);
       },
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
@@ -520,6 +550,15 @@ class AppPages {
     GetPage(
       name: RoutesHelper.CustomerPaymentsScreen,
       page: () => const CustomerPaymentsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // Add this with your other GetPage definitions
+    GetPage(
+      name: RoutesHelper.profileScreen,
+      page: () => const ProfileScreen(), // Make sure to import this
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),

@@ -1,7 +1,6 @@
 // auctions_mngmt_controller.dart
 import 'package:get/get.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
-
 import 'package:real_time_pawn/models/auction_models.dart';
 import '../../../core/utils/logs.dart';
 
@@ -27,6 +26,9 @@ class AuctionsController extends GetxController {
   var searchResults = <Auction>[].obs;
   var auctionBids = <Bid>[].obs;
 
+  // Flag to prevent multiple simultaneous calls
+  bool _isFetching = false;
+
   /// GET ALL AUCTIONS
   Future<bool> getAuctionsRequest({
     int page = 1,
@@ -45,10 +47,18 @@ class AuctionsController extends GetxController {
     String? sortBy = 'created_at',
     String? sortOrder = 'desc',
   }) async {
+    // Prevent multiple simultaneous calls
+    if (_isFetching) return false;
+
     try {
-      isLoading(true);
-      successMessage.value = '';
-      errorMessage.value = '';
+      _isFetching = true;
+
+      // Use microtask to ensure we're not in build phase
+      await Future.microtask(() {
+        isLoading.value = true;
+        successMessage.value = '';
+        errorMessage.value = '';
+      });
 
       final response = await AuctionsServices.getAuctions(
         page: page,
@@ -68,90 +78,125 @@ class AuctionsController extends GetxController {
         sortOrder: sortOrder,
       );
 
-      if (response.success && response.data != null) {
-        auctionsList.value = response.data!.auctions;
-        pagination.value = response.data!.pagination;
-        currentPage.value = page;
+      // Use microtask for all state updates
+      await Future.microtask(() {
+        if (response.success && response.data != null) {
+          auctionsList.value = response.data!.auctions;
+          pagination.value = response.data!.pagination;
+          currentPage.value = page;
 
-        successMessage.value =
-            response.message ?? 'Auctions loaded successfully';
-        DevLogs.logSuccess(successMessage.value);
-        return true;
-      } else {
-        errorMessage.value = response.message ?? 'Failed to load auctions';
-        DevLogs.logError(errorMessage.value);
-        return false;
-      }
+          successMessage.value =
+              response.message ?? 'Auctions loaded successfully';
+          DevLogs.logSuccess(successMessage.value);
+        } else {
+          errorMessage.value = response.message ?? 'Failed to load auctions';
+          DevLogs.logError(errorMessage.value);
+        }
+
+        isLoading.value = false;
+        _isFetching = false;
+      });
+
+      return response.success;
     } catch (e) {
-      DevLogs.logError('Error getting auctions: ${e.toString()}');
-      errorMessage.value = 'An error occurred: ${e.toString()}';
+      await Future.microtask(() {
+        DevLogs.logError('Error getting auctions: ${e.toString()}');
+        errorMessage.value = 'An error occurred: ${e.toString()}';
+        isLoading.value = false;
+        _isFetching = false;
+      });
       return false;
-    } finally {
-      isLoading(false);
     }
   }
 
   /// GET AUCTION DETAILS
   Future<bool> getAuctionDetailsRequest({required String auctionId}) async {
+    if (_isFetching) return false;
+
     try {
-      isLoadingDetails(true);
-      successMessage.value = '';
-      errorMessage.value = '';
+      _isFetching = true;
+
+      await Future.microtask(() {
+        isLoadingDetails.value = true;
+        successMessage.value = '';
+        errorMessage.value = '';
+      });
 
       final response = await AuctionsServices.getAuctionDetails(
         auctionId: auctionId,
       );
 
-      if (response.success && response.data != null) {
-        selectedAuction.value = response.data!.auction;
-        currentBid.value = response.data!.currentBid;
+      await Future.microtask(() {
+        if (response.success && response.data != null) {
+          selectedAuction.value = response.data!.auction;
+          currentBid.value = response.data!.currentBid;
 
-        successMessage.value = response.message ?? 'Auction details loaded';
-        DevLogs.logSuccess(successMessage.value);
-        return true;
-      } else {
-        errorMessage.value =
-            response.message ?? 'Failed to load auction details';
-        DevLogs.logError(errorMessage.value);
-        return false;
-      }
+          successMessage.value = response.message ?? 'Auction details loaded';
+          DevLogs.logSuccess(successMessage.value);
+        } else {
+          errorMessage.value =
+              response.message ?? 'Failed to load auction details';
+          DevLogs.logError(errorMessage.value);
+        }
+
+        isLoadingDetails.value = false;
+        _isFetching = false;
+      });
+
+      return response.success;
     } catch (e) {
-      DevLogs.logError('Error getting auction details: ${e.toString()}');
-      errorMessage.value = 'An error occurred: ${e.toString()}';
+      await Future.microtask(() {
+        DevLogs.logError('Error getting auction details: ${e.toString()}');
+        errorMessage.value = 'An error occurred: ${e.toString()}';
+        isLoadingDetails.value = false;
+        _isFetching = false;
+      });
       return false;
-    } finally {
-      isLoadingDetails(false);
     }
   }
 
   /// GET LIVE AUCTIONS
   Future<bool> getLiveAuctionsRequest({String? category}) async {
+    if (_isFetching) return false;
+
     try {
-      isLoadingLive(true);
-      successMessage.value = '';
-      errorMessage.value = '';
+      _isFetching = true;
+
+      await Future.microtask(() {
+        isLoadingLive.value = true;
+        successMessage.value = '';
+        errorMessage.value = '';
+      });
 
       final response = await AuctionsServices.getLiveAuctions(
         category: category,
       );
 
-      if (response.success && response.data != null) {
-        liveAuctions.value = response.data!;
+      await Future.microtask(() {
+        if (response.success && response.data != null) {
+          liveAuctions.value = response.data!;
 
-        successMessage.value = response.message ?? 'Live auctions loaded';
-        DevLogs.logSuccess(successMessage.value);
-        return true;
-      } else {
-        errorMessage.value = response.message ?? 'Failed to load live auctions';
-        DevLogs.logError(errorMessage.value);
-        return false;
-      }
+          successMessage.value = response.message ?? 'Live auctions loaded';
+          DevLogs.logSuccess(successMessage.value);
+        } else {
+          errorMessage.value =
+              response.message ?? 'Failed to load live auctions';
+          DevLogs.logError(errorMessage.value);
+        }
+
+        isLoadingLive.value = false;
+        _isFetching = false;
+      });
+
+      return response.success;
     } catch (e) {
-      DevLogs.logError('Error getting live auctions: ${e.toString()}');
-      errorMessage.value = 'An error occurred: ${e.toString()}';
+      await Future.microtask(() {
+        DevLogs.logError('Error getting live auctions: ${e.toString()}');
+        errorMessage.value = 'An error occurred: ${e.toString()}';
+        isLoadingLive.value = false;
+        _isFetching = false;
+      });
       return false;
-    } finally {
-      isLoadingLive(false);
     }
   }
 
@@ -161,11 +206,12 @@ class AuctionsController extends GetxController {
     String? category,
     String? search,
   }) async {
-    try {
-      if (currentPage.value >= pagination.value.pages) {
-        return false; // No more pages
-      }
+    if (_isFetching || currentPage.value >= pagination.value.pages) {
+      return false;
+    }
 
+    try {
+      _isFetching = true;
       final nextPage = currentPage.value + 1;
 
       final response = await AuctionsServices.getAuctions(
@@ -176,20 +222,26 @@ class AuctionsController extends GetxController {
         search: search,
       );
 
-      if (response.success && response.data != null) {
-        auctionsList.addAll(response.data!.auctions);
-        pagination.value = response.data!.pagination;
-        currentPage.value = nextPage;
+      await Future.microtask(() {
+        if (response.success && response.data != null) {
+          auctionsList.addAll(response.data!.auctions);
+          pagination.value = response.data!.pagination;
+          currentPage.value = nextPage;
+          successMessage.value = 'Loaded more auctions';
+        } else {
+          errorMessage.value =
+              response.message ?? 'Failed to load more auctions';
+        }
+        _isFetching = false;
+      });
 
-        successMessage.value = 'Loaded more auctions';
-        return true;
-      } else {
-        errorMessage.value = response.message ?? 'Failed to load more auctions';
-        return false;
-      }
+      return response.success;
     } catch (e) {
-      DevLogs.logError('Error loading more auctions: ${e.toString()}');
-      errorMessage.value = 'An error occurred: ${e.toString()}';
+      await Future.microtask(() {
+        DevLogs.logError('Error loading more auctions: ${e.toString()}');
+        errorMessage.value = 'An error occurred: ${e.toString()}';
+        _isFetching = false;
+      });
       return false;
     }
   }
@@ -199,104 +251,142 @@ class AuctionsController extends GetxController {
     required String query,
     String? status,
   }) async {
+    if (_isFetching) return false;
+
     try {
-      isLoadingSearch(true);
-      successMessage.value = '';
-      errorMessage.value = '';
+      _isFetching = true;
+
+      await Future.microtask(() {
+        isLoadingSearch.value = true;
+        successMessage.value = '';
+        errorMessage.value = '';
+      });
 
       final response = await AuctionsServices.searchAuctions(
         query: query,
         status: status,
       );
 
-      if (response.success && response.data != null) {
-        searchResults.value = response.data!;
-        successMessage.value =
-            response.message ?? 'Search completed successfully';
-        DevLogs.logSuccess(successMessage.value);
-        return true;
-      } else {
-        errorMessage.value = response.message ?? 'Failed to search auctions';
-        DevLogs.logError(errorMessage.value);
-        return false;
-      }
+      await Future.microtask(() {
+        if (response.success && response.data != null) {
+          searchResults.value = response.data!;
+          successMessage.value =
+              response.message ?? 'Search completed successfully';
+          DevLogs.logSuccess(successMessage.value);
+        } else {
+          errorMessage.value = response.message ?? 'Failed to search auctions';
+          DevLogs.logError(errorMessage.value);
+        }
+
+        isLoadingSearch.value = false;
+        _isFetching = false;
+      });
+
+      return response.success;
     } catch (e) {
-      DevLogs.logError('Error searching auctions: ${e.toString()}');
-      errorMessage.value = 'An error occurred: ${e.toString()}';
+      await Future.microtask(() {
+        DevLogs.logError('Error searching auctions: ${e.toString()}');
+        errorMessage.value = 'An error occurred: ${e.toString()}';
+        isLoadingSearch.value = false;
+        _isFetching = false;
+      });
       return false;
-    } finally {
-      isLoadingSearch(false);
     }
   }
 
   /// GET AUCTION BIDS
   Future<bool> getAuctionBidsRequest({required String auctionId}) async {
+    if (_isFetching) return false;
+
     try {
-      isLoadingBids(true);
-      successMessage.value = '';
-      errorMessage.value = '';
+      _isFetching = true;
+
+      await Future.microtask(() {
+        isLoadingBids.value = true;
+        successMessage.value = '';
+        errorMessage.value = '';
+      });
 
       final response = await AuctionsServices.getAuctionBids(
         auctionId: auctionId,
       );
 
-      if (response.success && response.data != null) {
-        auctionBids.value = response.data!;
-        successMessage.value = response.message ?? 'Bids loaded successfully';
-        DevLogs.logSuccess(successMessage.value);
-        return true;
-      } else {
-        errorMessage.value = response.message ?? 'Failed to load bids';
-        DevLogs.logError(errorMessage.value);
-        return false;
-      }
+      await Future.microtask(() {
+        if (response.success && response.data != null) {
+          auctionBids.value = response.data!;
+          successMessage.value = response.message ?? 'Bids loaded successfully';
+          DevLogs.logSuccess(successMessage.value);
+        } else {
+          errorMessage.value = response.message ?? 'Failed to load bids';
+          DevLogs.logError(errorMessage.value);
+        }
+
+        isLoadingBids.value = false;
+        _isFetching = false;
+      });
+
+      return response.success;
     } catch (e) {
-      DevLogs.logError('Error getting auction bids: ${e.toString()}');
-      errorMessage.value = 'An error occurred: ${e.toString()}';
+      await Future.microtask(() {
+        DevLogs.logError('Error getting auction bids: ${e.toString()}');
+        errorMessage.value = 'An error occurred: ${e.toString()}';
+        isLoadingBids.value = false;
+        _isFetching = false;
+      });
       return false;
-    } finally {
-      isLoadingBids(false);
     }
   }
 
-  /// PLACE BID ON AUCTION
   /// PLACE BID ON AUCTION
   Future<bool> placeBidRequest({
     required String auctionId,
     required double amount,
   }) async {
+    if (_isFetching) return false;
+
     try {
-      isLoading(true);
-      successMessage.value = '';
-      errorMessage.value = '';
+      _isFetching = true;
+
+      await Future.microtask(() {
+        isLoading.value = true;
+        successMessage.value = '';
+        errorMessage.value = '';
+      });
 
       final response = await AuctionsServices.placeBid(
         auctionId: auctionId,
         amount: amount,
       );
 
-      if (response.success && response.data != null) {
-        successMessage.value = response.message ?? 'Bid placed successfully';
-        DevLogs.logSuccess(successMessage.value);
-        return true;
-      } else {
-        // Check for specific server error
-        final errorMsg = response.message ?? 'Failed to place bid';
-        if (errorMsg.contains('next is not a function')) {
-          errorMessage.value =
-              'Server is temporarily unavailable. Please try again in a few minutes.';
+      await Future.microtask(() {
+        if (response.success && response.data != null) {
+          successMessage.value = response.message ?? 'Bid placed successfully';
+          DevLogs.logSuccess(successMessage.value);
         } else {
-          errorMessage.value = errorMsg;
+          // Check for specific server error
+          final errorMsg = response.message ?? 'Failed to place bid';
+          if (errorMsg.contains('next is not a function')) {
+            errorMessage.value =
+                'Server is temporarily unavailable. Please try again in a few minutes.';
+          } else {
+            errorMessage.value = errorMsg;
+          }
+          DevLogs.logError(errorMessage.value);
         }
-        DevLogs.logError(errorMessage.value);
-        return false;
-      }
+
+        isLoading.value = false;
+        _isFetching = false;
+      });
+
+      return response.success;
     } catch (e) {
-      DevLogs.logError('Error placing bid: ${e.toString()}');
-      errorMessage.value = 'An error occurred: ${e.toString()}';
+      await Future.microtask(() {
+        DevLogs.logError('Error placing bid: ${e.toString()}');
+        errorMessage.value = 'An error occurred: ${e.toString()}';
+        isLoading.value = false;
+        _isFetching = false;
+      });
       return false;
-    } finally {
-      isLoading(false);
     }
   }
 

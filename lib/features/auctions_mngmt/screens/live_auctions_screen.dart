@@ -8,6 +8,7 @@ import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_he
 import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_history_helper.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
+import 'package:shimmer/shimmer.dart';
 
 class LiveAuctionsScreen extends StatefulWidget {
   const LiveAuctionsScreen({super.key});
@@ -122,6 +123,82 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
     );
   }
 
+  // Shimmer loader for grid items
+  Widget _buildShimmerGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 16,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 8),
+                      Container(width: 100, height: 12, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Container(width: 60, height: 20, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(width: 50, height: 12, color: Colors.white),
+                          Container(width: 50, height: 12, color: Colors.white),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,49 +207,78 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header with Back Button
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Live Auctions',
-                        style: GoogleFonts.poppins(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textColor,
-                        ),
+                  // Back Button
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: AppColors.primaryColor,
                       ),
-                      const SizedBox(height: 4),
-                      Obx(() {
-                        final liveCount =
-                            _auctionsController.liveAuctions.length;
-                        return Text(
-                          '$liveCount auctions live now',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: AppColors.subtextColor,
-                          ),
-                        );
-                      }),
-                    ],
+                      onPressed: () => Get.back(),
+                      tooltip: 'Go Back',
+                    ),
                   ),
-                  // Add history icon here too
-                  IconButton(
-                    onPressed: () {
-                      Get.toNamed(RoutesHelper.userBiddingHistoryScreen);
-                    },
-                    icon: const Icon(Icons.history_outlined),
-                    color: AppColors.textColor,
-                    tooltip: 'View My Bidding History',
+                  const SizedBox(width: 12),
+                  // Title
+                  Expanded(
+                    child: Text(
+                      'Live Auctions',
+                      style: GoogleFonts.poppins(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textColor,
+                      ),
+                    ),
+                  ),
+                  // History Icon
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        Get.toNamed(RoutesHelper.userBiddingHistoryScreen);
+                      },
+                      icon: const Icon(Icons.history_outlined, size: 20),
+                      color: AppColors.primaryColor,
+                      tooltip: 'View My Bidding History',
+                    ),
                   ),
                 ],
               ),
             ),
+
+            // Live Count
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Obx(() {
+                final liveCount = _auctionsController.liveAuctions.length;
+                return Text(
+                  '$liveCount auctions live now',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.subtextColor,
+                  ),
+                );
+              }),
+            ),
+
+            const SizedBox(height: 16),
 
             // Category Filter
             SizedBox(
@@ -226,7 +332,7 @@ class _LiveAuctionsScreenState extends State<LiveAuctionsScreen> {
             Expanded(
               child: Obx(() {
                 if (_auctionsController.isLoadingLive.value) {
-                  return const Center(child: CircularProgressIndicator());
+                  return _buildShimmerGrid();
                 }
 
                 final liveAuctions = _auctionsController.liveAuctions;

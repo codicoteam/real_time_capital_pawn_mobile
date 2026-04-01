@@ -72,7 +72,7 @@ class _BidCardState extends State<BidCard> {
 
     final hasDispute = controller.hasBidDispute(widget.bid);
     final isPaid = controller.isBidPaid(widget.bid);
-    final isWinning = controller.isBidWinning(widget.bid);
+    controller.isBidWinning(widget.bid);
     final isWon = controller.isBidWon(widget.bid);
     final isLive = auctionStatus == 'live';
 

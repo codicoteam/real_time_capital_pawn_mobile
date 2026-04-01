@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
@@ -17,9 +16,9 @@ import '../../../config/routers/router.dart' show RoutesHelper;
 import '../../../models/attachment_model.dart' show AttachmentModel;
 import '../../attached_files_mngmt/controllers/attached_files_mngmt_controller.dart'
     show AttachmentController;
-import '../../attached_files_mngmt/helpers/attached_files_mngmt_helper.dart' show AttachmentHelper;
+import '../../attached_files_mngmt/helpers/attached_files_mngmt_helper.dart'
+    show AttachmentHelper;
 import '../helpers/update_attachments_dialog.dart';
-
 
 // ---------------------------------------------------------------------
 // Main LoanApplicationDetailsScreen

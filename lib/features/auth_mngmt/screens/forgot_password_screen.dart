@@ -27,7 +27,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.sizeOf(context).width;
     double screenHeight = MediaQuery.sizeOf(context).height;
 
     return Scaffold(

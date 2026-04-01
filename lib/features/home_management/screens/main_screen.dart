@@ -3,12 +3,12 @@ import 'package:get/get.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auctions_list_screen.dart'
     show AuctionsListScreen;
+import 'package:real_time_pawn/features/profile_mngmt/controllers/profile_mngmt_controller.dart';
 
 import '../../../config/routers/router.dart';
 import '../../../core/utils/pallete.dart';
 import '../../../global/user_controller.dart';
 import '../../../widgets/drawers/customer_drawer.dart';
-import '../../loan_application_mngmt/screens/loan_application_step1.dart';
 
 import '../../loan_mngmt/screens/loan_mngmt_screen.dart';
 import '../../profile_mngmt/screens/profile_mngmt_screen.dart' as MyProfile;
@@ -29,6 +29,21 @@ class _MainHomePageState extends State<MainHomePage> {
 
   final UserController userController = Get.find<UserController>();
 
+  // Initialize ProfileController if not already done
+  late final ProfileController _profileController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize ProfileController
+    _profileController = Get.put(ProfileController(), permanent: true);
+
+    // Fetch user profile data when the page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _profileController.fetchUserProfile();
+    });
+  }
+
   // Actual screens for each tab
   final List<Widget> _pages = [
     const HomePage(),
@@ -44,11 +59,8 @@ class _MainHomePageState extends State<MainHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: CustomDrawer(
-        userName: userController.user?.fullName ?? 'Guest',
-        userEmail: userController.user?.email ?? 'guest@example.com',
-        userId: userController.user?.userId ?? '',
-      ),
+      // Remove the parameters - CustomDrawer now gets data from ProfileController
+      drawer: CustomDrawer(),
       body: PersistentTabView(
         context,
         controller: _tabController,
@@ -114,7 +126,7 @@ class _MainHomePageState extends State<MainHomePage> {
         activeColorSecondary: AppColors.backgroundColor,
       ),
       PersistentBottomNavBarItem(
-        icon: const Icon(Icons.notifications_rounded, size: 24),
+        icon: const Icon(Icons.gavel_rounded, size: 24),
         title: "Auction",
         activeColorPrimary: AppColors.primaryColor,
         inactiveColorPrimary: AppColors.subtextColor,

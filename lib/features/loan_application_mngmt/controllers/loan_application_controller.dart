@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
@@ -409,9 +410,26 @@ class LoanApplicationControllerTwo extends GetxController {
       final filePath =
           '$userId/$documentType/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
 
-      await Supabase.instance.client.storage
-          .from('topics')
-          .upload(filePath, File(file.path));
+      // Handle web vs mobile upload differently
+      if (kIsWeb) {
+        // Web upload - use uploadBinary
+        final bytes = await file.readAsBytes();
+        await Supabase.instance.client.storage
+            .from(bucket)
+            .uploadBinary(
+              filePath,
+              bytes,
+              fileOptions: FileOptions(
+                contentType: _getMimeType(file.name),
+                upsert: false,
+              ),
+            );
+      } else {
+        // Mobile upload - use File
+        await Supabase.instance.client.storage
+            .from(bucket)
+            .upload(filePath, File(file.path));
+      }
 
       final publicUrl = Supabase.instance.client.storage
           .from(bucket)
@@ -441,6 +459,7 @@ class LoanApplicationControllerTwo extends GetxController {
 
     if (pickedFile == null) return;
 
+    // Set uploading state
     switch (type) {
       case 'national_id':
         isUploadingNationalId.value = true;
@@ -460,36 +479,79 @@ class LoanApplicationControllerTwo extends GetxController {
         break;
     }
 
-    final url = await _uploadFileToSupabase(pickedFile, type);
+    try {
+      // Upload to Supabase only - get URL
+      final url = await _uploadFileToSupabase(pickedFile, type);
 
-    switch (type) {
-      case 'national_id':
-        isUploadingNationalId.value = false;
-        if (url != null) nationalIdUrl.value = url;
-        break;
-      case 'passport':
-        isUploadingPassport.value = false;
-        if (url != null) passportUrl.value = url;
-        break;
-      case 'proof_of_resident':
-        isUploadingProofOfResident.value = false;
-        if (url != null) proofOfResidentUrl.value = url;
-        break;
-      case 'proof_of_employment':
-        isUploadingProofOfEmployment.value = false;
-        if (url != null) proofOfEmploymentUrl.value = url;
-        break;
-    }
+      if (url != null) {
+        // Store the URL only - NO ATTACHMENT CREATION HERE
+        switch (type) {
+          case 'national_id':
+            nationalIdUrl.value = url;
+            break;
+          case 'passport':
+            passportUrl.value = url;
+            break;
+          case 'proof_of_resident':
+            proofOfResidentUrl.value = url;
+            break;
+          case 'proof_of_employment':
+            proofOfEmploymentUrl.value = url;
+            break;
+        }
 
-    if (url != null) {
+        Get.snackbar(
+          'Success',
+          '$type uploaded successfully',
+          backgroundColor: AppColors.successColor,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: 2000.ms,
+        );
+      }
+    } catch (e) {
+      DevLogs.logError('Upload failed for $type: $e');
       Get.snackbar(
-        'Success',
-        '$type uploaded successfully',
-        backgroundColor: AppColors.successColor,
+        'Upload failed',
+        'Failed to upload $type: ${e.toString()}',
+        backgroundColor: AppColors.errorColor,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
-        duration: 200.ms,
       );
+    } finally {
+      // Clear uploading state
+      switch (type) {
+        case 'national_id':
+          isUploadingNationalId.value = false;
+          break;
+        case 'passport':
+          isUploadingPassport.value = false;
+          break;
+        case 'proof_of_resident':
+          isUploadingProofOfResident.value = false;
+          break;
+        case 'proof_of_employment':
+          isUploadingProofOfEmployment.value = false;
+          break;
+      }
+    }
+  }
+
+  // Add this helper method
+  String _getMimeType(String filename) {
+    final extension = filename.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'application/octet-stream';
     }
   }
 

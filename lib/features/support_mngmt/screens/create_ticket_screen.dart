@@ -23,7 +23,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
   final TextEditingController _descriptionController = TextEditingController();
 
   TicketCategory _selectedCategory = TicketCategory.general;
-  TicketPriority _selectedPriority = TicketPriority.urgent;
 
   int _currentStep = 0;
   late AnimationController _slideController;
@@ -92,7 +91,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
         subject: _subjectController.text.trim(),
         description: _descriptionController.text.trim(),
         category: _selectedCategory,
-        priority: _selectedPriority,
+        priority: TicketPriority.medium,
       );
 
       if (success) Get.back();
@@ -117,41 +116,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
     _CategoryItem(TicketCategory.general, 'General', Icons.help_outline),
   ];
 
-  // ── Priority config ──────────────────────────────────────────────
-  static const _priorities = [
-    _PriorityItem(
-      TicketPriority.urgent,
-      'Urgent',
-      Color(0xFFFF4757),
-      '⚡ Needs immediate attention',
-    ),
-    _PriorityItem(
-      TicketPriority.high,
-      'High',
-      Color(0xFFFF6B35),
-      '🔥 Important issue',
-    ),
-    _PriorityItem(
-      TicketPriority.medium,
-      'Medium',
-      Color(0xFFFFBE0B),
-      '📋 Standard request',
-    ),
-    _PriorityItem(
-      TicketPriority.low,
-      'Low',
-      Color(0xFF22C55E),
-      '💬 Non-urgent inquiry',
-    ),
-  ];
-
   // ── Steps ─────────────────────────────────────────────────────────
-  static const _stepTitles = ['Category', 'Priority', 'Details'];
-  static const _stepSubtitles = [
-    'What\'s this about?',
-    'How critical is this?',
-    'Tell us more',
-  ];
+  static const _stepTitles = ['Category', 'Details'];
+  static const _stepSubtitles = ['What\'s this about?', 'Tell us more'];
 
   @override
   Widget build(BuildContext context) {
@@ -370,8 +337,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       child: switch (_currentStep) {
         0 => _buildCategoryStep(),
-        1 => _buildPriorityStep(),
-        2 => _buildDetailsStep(),
+        1 => _buildDetailsStep(),
         _ => const SizedBox.shrink(),
       },
     );
@@ -469,132 +435,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
     );
   }
 
-  // ── STEP 2: Priority ──────────────────────────────────────────────
-  Widget _buildPriorityStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'How urgently do you\nneed this resolved?',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textColor,
-            height: 1.3,
-          ),
-        ),
-        const SizedBox(height: 20),
-        ..._priorities.map((p) {
-          final isSelected = _selectedPriority == p.value;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedPriority = p.value),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isSelected ? p.color.withOpacity(0.07) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected ? p.color : AppColors.borderColor,
-                  width: isSelected ? 1.5 : 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isSelected
-                        ? p.color.withOpacity(0.12)
-                        : Colors.black.withOpacity(0.04),
-                    blurRadius: isSelected ? 12 : 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: p.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: isSelected
-                          ? Icon(
-                              Icons.radio_button_checked_rounded,
-                              color: p.color,
-                              size: 22,
-                            )
-                          : Icon(
-                              Icons.radio_button_off_rounded,
-                              color: p.color.withOpacity(0.5),
-                              size: 22,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              p.label,
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected
-                                    ? p.color
-                                    : AppColors.textColor,
-                              ),
-                            ),
-                            if (p.value == TicketPriority.urgent) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: p.color.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  'DEFAULT',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: p.color,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          p.description,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.subtextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  // ── STEP 3: Details ───────────────────────────────────────────────
+  // ── STEP 2: Details ───────────────────────────────────────────────
   Widget _buildDetailsStep() {
     return Form(
       key: _formKey,
@@ -612,7 +453,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
           ),
           const SizedBox(height: 10),
 
-          // Summary pill — same glass card language as TicketDetailScreen
+          // Summary pill — showing only category now
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
@@ -647,37 +488,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: AppColors.primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Container(
-                    width: 1,
-                    height: 12,
-                    color: AppColors.borderColor,
-                  ),
-                ),
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: _priorities
-                        .firstWhere((p) => p.value == _selectedPriority)
-                        .color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  _priorities
-                      .firstWhere((p) => p.value == _selectedPriority)
-                      .label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: _priorities
-                        .firstWhere((p) => p.value == _selectedPriority)
-                        .color,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1011,12 +821,4 @@ class _CategoryItem {
   final String label;
   final IconData icon;
   const _CategoryItem(this.value, this.label, this.icon);
-}
-
-class _PriorityItem {
-  final TicketPriority value;
-  final String label;
-  final Color color;
-  final String description;
-  const _PriorityItem(this.value, this.label, this.color, this.description);
 }

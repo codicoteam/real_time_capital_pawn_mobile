@@ -222,13 +222,6 @@ class _HomePageState extends State<HomePage> {
             color: Colors.white,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: SafeArea(
         child: Obx(() {

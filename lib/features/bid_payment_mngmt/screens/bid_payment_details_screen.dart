@@ -369,86 +369,40 @@ class _PaymentDetailsScreenState extends State<BidPaymentDetailsScreen> {
                           ),
                         ),
 
-                      // Action buttons
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Share receipt
-                                  BidPaymentHelper.showSuccess(
-                                    'Receipt sharing coming soon!',
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: AppColors.primaryColor,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text('Share Receipt'),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            if (payment.status == PaymentStatus.failed)
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    // Retry payment
-                                    Get.toNamed(
-                                      '/select-payment-method',
-                                      arguments: {
-                                        'bidId': payment.bid.id,
-                                        'amount': payment.amount,
-                                      },
-                                    );
+                      // ✅ Only Retry Payment button remains (if payment failed)
+                      if (payment.status == PaymentStatus.failed)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Retry payment
+                                Get.toNamed(
+                                  '/select-payment-method',
+                                  arguments: {
+                                    'bidId': payment.bid.id,
+                                    'amount': payment.amount,
                                   },
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: RealTimeColors.success,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text('Retry Payment'),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: RealTimeColors.success,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  Get.offAllNamed('/my-bid-payments');
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.primaryColor,
-                                  side: BorderSide(
-                                    color: AppColors.primaryColor,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text('Back to Payments'),
-                              ),
+                              child: const Text('Retry Payment'),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+
+                      // Add some bottom padding for better scrolling
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

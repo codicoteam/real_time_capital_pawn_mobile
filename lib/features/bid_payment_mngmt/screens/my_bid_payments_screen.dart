@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
-import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/controllers/bid_payment_mngmt_controller.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/helpers/bid_payment_mngmt_helper.dart';

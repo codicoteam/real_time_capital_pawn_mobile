@@ -131,36 +131,6 @@ class SupportTicketController extends GetxController {
     }
   }
 
-  /// 5. ADD ATTACHMENT
-  Future<bool> addAttachment({
-    required String ticketId,
-    required String attachmentId,
-  }) async {
-    try {
-      isAddingAttachment(true);
-      clearMessages();
-
-      final response = await SupportTicketService.addAttachment(
-        ticketId: ticketId,
-        attachmentId: attachmentId,
-      );
-
-      if (response.success && response.data != null) {
-        selectedTicket.value = response.data!;
-        successMessage.value = 'Attachment added';
-        return true;
-      } else {
-        errorMessage.value = response.message ?? 'Failed to add attachment';
-        return false;
-      }
-    } catch (e) {
-      errorMessage.value = 'Error adding attachment: ${e.toString()}';
-      return false;
-    } finally {
-      isAddingAttachment(false);
-    }
-  }
-
   /// 6. UPDATE TICKET
   Future<bool> updateTicket({
     required String ticketId,
@@ -194,6 +164,39 @@ class SupportTicketController extends GetxController {
       return false;
     } finally {
       isLoadingTicket(false);
+    }
+  }
+
+  /// 7. ADD ATTACHMENT TO TICKET
+  Future<bool> addAttachment({
+    required String ticketId,
+    required String attachmentId,
+  }) async {
+    try {
+      isAddingAttachment(true);
+      clearMessages();
+
+      final response = await SupportTicketService.addAttachment(
+        ticketId: ticketId,
+        attachmentId: attachmentId,
+      );
+
+      if (response.success && response.data != null) {
+        selectedTicket.value = response.data!;
+        successMessage.value = 'Attachment added successfully';
+        DevLogs.logSuccess(successMessage.value);
+        return true;
+      } else {
+        errorMessage.value = response.message ?? 'Failed to add attachment';
+        DevLogs.logError(errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      errorMessage.value = 'Error adding attachment: ${e.toString()}';
+      DevLogs.logError(errorMessage.value);
+      return false;
+    } finally {
+      isAddingAttachment(false);
     }
   }
 

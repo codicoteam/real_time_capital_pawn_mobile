@@ -1,24 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
+import 'package:real_time_pawn/features/profile_mngmt/controllers/profile_mngmt_controller.dart';
 import 'package:real_time_pawn/widgets/custom_typography/typography.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final String? profileImageUrl;
-  final String userName;
-  final String userEmail;
-  final String userId;
+  final ProfileController _profileController = Get.find<ProfileController>();
 
-  const CustomDrawer({
-    super.key,
-    this.profileImageUrl,
-    required this.userName,
-    required this.userEmail,
-    required this.userId,
-  });
+  CustomDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -31,86 +25,125 @@ class CustomDrawer extends StatelessWidget {
       backgroundColor: AppColors.backgroundColor,
       child: Column(
         children: [
-          // Drawer Header with profile
-          GestureDetector(
-            onTap: () {
-              Get.toNamed(RoutesHelper.profileScreen);
-            },
-            child: Container(
-              height: effectiveHeaderHeight,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.primaryColor, AppColors.secondaryColor],
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+          // Drawer Header with profile - Now using Obx for reactive updates
+          Obx(() {
+            final user = _profileController.userProfile.value;
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop(); // Close drawer
+                Get.toNamed(RoutesHelper.profileScreen);
+              },
+              child: Container(
+                height: effectiveHeaderHeight,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.primaryColor, AppColors.secondaryColor],
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Profile Picture with fallback
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: profileImageUrl != null
-                            ? ClipOval(
-                                child: Image.network(
-                                  profileImageUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      _buildProfileFallback(),
-                                ),
-                              )
-                            : _buildProfileFallback(),
-                      ).animate().fadeIn(duration: 300.ms),
-                      const SizedBox(height: 12),
-                      // User Name with overflow protection
-                      SizedBox(
-                        width: double.infinity,
-                        child: Text(
-                          userName,
-                          style: CustomTypography.nunitoTextTheme.titleLarge
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Profile Picture with exact same styling as ProfileScreen
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                spreadRadius: 0,
+                                offset: const Offset(0, 4),
                               ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ).animate().slideX(begin: -0.1).fadeIn(delay: 100.ms),
-                      ),
-                      const SizedBox(height: 4),
-                      // User Email with overflow protection
-                      SizedBox(
-                        width: double.infinity,
-                        child: Text(
-                          userEmail,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 12,
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ).animate().slideX(begin: -0.1).fadeIn(delay: 200.ms),
-                      ),
-                    ],
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundColor: AppColors.primaryColor.withOpacity(
+                              0.1,
+                            ),
+                            backgroundImage: user?.profilePicUrl != null
+                                ? CachedNetworkImageProvider(
+                                    user!.profilePicUrl!,
+                                  )
+                                : null,
+                            child: user?.profilePicUrl == null
+                                ? Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: AppColors.primaryColor,
+                                  )
+                                : null,
+                          ),
+                        ).animate().fadeIn(duration: 300.ms),
+
+                        const SizedBox(height: 12),
+
+                        // User Name - Same animation and styling as ProfileScreen
+                        SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            user?.fullNameDisplay ?? 'Loading...',
+                            style: GoogleFonts.nunito(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ).animate().slideX(begin: -0.1).fadeIn(delay: 100.ms),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        // User Email - Same animation and styling as ProfileScreen
+                        SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            user?.email ?? 'Loading...',
+                            style: GoogleFonts.nunito(
+                              fontSize: 13,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ).animate().slideX(begin: -0.1).fadeIn(delay: 200.ms),
+                        ),
+
+                        // Show loading indicator if profile is being fetched
+                        if (_profileController.isLoading.value && user == null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          }),
+
           // Drawer Items with flexible space
           Expanded(
             child: SingleChildScrollView(
@@ -126,6 +159,7 @@ class CustomDrawer extends StatelessWidget {
                     color: RealTimeColors.primaryGreen,
                     onTap: () => _navigateAndClose(context, '/about'),
                   ).animate().fadeIn(delay: 300.ms),
+
                   // Loans
                   _buildDrawerItem(
                     icon: Icons.account_balance_wallet_outlined,
@@ -146,22 +180,14 @@ class CustomDrawer extends StatelessWidget {
                     ),
                   ).animate().fadeIn(delay: 360.ms),
 
-                  // Notifications
-                  _buildDrawerItem(
-                    icon: Icons.notifications_outlined,
-                    title: 'Notifications',
-                    color: RealTimeColors.error,
-                    onTap: () => _navigateAndClose(context, '/notifications'),
-                  ).animate().fadeIn(delay: 420.ms),
-
-                  // Auctions - FIXED
+                  // Auctions
                   _buildDrawerItem(
                     icon: Icons.gavel,
                     title: 'Auctions',
                     color: RealTimeColors.grey800,
                     onTap: () => _navigateAndClose(
                       context,
-                      RoutesHelper.auctionsListScreen, // Use the route name
+                      RoutesHelper.auctionsListScreen,
                     ),
                   ).animate().fadeIn(delay: 460.ms),
 
@@ -170,12 +196,10 @@ class CustomDrawer extends StatelessWidget {
                     icon: Icons.local_offer_outlined,
                     title: 'Bids',
                     color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(
-                      context,
-                      RoutesHelper
-                          .myBidsScreen, // Changed from '/my-bids' to RoutesHelper.myBidsScreen
-                    ),
+                    onTap: () =>
+                        _navigateAndClose(context, RoutesHelper.myBidsScreen),
                   ).animate().fadeIn(delay: 480.ms),
+
                   // FAQ
                   _buildDrawerItem(
                     icon: Icons.question_answer_outlined,
@@ -187,13 +211,17 @@ class CustomDrawer extends StatelessWidget {
                   // Loan Application
                   _buildDrawerItem(
                     icon: Icons.article_outlined,
-                    title: 'Loans Status',
+                    title: 'Loans Applications',
                     color: RealTimeColors.darkGreen,
-                    onTap: () => _navigateAndClose(
-                      context,
-                      RoutesHelper.loanApplicationsScreen,
-                      arguments: userId, // Pass userId as argument
-                    ),
+                    onTap: () {
+                      final userId =
+                          _profileController.userProfile.value?.id ?? '';
+                      _navigateAndClose(
+                        context,
+                        RoutesHelper.loanApplicationsScreen,
+                        arguments: userId,
+                      );
+                    },
                   ).animate().fadeIn(delay: 520.ms),
 
                   // Payments
@@ -214,13 +242,13 @@ class CustomDrawer extends StatelessWidget {
                     color: RealTimeColors.warning,
                     onTap: () => _navigateAndClose(
                       context,
-                      RoutesHelper.ticketListScreen, // Using the route name
+                      RoutesHelper.ticketListScreen,
                     ),
                   ).animate().fadeIn(delay: 580.ms),
 
                   const Divider(height: 32, indent: 20, endIndent: 20),
 
-                  // Extra space at bottom to prevent button overlap
+                  // Extra space at bottom
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
                 ],
               ),
@@ -232,10 +260,6 @@ class CustomDrawer extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Widget _buildProfileFallback() {
-    return const Icon(Icons.person, color: Colors.white, size: 40);
   }
 
   Widget _buildDrawerItem({
@@ -469,7 +493,12 @@ class CustomDrawer extends StatelessWidget {
               onPressed: () async {
                 Navigator.of(context).pop();
                 Navigator.pop(context);
-                // await AuthHelper.validateAndDeleteUser(userId: userId);
+                final user = _profileController.userProfile.value;
+                if (user != null) {
+                  await _profileController.requestAccountDeletion(
+                    email: user.email,
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
