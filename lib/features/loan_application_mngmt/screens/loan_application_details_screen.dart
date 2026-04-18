@@ -1,29 +1,14 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
-import 'package:real_time_pawn/models/attachment_model.dart';
+import '../../../config/routers/router.dart';
 
-import '../../../config/routers/router.dart' show RoutesHelper;
-import '../../../models/attachment_model.dart' show AttachmentModel;
-import '../../attached_files_mngmt/controllers/attached_files_mngmt_controller.dart'
-    show AttachmentController;
-import '../../attached_files_mngmt/helpers/attached_files_mngmt_helper.dart' show AttachmentHelper;
-import '../helpers/update_attachments_dialog.dart';
-
-
-// ---------------------------------------------------------------------
-// Main LoanApplicationDetailsScreen
-// ---------------------------------------------------------------------
 class LoanApplicationDetailsScreen extends StatefulWidget {
   final LoanApplicationModel application;
 
@@ -37,370 +22,405 @@ class LoanApplicationDetailsScreen extends StatefulWidget {
 class _LoanApplicationDetailsScreenState
     extends State<LoanApplicationDetailsScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _fabController;
+  late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
   bool _showFab = false;
-
-  // Attachment controller
-  late final AttachmentController attachmentController;
-
-  // Upload state
-  bool _isUploading = false;
-  double _uploadProgress = 0.0;
-  String _uploadMessage = '';
-
-  // Image picker
-  final ImagePicker _picker = ImagePicker();
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   @override
   void initState() {
     super.initState();
-    _fabController = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 600),
     );
+    _animationController.forward();
 
     _scrollController.addListener(() {
       if (_scrollController.offset > 200 && !_showFab) {
         setState(() => _showFab = true);
-        _fabController.forward();
       } else if (_scrollController.offset <= 200 && _showFab) {
         setState(() => _showFab = false);
-        _fabController.reverse();
       }
     });
-
-    // Initialize attachment controller and fetch data
-    attachmentController = Get.put(AttachmentController());
-    _fetchAttachments();
-  }
-
-  void _fetchAttachments() {
-    attachmentController.fetchAttachmentsByUserAndEntity(
-      userId: widget.application.customerUser!.id ?? '',
-      entityType: 'LoanApplication',
-      entityId: widget.application.id ?? '',
-    );
   }
 
   @override
   void dispose() {
-    _fabController.dispose();
+    _animationController.dispose();
     _scrollController.dispose();
-    Get.delete<AttachmentController>(); // Clean up controller
     super.dispose();
   }
 
-  // ------------------ Upload Methods ------------------
-  Future<void> _pickImageFromSource(ImageSource source) async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: source,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
+  String _formatCurrency(int? amount) {
+    if (amount == null) return '\$0.00';
+    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    return formatter.format(amount);
+  }
 
-      if (pickedFile != null) {
-        _showAssetDetailsModal(File(pickedFile.path));
-      }
-    } catch (e) {
-      if (mounted) {
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat('MMMM dd, yyyy • hh:mm a').format(date);
+  }
+
+  String _formatDateShort(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat('MMM dd, yyyy').format(date);
+  }
+
+  String _formatTimeAgo(DateTime? date) {
+    if (date == null) return '';
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 7) {
+      return _formatDateShort(date);
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  String _formatCollateralCategory(String? category) {
+    if (category == null || category.isEmpty) return 'N/A';
+    switch (category.toLowerCase()) {
+      case 'small_loans':
+        return '📱 Electronics';
+      case 'motor_vehicle':
+        return '🚗 Motor Vehicle';
+      case 'jewellery':
+        return '💎 Jewellery';
+      default:
+        return category;
+    }
+  }
+
+  String _formatRepaymentType(String? type) {
+    if (type == null) return 'N/A';
+    switch (type.toLowerCase()) {
+      case 'once_off':
+        return 'Once Off Payment';
+      case 'installment':
+        return 'Installment Plan';
+      default:
+        return type;
+    }
+  }
+
+  String _formatStatus(String? status) {
+    if (status == null || status.isEmpty) return 'Submitted';
+    return status
+        .split('_')
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
+        .join(' ');
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'processing':
+        return const Color(0xFFF57C00);
+      case 'submitted':
+        return const Color(0xFF1976D2);
+      case 'approved':
+        return const Color(0xFF388E3C);
+      case 'rejected':
+        return const Color(0xFFD32F2F);
+      case 'cancelled':
+        return const Color(0xFFC2185B);
+      default:
+        return const Color(0xFF1976D2);
+    }
+  }
+
+  IconData _getStatusIcon(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'processing':
+        return Icons.hourglass_empty_rounded;
+      case 'submitted':
+        return Icons.send_rounded;
+      case 'approved':
+        return Icons.check_circle_rounded;
+      case 'rejected':
+        return Icons.cancel_rounded;
+      case 'cancelled':
+        return Icons.block_rounded;
+      default:
+        return Icons.pending_rounded;
+    }
+  }
+
+  bool get _isEditable {
+    final status = widget.application.status?.toLowerCase();
+    return status != 'approved' &&
+        status != 'rejected' &&
+        status != 'cancelled';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: CustomScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                _buildStatusCard().animate().fadeIn(
+                  delay: 200.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 20),
+                _buildAmountCard().animate().fadeIn(
+                  delay: 300.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 20),
+                _buildCustomerInfoCard().animate().fadeIn(
+                  delay: 350.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 20),
+                _buildCollateralCard().animate().fadeIn(
+                  delay: 400.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 20),
+                _buildRepaymentCard().animate().fadeIn(
+                  delay: 500.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 20),
+                _buildDebtorCheckCard().animate().fadeIn(
+                  delay: 550.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 20),
+                _buildDeclarationCard().animate().fadeIn(
+                  delay: 600.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 20),
+                if (widget.application.adminNotes != null &&
+                    widget.application.adminNotes!.isNotEmpty)
+                  _buildAdminNotesCard().animate().fadeIn(
+                    delay: 650.ms,
+                    duration: 500.ms,
+                    curve: Curves.easeOut,
+                  ),
+                const SizedBox(height: 20),
+                if (widget.application.collateralImages != null &&
+                    widget.application.collateralImages!.isNotEmpty)
+                  _buildCollateralImagesCard().animate().fadeIn(
+                    delay: 700.ms,
+                    duration: 500.ms,
+                    curve: Curves.easeOut,
+                  ),
+                const SizedBox(height: 20),
+                _buildMetadataCard().animate().fadeIn(
+                  delay: 750.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOut,
+                ),
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _isEditable
+          ? AnimatedOpacity(
+              opacity: _showFab ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child:
+                  FloatingActionButton.extended(
+                        onPressed: _navigateToUpdateScreen,
+                        backgroundColor: AppColors.primaryColor,
+                        elevation: 8,
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        label: Text(
+                          'Edit Application',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                      .animate(
+                        onPlay: (controller) =>
+                            controller.repeat(reverse: true),
+                      )
+                      .shimmer(
+                        delay: 2000.ms,
+                        duration: 1500.ms,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  void _navigateToUpdateScreen() {
+    Get.toNamed(
+      RoutesHelper.updateLoanApplication,
+      arguments: widget.application,
+    )?.then((result) {
+      if (result == true && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to pick image: ${e.toString()}'),
-            backgroundColor: AppColors.errorColor,
+          const SnackBar(
+            content: Text('Application updated successfully'),
+            backgroundColor: AppColors.successColor,
+            duration: Duration(seconds: 2),
           ),
         );
       }
-    }
-  }
-
-  void _showAssetUploadModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return _buildAssetUploadModal();
-      },
-    );
-  }
-
-  void _showAssetDetailsModal(File imageFile) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: false,
-      builder: (context) {
-        return AssetDetailsModal(
-          imageFile: imageFile,
-          selectedLoanCategory: null, // or pass something if needed
-          onAssetSaved: (assetName, serialNumber, conditionNotes) async {
-            await _uploadAssetToSupabase(
-              imageFile: imageFile,
-              assetName: assetName,
-              serialNumber: serialNumber,
-              conditionNotes: conditionNotes,
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _uploadAssetToSupabase({
-    required File imageFile,
-    required String assetName,
-    required String serialNumber,
-    required String conditionNotes,
-  }) async {
-    setState(() {
-      _isUploading = true;
-      _uploadProgress = 0.0;
-      _uploadMessage = 'Preparing upload...';
     });
-
-    try {
-      // Step 1: Upload to Supabase Storage (Public bucket)
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${assetName.replaceAll(' ', '_')}.jpg';
-      final filePath = 'attachments/$fileName';
-
-      setState(() {
-        _uploadProgress = 0.2;
-        _uploadMessage = 'Uploading to storage...';
-      });
-
-      DevLogs.logInfo('📤 Uploading to storage: $filePath');
-
-      await _supabase.storage
-          .from('topics')
-          .upload(
-            filePath,
-            imageFile,
-            fileOptions: const FileOptions(
-              upsert: false,
-              contentType: 'image/jpeg',
-            ),
-          );
-
-      DevLogs.logInfo('✅ File uploaded to storage');
-
-      setState(() {
-        _uploadProgress = 0.5;
-        _uploadMessage = 'Getting public URL...';
-      });
-
-      final publicUrl = _supabase.storage.from('topics').getPublicUrl(filePath);
-      DevLogs.logInfo('🔗 Public URL: $publicUrl');
-
-      setState(() {
-        _uploadProgress = 0.7;
-        _uploadMessage = 'Registering attachment...';
-      });
-
-      // Prepare metadata
-      final metaData =
-          '{"asset_name":"$assetName","serial_number":"$serialNumber","condition_notes":"$conditionNotes"}';
-
-      DevLogs.logInfo('💾 Registering attachment in database...');
-
-      final attachmentModel = await AttachmentHelper.uploadAttachment(
-        entityType: 'LoanApplication',
-        entityId: widget.application.id ?? '',
-        category: 'asset_photos', // or you can make this dynamic
-        filename: fileName,
-        mimeType: 'image/jpeg',
-        storage: 'url',
-        url: publicUrl,
-        meta: metaData,
-      );
-
-      setState(() {
-        _uploadProgress = 0.9;
-        _uploadMessage = 'Finalizing...';
-      });
-
-      if (attachmentModel != null) {
-        // Success: refresh attachments list
-        await attachmentController.fetchAttachmentsByUserAndEntity(
-          userId: widget.application.customerUser!.id ?? '',
-          entityType: 'LoanApplication',
-          entityId: widget.application.id ?? '',
-        );
-
-        setState(() {
-          _uploadProgress = 1.0;
-          _uploadMessage = 'Upload complete!';
-        });
-
-        DevLogs.logInfo('🎉 Asset uploaded successfully!');
-
-        await Future.delayed(const Duration(milliseconds: 800));
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Attachment uploaded successfully!')),
-                ],
-              ),
-              backgroundColor: AppColors.successColor,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
-        }
-      } else {
-        throw Exception('Failed to save attachment to database');
-      }
-    } on StorageException catch (e) {
-      DevLogs.logError('❌ Storage Exception: ${e.toString()}');
-      if (mounted) {
-        String errorMessage = 'Upload failed: ';
-        if (e.statusCode == '403' || e.statusCode == 403) {
-          errorMessage +=
-              'Access denied. Make sure the storage bucket is public in Supabase Dashboard.';
-        } else {
-          errorMessage += e.message;
-        }
-        _showErrorSnackbar(errorMessage);
-      }
-    } catch (e) {
-      DevLogs.logError('❌ General Exception: ${e.toString()}');
-      if (mounted) {
-        _showErrorSnackbar('Upload failed: ${e.toString()}');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-          _uploadProgress = 0.0;
-          _uploadMessage = '';
-        });
-      }
-    }
   }
 
-  void _showErrorSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 200,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: AppColors.primaryColor,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        title: Text(
+          'Loan Application Details',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        background: Stack(
+          fit: StackFit.expand,
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.7),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 80,
+              right: -20,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -30,
+              left: -30,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
           ],
         ),
-        backgroundColor: AppColors.errorColor,
-        duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
-  Widget _buildAssetUploadModal() {
+  Widget _buildStatusCard() {
+    final status = widget.application.status ?? 'submitted';
+    final statusColor = _getStatusColor(status);
+    final statusIcon = _getStatusIcon(status);
+    final statusText = _formatStatus(status);
+
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.backgroundColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(color: statusColor.withOpacity(0.2), width: 1),
       ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Upload Attachment',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Choose an upload method',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppColors.subtextColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Upload Options
-          Row(
-            children: [
-              Expanded(
-                child: _buildUploadOption(
-                  icon: Icons.camera_alt,
-                  label: 'Take Photo',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImageFromSource(ImageSource.camera);
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildUploadOption(
-                  icon: Icons.photo_library,
-                  label: 'Gallery',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImageFromSource(ImageSource.gallery);
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Note
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.surfaceColor.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
+            child: Icon(statusIcon, color: statusColor, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: AppColors.primaryColor,
+                Text(
+                  'Current Status',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: AppColors.subtextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'You can add asset details after selecting an image',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.subtextColor,
-                    ),
+                const SizedBox(height: 4),
+                Text(
+                  statusText,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: statusColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Application #${widget.application.applicationNo ?? 'N/A'}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.subtextColor,
                   ),
                 ),
               ],
@@ -408,250 +428,67 @@ class _LoanApplicationDetailsScreenState
           ),
         ],
       ),
-    ).animate().slideY(
-      begin: 1,
-      end: 0,
-      duration: 300.ms,
-      curve: Curves.easeOut,
     );
   }
 
-  Widget _buildUploadOption({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppColors.borderColor),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 32, color: AppColors.primaryColor),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textColor,
-              ),
-            ),
+  Widget _buildAmountCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryColor,
+            AppColors.primaryColor.withOpacity(0.85),
           ],
         ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryColor.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildUploadingOverlay() {
-    return Container(
-      color: Colors.black.withOpacity(0.75),
-      child: Center(
-        child:
-            Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 32),
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceColor,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.4),
-                        blurRadius: 30,
-                        spreadRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Animated circular progress
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 120,
-                            height: 120,
-                            child: CircularProgressIndicator(
-                              value: _uploadProgress,
-                              strokeWidth: 10,
-                              backgroundColor: AppColors.borderColor
-                                  .withOpacity(0.3),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primaryColor,
-                              ),
-                            ),
-                          ),
-                          Container(
-                                width: 90,
-                                height: 90,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
-                                    0.1,
-                                  ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.cloud_upload_rounded,
-                                  size: 45,
-                                  color: AppColors.primaryColor,
-                                ),
-                              )
-                              .animate(
-                                onPlay: (controller) => controller.repeat(),
-                              )
-                              .shimmer(
-                                duration: 2000.ms,
-                                color: AppColors.primaryColor.withOpacity(0.5),
-                              )
-                              .scale(
-                                begin: const Offset(1, 1),
-                                end: const Offset(1.15, 1.15),
-                                duration: 1000.ms,
-                              )
-                              .then()
-                              .scale(
-                                begin: const Offset(1.15, 1.15),
-                                end: const Offset(1, 1),
-                                duration: 1000.ms,
-                              ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-
-                      // Progress percentage
-                      Text(
-                            '${(_uploadProgress * 100).toInt()}%',
-                            style: GoogleFonts.poppins(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryColor,
-                              letterSpacing: 2,
-                            ),
-                          )
-                          .animate(onPlay: (controller) => controller.repeat())
-                          .shimmer(
-                            duration: 2000.ms,
-                            color: AppColors.primaryColor.withOpacity(0.5),
-                          ),
-                      const SizedBox(height: 12),
-
-                      // Upload message
-                      Text(
-                            _uploadMessage,
-                            style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              color: AppColors.textColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          )
-                          .animate(onPlay: (controller) => controller.repeat())
-                          .fadeIn(duration: 1000.ms)
-                          .then()
-                          .fadeOut(duration: 1000.ms),
-                      const SizedBox(height: 20),
-
-                      // Linear progress bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: SizedBox(
-                          height: 10,
-                          child: LinearProgressIndicator(
-                            value: _uploadProgress,
-                            backgroundColor: AppColors.borderColor.withOpacity(
-                              0.3,
-                            ),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Uploading steps indicator
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildStepIndicator(
-                              'Storage',
-                              _uploadProgress >= 0.5,
-                            ),
-                            const SizedBox(width: 6),
-                            Icon(
-                              Icons.arrow_forward,
-                              size: 16,
-                              color: AppColors.subtextColor,
-                            ),
-                            const SizedBox(width: 6),
-                            _buildStepIndicator(
-                              'Database',
-                              _uploadProgress >= 0.9,
-                            ),
-                            const SizedBox(width: 6),
-                            Icon(
-                              Icons.arrow_forward,
-                              size: 16,
-                              color: AppColors.subtextColor,
-                            ),
-                            const SizedBox(width: 6),
-                            _buildStepIndicator('Done', _uploadProgress >= 1.0),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                .animate()
-                .scale(duration: 400.ms, curve: Curves.elasticOut)
-                .fadeIn(duration: 300.ms),
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isActive
-            ? AppColors.primaryColor.withOpacity(0.2)
-            : AppColors.borderColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isActive
-              ? AppColors.primaryColor
-              : AppColors.borderColor.withOpacity(0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isActive)
-            Icon(Icons.check_circle, size: 12, color: AppColors.primaryColor),
-          if (isActive) const SizedBox(width: 3),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.attach_money_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Requested Amount',
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Text(
-            label,
+            _formatCurrency(widget.application.requestedLoanAmount),
             style: GoogleFonts.poppins(
-              fontSize: 10,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              color: isActive ? AppColors.primaryColor : AppColors.subtextColor,
+              color: Colors.white,
+              fontSize: 44,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -1,
             ),
           ),
         ],
@@ -659,7 +496,1000 @@ class _LoanApplicationDetailsScreenState
     );
   }
 
-  // ------------------ Image Modal ------------------
+  Widget _buildCustomerInfoCard() {
+    final customer = widget.application.customerUser;
+    if (customer == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  color: AppColors.primaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Customer Information',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildDetailRow(
+            'Full Name',
+            '${customer.firstName ?? ''} ${customer.lastName ?? ''}'.trim(),
+            Icons.badge_outlined,
+          ),
+          const SizedBox(height: 16),
+          _buildDetailRow(
+            'Email',
+            customer.email ?? 'N/A',
+            Icons.email_outlined,
+          ),
+          const SizedBox(height: 16),
+          _buildDetailRow(
+            'Phone',
+            customer.phone ?? 'N/A',
+            Icons.phone_outlined,
+          ),
+          if (customer.nationalIdNumber != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'National ID',
+              customer.nationalIdNumber!,
+              Icons.credit_card_outlined,
+            ),
+          ],
+          if (customer.dateOfBirth != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Date of Birth',
+              _formatDateShort(customer.dateOfBirth),
+              Icons.cake_outlined,
+            ),
+          ],
+          if (customer.address != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Address',
+              customer.address!,
+              Icons.location_on_outlined,
+              isLongText: true,
+            ),
+          ],
+          if (customer.gender != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow('Gender', customer.gender!, Icons.wc_outlined),
+          ],
+          if (customer.maritalStatus != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Marital Status',
+              customer.maritalStatus!,
+              Icons.favorite_outlined,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollateralCard() {
+    final category = widget.application.collateralCategory ?? '';
+    final categoryDisplay = _formatCollateralCategory(category);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.security_rounded,
+                  color: AppColors.primaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Collateral Information',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildDetailRow('Category', categoryDisplay, Icons.category_outlined),
+
+          // Category-specific details
+          if (category.toLowerCase() == 'jewellery' &&
+              widget.application.jewelleryDetails != null) ...[
+            const SizedBox(height: 16),
+            _buildSubsectionHeader('Jewellery Details', Icons.diamond_outlined),
+            const SizedBox(height: 12),
+            if (widget.application.jewelleryDetails!.type != null)
+              _buildDetailRow(
+                'Type',
+                widget.application.jewelleryDetails!.type!,
+                Icons.label_outline,
+                indent: true,
+              ),
+            if (widget.application.jewelleryDetails!.weight != null)
+              _buildDetailRow(
+                'Weight',
+                '${widget.application.jewelleryDetails!.weight}g',
+                Icons.fitness_center,
+                indent: true,
+              ),
+            if (widget.application.jewelleryDetails!.purity != null)
+              _buildDetailRow(
+                'Purity',
+                widget.application.jewelleryDetails!.purity!,
+                Icons.star_outline,
+                indent: true,
+              ),
+            if (widget.application.jewelleryDetails!.estimatedValue != null)
+              _buildDetailRow(
+                'Estimated Value',
+                _formatCurrency(
+                  widget.application.jewelleryDetails!.estimatedValue,
+                ),
+                Icons.monetization_on_outlined,
+                indent: true,
+              ),
+            if (widget.application.jewelleryDetails!.description != null)
+              _buildDetailRow(
+                'Description',
+                widget.application.jewelleryDetails!.description!,
+                Icons.description_outlined,
+                indent: true,
+                isLongText: true,
+              ),
+          ],
+
+          if (category.toLowerCase() == 'motor_vehicle' &&
+              widget.application.motorVehicleDetails != null) ...[
+            const SizedBox(height: 16),
+            _buildSubsectionHeader(
+              'Vehicle Details',
+              Icons.directions_car_outlined,
+            ),
+            const SizedBox(height: 12),
+            if (widget.application.motorVehicleDetails!.make != null)
+              _buildDetailRow(
+                'Make',
+                widget.application.motorVehicleDetails!.make!,
+                Icons.branding_watermark,
+                indent: true,
+              ),
+            if (widget.application.motorVehicleDetails!.model != null)
+              _buildDetailRow(
+                'Model',
+                widget.application.motorVehicleDetails!.model!,
+                Icons.label_outline,
+                indent: true,
+              ),
+            if (widget.application.motorVehicleDetails!.registrationNo != null)
+              _buildDetailRow(
+                'Registration No',
+                widget.application.motorVehicleDetails!.registrationNo!,
+                Icons.confirmation_number_outlined,
+                indent: true,
+              ),
+            if (widget.application.motorVehicleDetails!.year != null)
+              _buildDetailRow(
+                'Year',
+                widget.application.motorVehicleDetails!.year.toString(),
+                Icons.calendar_today_outlined,
+                indent: true,
+              ),
+            if (widget.application.motorVehicleDetails!.ccSerialNo != null)
+              _buildDetailRow(
+                'CC/Serial No',
+                widget.application.motorVehicleDetails!.ccSerialNo!,
+                Icons.qr_code,
+                indent: true,
+              ),
+            if (widget.application.motorVehicleDetails!.engineNo != null)
+              _buildDetailRow(
+                'Engine No',
+                widget.application.motorVehicleDetails!.engineNo!,
+                Icons.engineering_outlined,
+                indent: true,
+              ),
+            if (widget.application.motorVehicleDetails!.chassisNo != null)
+              _buildDetailRow(
+                'Chassis No',
+                widget.application.motorVehicleDetails!.chassisNo!,
+                Icons.view_quilt_outlined,
+                indent: true,
+              ),
+          ],
+
+          if (category.toLowerCase() == 'small_loans' &&
+              widget.application.smallLoanDetails != null) ...[
+            const SizedBox(height: 16),
+            _buildSubsectionHeader(
+              'Electronics Details',
+              Icons.devices_outlined,
+            ),
+            const SizedBox(height: 12),
+            if (widget.application.smallLoanDetails!.type != null)
+              _buildDetailRow(
+                'Type',
+                widget.application.smallLoanDetails!.type!,
+                Icons.device_hub,
+                indent: true,
+              ),
+            if (widget.application.smallLoanDetails!.model != null)
+              _buildDetailRow(
+                'Model',
+                widget.application.smallLoanDetails!.model!,
+                Icons.label_outline,
+                indent: true,
+              ),
+            if (widget.application.smallLoanDetails!.serialNo != null)
+              _buildDetailRow(
+                'Serial No',
+                widget.application.smallLoanDetails!.serialNo!,
+                Icons.qr_code,
+                indent: true,
+              ),
+          ],
+
+          if (widget.application.declaredAssetValue != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Declared Value',
+              _formatCurrency(widget.application.declaredAssetValue),
+              Icons.monetization_on_outlined,
+            ),
+          ],
+          if (widget.application.collateralDescription != null &&
+              widget.application.collateralDescription!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Description',
+              widget.application.collateralDescription!,
+              Icons.description_outlined,
+              isLongText: true,
+            ),
+          ],
+          if (widget.application.suretyDescription != null &&
+              widget.application.suretyDescription!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Surety Details',
+              widget.application.suretyDescription!,
+              Icons.people_outline,
+              isLongText: true,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRepaymentCard() {
+    final repaymentType = widget.application.repaymentType ?? 'once_off';
+    final repaymentTypeDisplay = _formatRepaymentType(repaymentType);
+    final repaymentDays = widget.application.repaymentDays;
+    final installmentCount = widget.application.installmentCount;
+    final installmentFrequency = widget.application.installmentFrequency;
+    final installmentAmount = widget.application.installmentAmount;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.payment_rounded,
+                  color: AppColors.primaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Repayment Plan',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildDetailRow(
+            'Repayment Type',
+            repaymentTypeDisplay,
+            Icons.schedule_rounded,
+          ),
+          if (repaymentType == 'once_off' && repaymentDays != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Repayment Period',
+              '$repaymentDays days',
+              Icons.timer_rounded,
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Due Date',
+              _formatDate(DateTime.now().add(Duration(days: repaymentDays))),
+              Icons.calendar_today_rounded,
+            ),
+          ],
+          if (repaymentType == 'installment') ...[
+            if (installmentCount != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Number of Installments',
+                '$installmentCount',
+                Icons.format_list_numbered_rounded,
+              ),
+            ],
+            if (installmentFrequency != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Payment Frequency',
+                installmentFrequency[0].toUpperCase() +
+                    installmentFrequency.substring(1),
+                Icons.repeat_rounded,
+              ),
+            ],
+            if (installmentAmount != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Installment Amount',
+                _formatCurrency(installmentAmount),
+                Icons.install_mobile_rounded,
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Total Repayment',
+                _formatCurrency(installmentAmount * (installmentCount ?? 0)),
+                Icons.summarize_rounded,
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebtorCheckCard() {
+    final debtorCheck = widget.application.debtorCheck;
+    if (debtorCheck == null || debtorCheck.checked != true) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: debtorCheck.matched == true
+            ? AppColors.errorColor.withOpacity(0.05)
+            : AppColors.successColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: debtorCheck.matched == true
+              ? AppColors.errorColor.withOpacity(0.3)
+              : AppColors.successColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: debtorCheck.matched == true
+                  ? AppColors.errorColor.withOpacity(0.1)
+                  : AppColors.successColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              debtorCheck.matched == true
+                  ? Icons.warning_amber_rounded
+                  : Icons.verified_rounded,
+              color: debtorCheck.matched == true
+                  ? AppColors.errorColor
+                  : AppColors.successColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Debtor Register Check',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  debtorCheck.matched == true
+                      ? 'Warning: Matched with debtor records'
+                      : 'Clear: No debtor records found',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: debtorCheck.matched == true
+                        ? AppColors.errorColor
+                        : AppColors.successColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (debtorCheck.matchedDebtorRecords != null &&
+                    debtorCheck.matchedDebtorRecords!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '${debtorCheck.matchedDebtorRecords!.length} record(s) found',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeclarationCard() {
+    final hasDeclaration =
+        widget.application.declarationText != null ||
+        widget.application.declarationSignedAt != null;
+
+    if (!hasDeclaration) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.description_rounded,
+                  color: AppColors.primaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Declaration',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          if (widget.application.declarationText != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                widget.application.declarationText!,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: AppColors.textColor,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+          if (widget.application.declarationSignatureName != null) ...[
+            const SizedBox(height: 12),
+            _buildDetailRow(
+              'Signed by',
+              widget.application.declarationSignatureName!,
+              Icons.edit_note_rounded,
+            ),
+          ],
+          if (widget.application.declarationSignedAt != null) ...[
+            const SizedBox(height: 12),
+            _buildDetailRow(
+              'Signed on',
+              _formatDate(widget.application.declarationSignedAt),
+              Icons.schedule_rounded,
+            ),
+          ],
+          if (widget.application.customTermsAndConditions != null &&
+              widget.application.customTermsAndConditions!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Custom Terms',
+              widget.application.customTermsAndConditions!,
+              Icons.privacy_tip_rounded,
+              isLongText: true,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminNotesCard() {
+    final notes = widget.application.adminNotes ?? [];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.admin_panel_settings_rounded,
+                  color: Colors.orange,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Admin Notes (${notes.length})',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: notes.length,
+            separatorBuilder: (context, index) => const Divider(height: 16),
+            itemBuilder: (context, index) {
+              final note = notes[index];
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.comment_rounded,
+                            size: 16,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            note.note ?? 'No content',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.person_outline,
+                          size: 12,
+                          color: AppColors.subtextColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          note.createdBy?.firstName ?? 'Admin',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: AppColors.subtextColor,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: AppColors.subtextColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatTimeAgo(note.createdAt),
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: AppColors.subtextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollateralImagesCard() {
+    final images = widget.application.collateralImages ?? [];
+    if (images.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.photo_library_rounded,
+                  color: AppColors.primaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Collateral Photos (${images.length})',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 120,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: images.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () => _showImageModal(images[index]),
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderColor),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        images[index],
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: RealTimeColors.grey200,
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: RealTimeColors.grey200,
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: AppColors.subtextColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetadataCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: RealTimeColors.grey100,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Additional Information',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.subtextColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildMetaRow(
+            'Application Source',
+            widget.application.applicationSource ?? 'N/A',
+          ),
+          _buildMetaRow('Created By', _getCreatedByName()),
+          _buildMetaRow(
+            'Created At',
+            _formatDate(widget.application.createdAt),
+          ),
+          if (widget.application.updatedAt != null)
+            _buildMetaRow(
+              'Last Updated',
+              _formatDate(widget.application.updatedAt),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetaRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppColors.subtextColor,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getCreatedByName() {
+    final createdBy = widget.application.createdBy;
+    if (createdBy == null) return 'N/A';
+    if (createdBy.firstName != null || createdBy.lastName != null) {
+      return '${createdBy.firstName ?? ''} ${createdBy.lastName ?? ''}'.trim();
+    }
+    return createdBy.email ?? 'N/A';
+  }
+
+  Widget _buildSubsectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.primaryColor),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    IconData icon, {
+    bool isLongText = false,
+    bool indent = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(left: indent ? 16 : 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: RealTimeColors.grey100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: AppColors.subtextColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.subtextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: isLongText ? 13 : 14,
+                    fontWeight: isLongText
+                        ? FontWeight.normal
+                        : FontWeight.w500,
+                    color: AppColors.textColor,
+                    height: 1.4,
+                  ),
+                  maxLines: isLongText ? 3 : null,
+                  overflow: isLongText ? TextOverflow.ellipsis : null,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showImageModal(String imageUrl) {
     showDialog(
       context: context,
@@ -671,16 +1501,20 @@ class _LoanApplicationDetailsScreenState
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.black54,
-                  child: const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 60,
-                      color: Colors.white54,
+              child: InteractiveViewer(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.black54,
+                    height: 300,
+                    width: double.infinity,
+                    child: const Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 60,
+                        color: Colors.white54,
+                      ),
                     ),
                   ),
                 ),
@@ -696,1173 +1530,6 @@ class _LoanApplicationDetailsScreenState
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ------------------ Helper methods (unchanged) ------------------
-  String _formatCurrency(int? amount) {
-    if (amount == null) return '\$0.00';
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-    return formatter.format(amount);
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return DateFormat('MMMM dd, yyyy').format(date);
-  }
-
-  String _formatDateShort(DateTime? date) {
-    if (date == null) return 'N/A';
-    return DateFormat('MMM dd, yyyy').format(date);
-  }
-
-  String _formatCollateralCategory(String? category) {
-    if (category == null || category.isEmpty) return 'N/A';
-    switch (category.toLowerCase()) {
-      case 'small_loans':
-        return 'Small Loans';
-      case 'motor_vehicle':
-        return 'Motor Vehicle';
-      case 'jewellery':
-        return 'Jewellery';
-      default:
-        return category
-            .split('_')
-            .map(
-              (word) => word.isEmpty
-                  ? ''
-                  : word[0].toUpperCase() + word.substring(1).toLowerCase(),
-            )
-            .join(' ');
-    }
-  }
-
-  String _formatStatus(String? status) {
-    if (status == null || status.isEmpty) return 'Unknown';
-    return status
-        .split('_')
-        .map(
-          (word) => word.isEmpty
-              ? ''
-              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
-        )
-        .join(' ');
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'processing':
-      case 'under_review':
-        return const Color(0xFFF57C00);
-      case 'submitted':
-      case 'pending':
-        return const Color(0xFF1976D2);
-      case 'approved':
-        return const Color(0xFF388E3C);
-      case 'rejected':
-      case 'declined':
-        return const Color(0xFFD32F2F);
-      case 'cancelled':
-        return const Color(0xFFC2185B);
-      case 'draft':
-        return const Color(0xFF616161);
-      default:
-        return RealTimeColors.grey700;
-    }
-  }
-
-  Color _getStatusBackgroundColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'processing':
-      case 'under_review':
-        return const Color(0xFFFFF3E0);
-      case 'submitted':
-      case 'pending':
-        return const Color(0xFFE3F2FD);
-      case 'approved':
-        return const Color(0xFFE8F5E9);
-      case 'rejected':
-      case 'declined':
-        return const Color(0xFFFFEBEE);
-      case 'cancelled':
-        return const Color(0xFFFCE4EC);
-      case 'draft':
-        return const Color(0xFFF5F5F5);
-      default:
-        return RealTimeColors.grey200;
-    }
-  }
-
-  IconData _getStatusIcon(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'processing':
-      case 'under_review':
-        return Icons.hourglass_empty_rounded;
-      case 'submitted':
-      case 'pending':
-        return Icons.send_rounded;
-      case 'approved':
-        return Icons.check_circle_outline_rounded;
-      case 'rejected':
-      case 'declined':
-        return Icons.cancel_outlined;
-      case 'cancelled':
-        return Icons.block_rounded;
-      case 'draft':
-        return Icons.edit_note_rounded;
-      default:
-        return Icons.help_outline_rounded;
-    }
-  }
-
-  bool _isImageUrl(String? url) {
-    if (url == null) return false;
-    final imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-    return imageExtensions.any((ext) => url.toLowerCase().endsWith(ext));
-  }
-
-  // ------------------ Build methods ------------------
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: Stack(
-        children: [
-          // Main Content
-          CustomScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildSliverAppBar(),
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    _buildStatusHeaderCard()
-                        .animate()
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0, duration: 500.ms),
-                    const SizedBox(height: 24),
-                    _buildAmountCard()
-                        .animate()
-                        .fadeIn(delay: 100.ms, duration: 400.ms)
-                        .slideY(
-                          begin: 0.2,
-                          end: 0,
-                          delay: 100.ms,
-                          duration: 500.ms,
-                        ),
-                    const SizedBox(height: 24),
-
-                    // Personal Information
-                    _buildSection(
-                          title: 'Personal Information',
-                          icon: Icons.person_outline_rounded,
-                          children: [
-                            _buildInfoRow(
-                              'Full Name',
-                              widget.application.fullName ?? 'N/A',
-                              Icons.badge_outlined,
-                            ),
-                            _buildInfoRow(
-                              'National ID',
-                              widget.application.nationalIdNumber ?? 'N/A',
-                              Icons.credit_card_outlined,
-                            ),
-                            _buildInfoRow(
-                              'Gender',
-                              widget.application.gender ?? 'N/A',
-                              Icons.wc_outlined,
-                            ),
-                            _buildInfoRow(
-                              'Date of Birth',
-                              _formatDateShort(widget.application.dateOfBirth),
-                              Icons.cake_outlined,
-                            ),
-                            _buildInfoRow(
-                              'Marital Status',
-                              widget.application.maritalStatus ?? 'N/A',
-                              Icons.favorite_outline_rounded,
-                            ),
-                          ],
-                        )
-                        .animate()
-                        .fadeIn(delay: 200.ms, duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 200.ms),
-                    const SizedBox(height: 24),
-
-                    // Contact Information
-                    _buildSection(
-                          title: 'Contact Information',
-                          icon: Icons.contact_phone_outlined,
-                          children: [
-                            _buildInfoRow(
-                              'Phone Number',
-                              widget.application.contactDetails ?? 'N/A',
-                              Icons.phone_outlined,
-                            ),
-                            _buildInfoRow(
-                              'Alternative Number',
-                              widget.application.alternativeNumber ?? 'N/A',
-                              Icons.phone_android_outlined,
-                            ),
-                            _buildInfoRow(
-                              'Email Address',
-                              widget.application.emailAddress ?? 'N/A',
-                              Icons.email_outlined,
-                            ),
-                            _buildInfoRow(
-                              'Home Address',
-                              widget.application.homeAddress ?? 'N/A',
-                              Icons.home_outlined,
-                              maxLines: 2,
-                            ),
-                          ],
-                        )
-                        .animate()
-                        .fadeIn(delay: 300.ms, duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 300.ms),
-                    const SizedBox(height: 24),
-
-                    // Employment Information
-                    if (widget.application.employment != null)
-                      _buildSection(
-                            title: 'Employment Information',
-                            icon: Icons.work_outline_rounded,
-                            children: [
-                              _buildInfoRow(
-                                'Employment Type',
-                                widget.application.employment?.employmentType ??
-                                    'N/A',
-                                Icons.business_center_outlined,
-                              ),
-                              _buildInfoRow(
-                                'Job Title',
-                                widget.application.employment?.title ?? 'N/A',
-                                Icons.assignment_ind_outlined,
-                              ),
-                              _buildInfoRow(
-                                'Duration',
-                                widget.application.employment?.duration ??
-                                    'N/A',
-                                Icons.schedule_outlined,
-                              ),
-                              _buildInfoRow(
-                                'Location',
-                                widget.application.employment?.location ??
-                                    'N/A',
-                                Icons.location_on_outlined,
-                              ),
-                              _buildInfoRow(
-                                'Contacts',
-                                widget.application.employment?.contacts ??
-                                    'N/A',
-                                Icons.contacts_outlined,
-                              ),
-                            ],
-                          )
-                          .animate()
-                          .fadeIn(delay: 400.ms, duration: 400.ms)
-                          .slideY(begin: 0.2, end: 0, delay: 400.ms),
-                    if (widget.application.employment != null)
-                      const SizedBox(height: 24),
-
-                    // Loan Details
-                    _buildSection(
-                          title: 'Loan Details',
-                          icon: Icons.account_balance_wallet_outlined,
-                          children: [
-                            _buildInfoRow(
-                              'Application Number',
-                              widget.application.applicationNo ?? 'N/A',
-                              Icons.confirmation_number_outlined,
-                            ),
-                            _buildInfoRow(
-                              'Requested Amount',
-                              _formatCurrency(
-                                widget.application.requestedLoanAmount,
-                              ),
-                              Icons.attach_money_rounded,
-                              valueColor: AppColors.primaryColor,
-                            ),
-                            _buildInfoRow(
-                              'Application Date',
-                              _formatDateShort(widget.application.createdAt),
-                              Icons.calendar_today_outlined,
-                            ),
-                          ],
-                        )
-                        .animate()
-                        .fadeIn(delay: 500.ms, duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 500.ms),
-                    const SizedBox(height: 24),
-
-                    // Collateral Information
-                    _buildSection(
-                          title: 'Collateral Information',
-                          icon: Icons.security_outlined,
-                          children: [
-                            _buildInfoRow(
-                              'Category',
-                              _formatCollateralCategory(
-                                widget.application.collateralCategory,
-                              ),
-                              Icons.category_outlined,
-                            ),
-                            if (widget.application.collateralDescription !=
-                                null)
-                              _buildInfoRow(
-                                'Description',
-                                widget.application.collateralDescription!,
-                                Icons.description_outlined,
-                                maxLines: 3,
-                              ),
-                            if (widget.application.declaredAssetValue != null)
-                              _buildInfoRow(
-                                'Declared Value',
-                                _formatCurrency(
-                                  widget.application.declaredAssetValue,
-                                ),
-                                Icons.monetization_on_outlined,
-                                valueColor: AppColors.successColor,
-                              ),
-                            if (widget.application.suretyDescription != null)
-                              _buildInfoRow(
-                                'Surety',
-                                widget.application.suretyDescription!,
-                                Icons.person_add_outlined,
-                                maxLines: 2,
-                              ),
-                          ],
-                        )
-                        .animate()
-                        .fadeIn(delay: 600.ms, duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0, delay: 600.ms),
-                    const SizedBox(height: 24),
-
-                    // Uploaded Documents Section (Image URLs)
-                    _buildUploadedDocumentsSection(),
-                    const SizedBox(height: 24),
-
-                    // Attachments Section (from AttachmentController) with Add button
-                    _buildAttachmentsSection(),
-                    const SizedBox(height: 24),
-
-                    // Declaration
-                    if (widget.application.declarationSignatureName != null)
-                      _buildSection(
-                            title: 'Declaration',
-                            icon: Icons.verified_outlined,
-                            children: [
-                              if (widget.application.declarationText != null)
-                                _buildInfoRow(
-                                  'Agreement',
-                                  widget.application.declarationText!,
-                                  Icons.gavel_outlined,
-                                  maxLines: 5,
-                                ),
-                              _buildInfoRow(
-                                'Signed By',
-                                widget.application.declarationSignatureName!,
-                                Icons.draw_outlined,
-                              ),
-                              if (widget.application.declarationSignedAt !=
-                                  null)
-                                _buildInfoRow(
-                                  'Signed Date',
-                                  _formatDate(
-                                    widget.application.declarationSignedAt,
-                                  ),
-                                  Icons.event_available_outlined,
-                                ),
-                            ],
-                          )
-                          .animate()
-                          .fadeIn(delay: 700.ms, duration: 400.ms)
-                          .slideY(begin: 0.2, end: 0, delay: 700.ms),
-                    if (widget.application.declarationSignatureName != null)
-                      const SizedBox(height: 24),
-
-                    // Debtor Check
-                    if (widget.application.debtorCheck?.checked == true)
-                      _buildSection(
-                            title: 'Debtor Check',
-                            icon: Icons.fact_check_outlined,
-                            children: [
-                              _buildInfoRow(
-                                'Status',
-                                widget.application.debtorCheck!.matched == true
-                                    ? 'Matched'
-                                    : 'Clear',
-                                widget.application.debtorCheck!.matched == true
-                                    ? Icons.warning_amber_rounded
-                                    : Icons.check_circle_outline_rounded,
-                                valueColor:
-                                    widget.application.debtorCheck!.matched ==
-                                        true
-                                    ? AppColors.warningColor
-                                    : AppColors.successColor,
-                              ),
-                              if (widget.application.debtorCheck!.matched ==
-                                  true)
-                                _buildInfoRow(
-                                  'Matched Records',
-                                  '${widget.application.debtorCheck!.matchedDebtorRecords?.length ?? 0} record(s)',
-                                  Icons.assignment_late_outlined,
-                                  valueColor: AppColors.errorColor,
-                                ),
-                            ],
-                          )
-                          .animate()
-                          .fadeIn(delay: 800.ms, duration: 400.ms)
-                          .slideY(begin: 0.2, end: 0, delay: 800.ms),
-                    if (widget.application.debtorCheck?.checked == true)
-                      const SizedBox(height: 24),
-
-                    // Internal Notes
-                    if (widget.application.internalNotes != null &&
-                        widget.application.internalNotes!.isNotEmpty)
-                      _buildSection(
-                            title: 'Internal Notes',
-                            icon: Icons.note_outlined,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: RealTimeColors.grey100,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppColors.borderColor,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  widget.application.internalNotes!,
-                                  style: GoogleFonts.poppins(
-                                    color: AppColors.textColor,
-                                    fontSize: 14,
-                                    height: 1.6,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                          .animate()
-                          .fadeIn(delay: 1000.ms, duration: 400.ms)
-                          .slideY(begin: 0.2, end: 0, delay: 1000.ms),
-                    const SizedBox(height: 100),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Floating Edit Button
-          _buildFloatingEditButton(),
-
-          // Upload overlay
-          if (_isUploading) _buildUploadingOverlay(),
-        ],
-      ),
-    );
-  }
-
-  // Updated: document tiles are tappable to show image modal
-  Widget _buildUploadedDocumentsSection() {
-    final hasAny =
-        widget.application.nationalIdUrl != null ||
-        widget.application.passportUrl != null ||
-        widget.application.proofOfResidentUrl != null ||
-        widget.application.proofOfEmploymentUrl != null;
-
-    if (!hasAny) return const SizedBox.shrink();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.image_outlined,
-                  color: AppColors.primaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Uploaded Documents',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textColor,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          if (widget.application.nationalIdUrl != null)
-            _buildDocumentTile(
-              'National ID',
-              widget.application.nationalIdUrl!,
-            ),
-          if (widget.application.passportUrl != null)
-            _buildDocumentTile('Passport', widget.application.passportUrl!),
-          if (widget.application.proofOfResidentUrl != null)
-            _buildDocumentTile(
-              'Proof of Residence',
-              widget.application.proofOfResidentUrl!,
-            ),
-          if (widget.application.proofOfEmploymentUrl != null)
-            _buildDocumentTile(
-              'Proof of Employment',
-              widget.application.proofOfEmploymentUrl!,
-            ),
-        ],
-      ),
-    );
-  }
-
-  // Tile for a single document URL – now tappable to show image
-  Widget _buildDocumentTile(String title, String url) {
-    return GestureDetector(
-      onTap: () {
-        if (_isImageUrl(url)) {
-          _showImageModal(url);
-        } else {
-          // Optionally handle non-image files (e.g., open URL)
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: RealTimeColors.grey400,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderColor, width: 1),
-        ),
-        child: Row(
-          children: [
-            if (_isImageUrl(url))
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  url,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 50,
-                    height: 50,
-                    color: RealTimeColors.grey300,
-                    child: Icon(
-                      Icons.broken_image,
-                      color: AppColors.subtextColor,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.insert_drive_file_outlined,
-                  color: AppColors.primaryColor,
-                  size: 30,
-                ),
-              ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      color: AppColors.textColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    url.split('/').last,
-                    style: GoogleFonts.poppins(
-                      color: AppColors.subtextColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: AppColors.subtextColor,
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Updated: Attachments section with Add button and tappable tiles
-  Widget _buildAttachmentsSection() {
-    return Obx(() {
-      if (attachmentController.isLoading.value) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderColor, width: 1),
-          ),
-          child: const Center(child: CircularProgressIndicator()),
-        );
-      }
-
-      // Even if empty, show a placeholder with add button
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.borderColor, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.attach_file_rounded,
-                    color: AppColors.primaryColor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Attachments',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textColor,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const Spacer(),
-                // Add Attachment Button
-                GestureDetector(
-                  onTap: _showAssetUploadModal,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.add,
-                          size: 16,
-                          color: AppColors.primaryColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Add',
-                          style: GoogleFonts.poppins(
-                            color: AppColors.primaryColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (attachmentController.attachments.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Text(
-                    'No attachments yet. Tap "Add" to upload.',
-                    style: GoogleFonts.poppins(
-                      color: AppColors.subtextColor,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              )
-            else
-              ...attachmentController.attachments.map((attachment) {
-                return _buildAttachmentTile(attachment);
-              }),
-          ],
-        ),
-      );
-    });
-  }
-
-  // Tile for a single attachment – now tappable to show image
-  Widget _buildAttachmentTile(AttachmentModel attachment) {
-    final isImage = _isImageUrl(attachment.url);
-    return GestureDetector(
-      onTap: () {
-        if (isImage && attachment.url != null) {
-          _showImageModal(attachment.url!);
-        } else {
-          // Optionally handle non-image files (e.g., open URL)
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: RealTimeColors.grey400,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderColor, width: 1),
-        ),
-        child: Row(
-          children: [
-            if (isImage)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  attachment.url!,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 50,
-                    height: 50,
-                    color: RealTimeColors.grey300,
-                    child: Icon(
-                      Icons.broken_image,
-                      color: AppColors.subtextColor,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.insert_drive_file_outlined,
-                  color: AppColors.primaryColor,
-                  size: 30,
-                ),
-              ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    attachment.filename ?? 'Unknown',
-                    style: GoogleFonts.poppins(
-                      color: AppColors.textColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    attachment.category ?? 'Uncategorized',
-                    style: GoogleFonts.poppins(
-                      color: AppColors.subtextColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: AppColors.subtextColor,
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Remaining existing helper widgets (unchanged, except for minor naming)
-  Widget _buildSliverAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: AppColors.primaryColor,
-      leading: IconButton(
-        icon: const Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20,
-          color: Colors.white,
-        ),
-        onPressed: () => Navigator.pop(context),
-      ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.3, end: 0),
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          'Application Details',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            letterSpacing: -0.3,
-          ),
-        ).animate().fadeIn(delay: 200.ms),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primaryColor,
-                AppColors.primaryColor.withOpacity(0.8),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusHeaderCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _getStatusBackgroundColor(widget.application.status),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              _getStatusIcon(widget.application.status),
-              color: _getStatusColor(widget.application.status),
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Application Status',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.subtextColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatStatus(widget.application.status),
-                  style: GoogleFonts.poppins(
-                    color: _getStatusColor(widget.application.status),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate().shimmer(
-      delay: 800.ms,
-      duration: 1500.ms,
-      color: Colors.white.withOpacity(0.3),
-    );
-  }
-
-  Widget _buildAmountCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryColor,
-            AppColors.primaryColor.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.account_balance_wallet_outlined,
-                color: Colors.white.withOpacity(0.9),
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Requested Loan Amount',
-                style: GoogleFonts.poppins(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _formatCurrency(widget.application.requestedLoanAmount),
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1.5,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Application #${widget.application.applicationNo ?? 'N/A'}',
-            style: GoogleFonts.poppins(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    ).animate().shimmer(
-      delay: 1000.ms,
-      duration: 1800.ms,
-      color: Colors.white.withOpacity(0.2),
-    );
-  }
-
-  Widget _buildSection({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: AppColors.primaryColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textColor,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(
-    String label,
-    String value,
-    IconData icon, {
-    int maxLines = 1,
-    Color? valueColor,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: RealTimeColors.grey100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: AppColors.subtextColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    color: AppColors.subtextColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: GoogleFonts.poppins(
-                    color: valueColor ?? AppColors.textColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                  ),
-                  maxLines: maxLines,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloatingEditButton() {
-    return Positioned(
-      bottom: 24,
-      right: 24,
-      child: ScaleTransition(
-        scale: _fabController,
-        child:
-            FloatingActionButton.extended(
-                  onPressed: () {
-                    Get.toNamed(
-                      RoutesHelper.updateLoanApplication,
-                      arguments: widget.application,
-                    );
-                  },
-                  backgroundColor: AppColors.primaryColor,
-                  elevation: 8,
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  label: Text(
-                    'Edit Details',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                )
-                .animate(onPlay: (controller) => controller.repeat())
-                .shimmer(
-                  delay: 2000.ms,
-                  duration: 1500.ms,
-                  color: Colors.white.withOpacity(0.3),
-                ),
       ),
     );
   }

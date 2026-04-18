@@ -5,6 +5,7 @@ import 'package:real_time_pawn/core/utils/logs.dart';
 import '../../../config/api_config/api_keys.dart';
 import '../../../core/utils/api_response.dart';
 import '../../../core/utils/shared_pref_methods.dart';
+import '../../../models/register_body_model.dart';
 
 class AuthServices {
   /// LOGIN
@@ -88,16 +89,7 @@ class AuthServices {
 
   /// REGISTER
   static Future<APIResponse<String>> register({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String password,
-    String? phone,
-    String? nationalIdNumber,
-    String? dateOfBirth,
-    String? address,
-    String? location,
-    bool acceptTerms = true,
+    required RegisterBodyModel registerBody,
   }) async {
     var headers = {'Content-Type': 'application/json'};
 
@@ -106,43 +98,8 @@ class AuthServices {
       Uri.parse('${ApiKeys.baseUrl}/users/register'),
     );
 
-    Map<String, dynamic> payload = {
-      "first_name": firstName,
-      "last_name": lastName,
-      "full_name": "$firstName $lastName",
-      "email": email,
-      "password": password,
-      "status": "pending",
-      "email_verified": false,
-      "terms_accepted_at": acceptTerms
-          ? DateTime.now().toUtc().toIso8601String()
-          : null,
-      "roles": ["customer"],
-      "auth_providers": [
-        {
-          "provider": "email",
-          "provider_user_id": email,
-          "added_at": DateTime.now().toUtc().toIso8601String(),
-        },
-      ],
-    };
-
-    if (phone != null && phone.isNotEmpty) {
-      payload["phone"] = phone;
-    }
-    if (nationalIdNumber != null && nationalIdNumber.isNotEmpty) {
-      payload["national_id_number"] = nationalIdNumber;
-    }
-    if (dateOfBirth != null && dateOfBirth.isNotEmpty) {
-      payload["date_of_birth"] = dateOfBirth;
-    }
-    if (address != null && address.isNotEmpty) {
-      payload["address"] = address;
-    }
-    if (location != null && location.isNotEmpty) {
-      payload["location"] = location;
-    }
-
+    // Convert to map and remove null values
+    Map<String, dynamic> payload = registerBody.toMap();
     payload.removeWhere((key, value) => value == null);
 
     DevLogs.logInfo('Registration payload: ${json.encode(payload)}');
@@ -166,7 +123,17 @@ class AuthServices {
         return APIResponse(
           success: true,
           message: message,
-          data: email, // or null if you prefer
+          data: registerBody.email,
+        );
+      } else if (response.statusCode == 401) {
+        final message = responseData['message'] ?? 'Registration successful';
+
+        DevLogs.logSuccess(message);
+
+        return APIResponse(
+          success: true,
+          message: message,
+          data: registerBody.email,
         );
       } else {
         final errorMessage = responseData['message'] ?? 'Registration failed';

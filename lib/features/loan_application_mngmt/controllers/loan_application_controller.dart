@@ -15,30 +15,16 @@ import '../screens/Loan application upload screen.dart'
     show LoanApplicationUploadScreen;
 
 class LoanApplicationControllerTwo extends GetxController {
-  // Personal Information Controllers
-  final fullNameController = TextEditingController();
-  final nationalIdController = TextEditingController();
-  final dateOfBirthController = TextEditingController();
-  final phoneController = TextEditingController();
-  final altPhoneController = TextEditingController();
-  final emailController = TextEditingController();
-  final addressController = TextEditingController();
-  final jobTitleController = TextEditingController();
-  final workLocationController = TextEditingController();
-  final employerContactController = TextEditingController();
-
   // Loan Information Controllers
   final loanAmountController = TextEditingController();
   final collateralDescController = TextEditingController();
   final suretyDescController = TextEditingController();
   final assetValueController = TextEditingController();
 
-  // Next of Kin Controllers
-  final nextOfKinNameController = TextEditingController();
-  final nextOfKinRelationshipController = TextEditingController();
-  final nextOfKinPhoneController = TextEditingController();
-  final nextOfKinEmailController = TextEditingController();
-  final nextOfKinAddressController = TextEditingController();
+  // Electronics (Small Loans) Details Controllers
+  final electronicTypeController = TextEditingController();
+  final electronicModelController = TextEditingController();
+  final electronicSerialController = TextEditingController();
 
   // Motor Vehicle Details Controllers
   final vehicleMakeController = TextEditingController();
@@ -49,11 +35,6 @@ class LoanApplicationControllerTwo extends GetxController {
   final vehicleChassisController = TextEditingController();
   final vehicleYearController = TextEditingController();
 
-  // Electronics (Small Loans) Details Controllers
-  final electronicTypeController = TextEditingController();
-  final electronicModelController = TextEditingController();
-  final electronicSerialController = TextEditingController();
-
   // Jewellery Details Controllers
   final jewelTypeController = TextEditingController();
   final jewelDescController = TextEditingController();
@@ -61,77 +42,70 @@ class LoanApplicationControllerTwo extends GetxController {
   final jewelPurityController = TextEditingController();
   final jewelEstimatedValueController = TextEditingController();
 
+  // Collateral Images (multiple)
+  final collateralImages = <XFile>[].obs;
+  final collateralImageUrls = <String>[].obs;
+  final isUploadingCollateralImages = false.obs;
+
   // Reactive selected values
-  final selectedGender = RxnString();
-  final selectedMaritalStatus = RxnString();
-  final selectedEmploymentType = RxnString();
-  final selectedEmploymentDuration = RxnString();
   final selectedLoanCategory = RxnString();
   final selectedLoanCategoryType = RxnString(); // for API
+  final selectedRepaymentType = RxString(
+    'once_off',
+  ); // 'once_off' or 'installment'
+  final selectedInstallmentFrequency = RxString(
+    'monthly',
+  ); // weekly, biweekly, monthly, quarterly
+  final installmentCount = 1.obs;
   final isDeclarationChecked = false.obs;
-
-  // Document files and URLs (reactive)
-  final nationalIdFile = Rx<XFile?>(null);
-  final nationalIdUrl = RxnString();
-  final isUploadingNationalId = false.obs;
-
-  final passportFile = Rx<XFile?>(null);
-  final passportUrl = RxnString();
-  final isUploadingPassport = false.obs;
-
-  final proofOfResidentFile = Rx<XFile?>(null);
-  final proofOfResidentUrl = RxnString();
-  final isUploadingProofOfResident = false.obs;
-
-  final proofOfEmploymentFile = Rx<XFile?>(null);
-  final proofOfEmploymentUrl = RxnString();
-  final isUploadingProofOfEmployment = false.obs;
 
   // UI state
   final isSubmitting = false.obs;
   final userData = Rx<Map<String, dynamic>?>(null);
-  final showAutoFillBanner = false.obs;
+  final showProfileInfo = false.obs;
 
   // Form validity (updated via listeners)
   final isFormValid = false.obs;
 
-  // Category options
-  final genderOptions = ['Male', 'Female', 'Other'];
-  final maritalStatusOptions = ['Single', 'Married', 'Divorced', 'Widowed'];
-  final employmentTypeOptions = [
-    'Full-time',
-    'Part-time',
-    'Self-employed',
-    'Unemployed',
+  // Repayment options
+  final repaymentTypeOptions = [
+    {
+      'title': 'Once Off',
+      'value': 'once_off',
+      'icon': Icons.check_circle_outline,
+    },
+    {
+      'title': 'Installment',
+      'value': 'installment',
+      'icon': Icons.calendar_month_outlined,
+    },
   ];
-  final employmentDurationOptions = [
-    '< 1 year',
-    '1-3 years',
-    '3-5 years',
-    '5+ years',
+
+  final installmentFrequencyOptions = [
+    {'title': 'Weekly', 'value': 'weekly'},
+    {'title': 'Bi-Weekly', 'value': 'biweekly'},
+    {'title': 'Monthly', 'value': 'monthly'},
+    {'title': 'Quarterly', 'value': 'quarterly'},
   ];
 
   final loanCategories = [
-    {
-      'title': 'Motor Vehicle',
-      'type': 'motor_vehicle',
-      'icon': Icons.directions_car,
-      'color': RealTimeColors.primaryGreen,
-      'description': 'Use your vehicle as collateral',
-    },
     {
       'title': 'Electronics',
       'type': 'small_loans',
       'icon': Icons.devices,
       'color': RealTimeColors.primaryGreen,
-      'description': 'Phones, laptops, gadgets',
+    },
+    {
+      'title': 'Motor Vehicle',
+      'type': 'motor_vehicle',
+      'icon': Icons.directions_car,
+      'color': RealTimeColors.primaryGreen,
     },
     {
       'title': 'Jewelry',
       'type': 'jewellery',
       'icon': Icons.diamond,
       'color': RealTimeColors.primaryGreen,
-      'description': 'Gold, watches, precious items',
     },
   ];
 
@@ -139,62 +113,81 @@ class LoanApplicationControllerTwo extends GetxController {
   void onInit() {
     super.onInit();
     _setupListeners();
-    _autoFillUserData(); // from profile
-    _autoFillFromLastApplication(); // from last saved application
+    _loadUserProfileInfo();
   }
 
   void _setupListeners() {
-    // Listen to all relevant controllers and Rx variables to update form validity
-    final textControllers = [
-      fullNameController,
-      nationalIdController,
-      dateOfBirthController,
-      phoneController,
-      emailController,
-      addressController,
-      jobTitleController,
-      workLocationController,
+    // Base controllers
+    final baseControllers = [
       loanAmountController,
       collateralDescController,
       assetValueController,
-      // category-specific controllers will be conditionally checked in _checkFormValidity
     ];
 
-    for (var controller in textControllers) {
+    for (var controller in baseControllers) {
+      controller.addListener(_checkFormValidity);
+    }
+
+    // Motor Vehicle controllers
+    final vehicleControllers = [
+      vehicleMakeController,
+      vehicleModelController,
+      vehicleRegController,
+      vehicleCcSerialController,
+      vehicleEngineController,
+      vehicleChassisController,
+      vehicleYearController,
+    ];
+
+    for (var controller in vehicleControllers) {
+      controller.addListener(_checkFormValidity);
+    }
+
+    // Electronics controllers
+    final electronicControllers = [
+      electronicTypeController,
+      electronicModelController,
+      electronicSerialController,
+    ];
+
+    for (var controller in electronicControllers) {
+      controller.addListener(_checkFormValidity);
+    }
+
+    // Jewellery controllers
+    final jewelleryControllers = [
+      jewelTypeController,
+      jewelDescController,
+      jewelWeightController,
+      jewelPurityController,
+      jewelEstimatedValueController,
+    ];
+
+    for (var controller in jewelleryControllers) {
       controller.addListener(_checkFormValidity);
     }
 
     // Listen to selected values
-    ever(selectedGender, (_) => _checkFormValidity());
-    ever(selectedMaritalStatus, (_) => _checkFormValidity());
-    ever(selectedEmploymentType, (_) => _checkFormValidity());
-    ever(selectedEmploymentDuration, (_) => _checkFormValidity());
     ever(selectedLoanCategoryType, (_) {
       _clearCategoryFields();
       _checkFormValidity();
     });
+    ever(selectedRepaymentType, (_) => _checkFormValidity());
+    ever(selectedInstallmentFrequency, (_) => _checkFormValidity());
+    ever(installmentCount, (_) => _checkFormValidity());
     ever(isDeclarationChecked, (_) => _checkFormValidity());
+    ever(collateralImages, (_) => _checkFormValidity());
   }
 
   void _checkFormValidity() {
     // Base required fields
     bool baseValid =
-        fullNameController.text.isNotEmpty &&
-        nationalIdController.text.isNotEmpty &&
-        selectedGender.value != null &&
-        dateOfBirthController.text.isNotEmpty &&
-        selectedMaritalStatus.value != null &&
-        phoneController.text.isNotEmpty &&
-        emailController.text.isNotEmpty &&
-        addressController.text.isNotEmpty &&
-        selectedEmploymentType.value != null &&
-        jobTitleController.text.isNotEmpty &&
-        selectedEmploymentDuration.value != null &&
-        workLocationController.text.isNotEmpty &&
         loanAmountController.text.isNotEmpty &&
+        double.tryParse(loanAmountController.text) != null &&
         selectedLoanCategory.value != null &&
         collateralDescController.text.isNotEmpty &&
         assetValueController.text.isNotEmpty &&
+        double.tryParse(assetValueController.text) != null &&
         isDeclarationChecked.value;
 
     if (!baseValid) {
@@ -202,31 +195,66 @@ class LoanApplicationControllerTwo extends GetxController {
       return;
     }
 
+    // Validate loan amount is positive
+    double loanAmount = double.tryParse(loanAmountController.text) ?? 0;
+    double assetValue = double.tryParse(assetValueController.text) ?? 0;
+    if (loanAmount <= 0 || assetValue <= 0) {
+      isFormValid.value = false;
+      return;
+    }
+
+    // Repayment type specific validation
+    if (selectedRepaymentType.value == 'installment') {
+      if (installmentCount.value < 1 || installmentCount.value > 48) {
+        isFormValid.value = false;
+        return;
+      }
+    }
+
     // Category-specific required fields
-    if (selectedLoanCategoryType.value == 'motor_vehicle') {
-      isFormValid.value =
+    final categoryType = selectedLoanCategoryType.value;
+    
+    if (categoryType == null) {
+      isFormValid.value = false;
+      return;
+    }
+
+    if (categoryType == 'motor_vehicle') {
+      final isValid = 
           vehicleMakeController.text.isNotEmpty &&
           vehicleModelController.text.isNotEmpty &&
           vehicleRegController.text.isNotEmpty &&
           vehicleCcSerialController.text.isNotEmpty &&
           vehicleEngineController.text.isNotEmpty &&
           vehicleChassisController.text.isNotEmpty &&
-          vehicleYearController.text.isNotEmpty;
-    } else if (selectedLoanCategoryType.value == 'small_loans') {
-      isFormValid.value =
+          vehicleYearController.text.isNotEmpty &&
+          int.tryParse(vehicleYearController.text) != null;
+      
+      isFormValid.value = isValid;
+    } else if (categoryType == 'small_loans') {
+      final isValid =
           electronicTypeController.text.isNotEmpty &&
           electronicModelController.text.isNotEmpty &&
           electronicSerialController.text.isNotEmpty;
-    } else if (selectedLoanCategoryType.value == 'jewellery') {
-      isFormValid.value =
+      
+      isFormValid.value = isValid;
+    } else if (categoryType == 'jewellery') {
+      final isValid = 
           jewelTypeController.text.isNotEmpty &&
           jewelDescController.text.isNotEmpty &&
           jewelWeightController.text.isNotEmpty &&
+          double.tryParse(jewelWeightController.text) != null &&
           jewelPurityController.text.isNotEmpty &&
-          jewelEstimatedValueController.text.isNotEmpty;
+          jewelEstimatedValueController.text.isNotEmpty &&
+          double.tryParse(jewelEstimatedValueController.text) != null;
+      
+      isFormValid.value = isValid;
     } else {
-      isFormValid.value = true; // fallback (should not happen)
+      isFormValid.value = false;
     }
+    
+    // Debug logging to help troubleshoot
+    DevLogs.logInfo('Form validity check - Category: $categoryType, IsValid: ${isFormValid.value}');
   }
 
   void _clearCategoryFields() {
@@ -249,156 +277,20 @@ class LoanApplicationControllerTwo extends GetxController {
     jewelEstimatedValueController.clear();
   }
 
-  Future<void> _autoFillUserData() async {
+  Future<void> _loadUserProfileInfo() async {
     final data = await ProfileMngmtHelper.getUserDataForLoanApplication();
     if (data != null) {
       userData.value = data;
-      fullNameController.text = data['fullName'] ?? '';
-      emailController.text = data['email'] ?? '';
-      phoneController.text = data['phone'] ?? '';
-      dateOfBirthController.text = data['dateOfBirth'] ?? '';
-      nationalIdController.text = data['nationalIdNumber'] ?? '';
-      addressController.text = data['address'] ?? '';
-      if (data['location'] != null && data['location']!.isNotEmpty) {
-        workLocationController.text = data['location']!;
-      }
-      showAutoFillBanner.value = true;
-      _showAutoFillFeedback(data);
+      showProfileInfo.value = true;
     }
   }
 
-  /// Retrieve and populate from last saved application
-  Future<void> _autoFillFromLastApplication() async {
-    final userId = await CacheUtils.getUserId();
-    if (userId == null) return;
-    final lastApp = await CacheUtils.getLastLoanApplication(userId);
-    if (lastApp != null) {
-      _populateFromLastApplication(lastApp);
-    }
-  }
+  Future<List<String>> _uploadCollateralImages() async {
+    if (collateralImages.isEmpty) return [];
 
-  /// Fill all controllers and reactive variables from stored payload
-  void _populateFromLastApplication(Map<String, dynamic> data) {
-    // Personal info
-    fullNameController.text = data['full_name'] ?? '';
-    nationalIdController.text = data['national_id_number'] ?? '';
-    selectedGender.value = data['gender'];
-    // Date of birth: parse ISO string to dd/MM/yyyy
-    if (data['date_of_birth'] != null) {
-      try {
-        final date = DateTime.parse(data['date_of_birth']);
-        dateOfBirthController.text =
-            "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-      } catch (_) {}
-    }
-    selectedMaritalStatus.value = data['marital_status'];
-    phoneController.text = data['contact_details'] ?? '';
-    altPhoneController.text = data['alternative_number'] ?? '';
-    emailController.text = data['email_address'] ?? '';
-    addressController.text = data['home_address'] ?? '';
+    isUploadingCollateralImages.value = true;
+    List<String> uploadedUrls = [];
 
-    // Employment
-    if (data['employment'] != null) {
-      final emp = data['employment'] as Map<String, dynamic>;
-      selectedEmploymentType.value = emp['employment_type'];
-      jobTitleController.text = emp['title'] ?? '';
-      selectedEmploymentDuration.value = emp['duration'];
-      workLocationController.text = emp['location'] ?? '';
-      employerContactController.text = emp['contacts'] ?? '';
-    }
-
-    // Loan details
-    loanAmountController.text = data['requested_loan_amount']?.toString() ?? '';
-    final categoryType = data['collateral_category'];
-    if (categoryType != null) {
-      // Find title from type
-      final matched = loanCategories.firstWhereOrNull(
-        (cat) => cat['type'] == categoryType,
-      );
-      if (matched != null) {
-        selectedLoanCategory.value = matched['title'] as String?;
-        selectedLoanCategoryType.value = categoryType;
-      }
-    }
-    collateralDescController.text = data['collateral_description'] ?? '';
-    suretyDescController.text = data['surety_description'] ?? '';
-    assetValueController.text = data['declared_asset_value']?.toString() ?? '';
-
-    // Documents URLs (files are not restored, only URLs)
-    nationalIdUrl.value = data['national_id_url'];
-    passportUrl.value = data['passport_url'];
-    proofOfResidentUrl.value = data['proof_of_resident_url'];
-    proofOfEmploymentUrl.value = data['proof_of_employment_url'];
-
-    // Next of kin
-    if (data['next_of_kin'] != null) {
-      final nok = data['next_of_kin'] as Map<String, dynamic>;
-      nextOfKinNameController.text = nok['full_name'] ?? '';
-      nextOfKinRelationshipController.text = nok['relationship'] ?? '';
-      nextOfKinPhoneController.text = nok['phone_number'] ?? '';
-      nextOfKinEmailController.text = nok['email'] ?? '';
-      nextOfKinAddressController.text = nok['address'] ?? '';
-    }
-
-    // Category specific fields
-    if (categoryType == 'motor_vehicle' &&
-        data['motor_vehicle_details'] != null) {
-      final veh = data['motor_vehicle_details'] as Map<String, dynamic>;
-      vehicleMakeController.text = veh['make'] ?? '';
-      vehicleModelController.text = veh['model'] ?? '';
-      vehicleRegController.text = veh['registration_no'] ?? '';
-      vehicleCcSerialController.text = veh['cc_serial_no'] ?? '';
-      vehicleEngineController.text = veh['engine_no'] ?? '';
-      vehicleChassisController.text = veh['chassis_no'] ?? '';
-      vehicleYearController.text = veh['year']?.toString() ?? '';
-    } else if (categoryType == 'small_loans' &&
-        data['small_loan_details'] != null) {
-      final elec = data['small_loan_details'] as Map<String, dynamic>;
-      electronicTypeController.text = elec['type'] ?? '';
-      electronicModelController.text = elec['model'] ?? '';
-      electronicSerialController.text = elec['serial_no'] ?? '';
-    } else if (categoryType == 'jewellery' &&
-        data['jewellery_details'] != null) {
-      final jew = data['jewellery_details'] as Map<String, dynamic>;
-      jewelTypeController.text = jew['type'] ?? '';
-      jewelDescController.text = jew['description'] ?? '';
-      jewelWeightController.text = jew['weight']?.toString() ?? '';
-      jewelPurityController.text = jew['purity'] ?? '';
-      jewelEstimatedValueController.text =
-          jew['estimated_value']?.toString() ?? '';
-    }
-
-    // Re-check validity after filling
-    _checkFormValidity();
-  }
-
-  void _showAutoFillFeedback(Map<String, dynamic> data) {
-    final hasBasicInfo = data['hasBasicInfo'] ?? false;
-    final missingFields = data['missingFields'] as List<String>? ?? [];
-    if (!hasBasicInfo) {
-      Get.snackbar(
-        'Auto-fill incomplete',
-        'Complete your profile to enable auto-fill',
-        backgroundColor: AppColors.warningColor,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        duration: 300.ms,
-      );
-      return;
-    }
-    if (hasBasicInfo && missingFields.isNotEmpty) {
-      Get.snackbar(
-        'Basic info auto-filled',
-        'Add ${missingFields.length} more field(s) to complete profile',
-        backgroundColor: AppColors.primaryColor,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        duration: 400.ms,
-      );
-    }
-  }
-
-  Future<String?> _uploadFileToSupabase(XFile file, String documentType) async {
     try {
       final userId = await CacheUtils.getUserId();
       if (userId == null || userId.isEmpty) {
@@ -406,114 +298,70 @@ class LoanApplicationControllerTwo extends GetxController {
       }
 
       const bucket = 'topics';
-      final filePath =
-          '$userId/$documentType/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
 
-      await Supabase.instance.client.storage
-          .from('topics')
-          .upload(filePath, File(file.path));
+      for (int i = 0; i < collateralImages.length; i++) {
+        final file = collateralImages[i];
+        final filePath =
+            '$userId/loan_collateral/${DateTime.now().millisecondsSinceEpoch}_${i}_${file.name}';
 
-      final publicUrl = Supabase.instance.client.storage
-          .from(bucket)
-          .getPublicUrl(filePath);
-      return publicUrl;
+        await Supabase.instance.client.storage
+            .from(bucket)
+            .upload(filePath, File(file.path));
+
+        final publicUrl = Supabase.instance.client.storage
+            .from(bucket)
+            .getPublicUrl(filePath);
+
+        uploadedUrls.add(publicUrl);
+      }
+
+      collateralImageUrls.assignAll(uploadedUrls);
+      return uploadedUrls;
     } catch (e) {
-      DevLogs.logError('Upload failed for $documentType: $e');
+      DevLogs.logError('Failed to upload collateral images: $e');
       Get.snackbar(
-        'Upload failed',
-        'Failed to upload $documentType: ${e.toString()}',
+        'Upload Failed',
+        'Failed to upload collateral images: ${e.toString()}',
         backgroundColor: AppColors.errorColor,
         colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
-      return null;
+      return [];
+    } finally {
+      isUploadingCollateralImages.value = false;
     }
   }
 
-  Future<void> pickAndUploadDocument(String type) async {
+  Future<void> pickCollateralImages() async {
     final picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
+    final List<XFile>? pickedFiles = await picker.pickMultiImage(
       maxWidth: 1800,
       maxHeight: 1800,
       imageQuality: 85,
     );
 
-    if (pickedFile == null) return;
-
-    switch (type) {
-      case 'national_id':
-        isUploadingNationalId.value = true;
-        nationalIdFile.value = pickedFile;
-        break;
-      case 'passport':
-        isUploadingPassport.value = true;
-        passportFile.value = pickedFile;
-        break;
-      case 'proof_of_resident':
-        isUploadingProofOfResident.value = true;
-        proofOfResidentFile.value = pickedFile;
-        break;
-      case 'proof_of_employment':
-        isUploadingProofOfEmployment.value = true;
-        proofOfEmploymentFile.value = pickedFile;
-        break;
-    }
-
-    final url = await _uploadFileToSupabase(pickedFile, type);
-
-    switch (type) {
-      case 'national_id':
-        isUploadingNationalId.value = false;
-        if (url != null) nationalIdUrl.value = url;
-        break;
-      case 'passport':
-        isUploadingPassport.value = false;
-        if (url != null) passportUrl.value = url;
-        break;
-      case 'proof_of_resident':
-        isUploadingProofOfResident.value = false;
-        if (url != null) proofOfResidentUrl.value = url;
-        break;
-      case 'proof_of_employment':
-        isUploadingProofOfEmployment.value = false;
-        if (url != null) proofOfEmploymentUrl.value = url;
-        break;
-    }
-
-    if (url != null) {
-      Get.snackbar(
-        'Success',
-        '$type uploaded successfully',
-        backgroundColor: AppColors.successColor,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        duration: 200.ms,
-      );
+    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+      if (collateralImages.length + pickedFiles.length > 6) {
+        Get.snackbar(
+          'Limit Reached',
+          'Maximum 6 images allowed',
+          backgroundColor: AppColors.warningColor,
+          colorText: Colors.white,
+        );
+        return;
+      }
+      collateralImages.addAll(pickedFiles);
     }
   }
 
+  void removeCollateralImage(int index) {
+    collateralImages.removeAt(index);
+  }
+
   /// Validates the entire form and shows a snackbar with missing fields if invalid.
-  /// Returns true if valid.
   bool validateForm({bool showSnackbar = true}) {
     List<String> missingFields = [];
 
     // Base fields
-    if (fullNameController.text.isEmpty) missingFields.add('Full Name');
-    if (nationalIdController.text.isEmpty) missingFields.add('National ID');
-    if (selectedGender.value == null) missingFields.add('Gender');
-    if (dateOfBirthController.text.isEmpty) missingFields.add('Date of Birth');
-    if (selectedMaritalStatus.value == null)
-      missingFields.add('Marital Status');
-    if (phoneController.text.isEmpty) missingFields.add('Phone Number');
-    if (emailController.text.isEmpty) missingFields.add('Email');
-    if (addressController.text.isEmpty) missingFields.add('Address');
-    if (selectedEmploymentType.value == null)
-      missingFields.add('Employment Type');
-    if (jobTitleController.text.isEmpty) missingFields.add('Job Title');
-    if (selectedEmploymentDuration.value == null)
-      missingFields.add('Employment Duration');
-    if (workLocationController.text.isEmpty) missingFields.add('Work Location');
     if (loanAmountController.text.isEmpty) missingFields.add('Loan Amount');
     if (selectedLoanCategory.value == null) missingFields.add('Loan Category');
     if (collateralDescController.text.isEmpty)
@@ -521,6 +369,24 @@ class LoanApplicationControllerTwo extends GetxController {
     if (assetValueController.text.isEmpty)
       missingFields.add('Declared Asset Value');
     if (!isDeclarationChecked.value) missingFields.add('Declaration Checkbox');
+
+    // Validate numeric values
+    double? loanAmount = double.tryParse(loanAmountController.text);
+    double? assetValue = double.tryParse(assetValueController.text);
+    if (loanAmount == null) missingFields.add('Valid Loan Amount');
+    if (assetValue == null) missingFields.add('Valid Asset Value');
+    if (loanAmount != null && loanAmount <= 0)
+      missingFields.add('Loan Amount > 0');
+    if (assetValue != null && assetValue <= 0)
+      missingFields.add('Asset Value > 0');
+
+    // Repayment validation
+    if (selectedRepaymentType.value == 'installment') {
+      if (installmentCount.value < 1)
+        missingFields.add('Installment Count (min 1)');
+      if (installmentCount.value > 48)
+        missingFields.add('Installment Count (max 48)');
+    }
 
     // Category-specific fields
     if (selectedLoanCategoryType.value == 'motor_vehicle') {
@@ -536,6 +402,8 @@ class LoanApplicationControllerTwo extends GetxController {
       if (vehicleChassisController.text.isEmpty)
         missingFields.add('Chassis Number');
       if (vehicleYearController.text.isEmpty) missingFields.add('Vehicle Year');
+      if (int.tryParse(vehicleYearController.text) == null)
+        missingFields.add('Valid Vehicle Year');
     } else if (selectedLoanCategoryType.value == 'small_loans') {
       if (electronicTypeController.text.isEmpty)
         missingFields.add('Electronic Type');
@@ -548,9 +416,13 @@ class LoanApplicationControllerTwo extends GetxController {
       if (jewelDescController.text.isEmpty)
         missingFields.add('Jewellery Description');
       if (jewelWeightController.text.isEmpty) missingFields.add('Weight');
+      if (double.tryParse(jewelWeightController.text) == null)
+        missingFields.add('Valid Weight Number');
       if (jewelPurityController.text.isEmpty) missingFields.add('Purity');
       if (jewelEstimatedValueController.text.isEmpty)
         missingFields.add('Estimated Value');
+      if (double.tryParse(jewelEstimatedValueController.text) == null)
+        missingFields.add('Valid Estimated Value');
     }
 
     if (missingFields.isNotEmpty) {
@@ -575,78 +447,31 @@ class LoanApplicationControllerTwo extends GetxController {
 
     isSubmitting.value = true;
 
-    // Parse date
-    DateTime? parsedDate;
-    try {
-      final dateParts = dateOfBirthController.text.split('/');
-      if (dateParts.length == 3) {
-        parsedDate = DateTime(
-          int.parse(dateParts[2]),
-          int.parse(dateParts[1]),
-          int.parse(dateParts[0]),
-        );
-      }
-    } catch (e) {
-      // ignore
-    }
+    // Upload collateral images first
+    List<String> imageUrls = await _uploadCollateralImages();
 
-    // Build payload
+    // Build payload according to the new schema
+    double loanAmount = double.parse(loanAmountController.text);
+    double assetValue = double.parse(assetValueController.text);
+
     Map<String, dynamic> payload = {
-      "full_name": fullNameController.text,
-      "national_id_number": nationalIdController.text,
-      "gender": selectedGender.value,
-      "date_of_birth": parsedDate?.toIso8601String(),
-      "marital_status": selectedMaritalStatus.value,
-      "contact_details": phoneController.text,
-      "alternative_number": altPhoneController.text.isNotEmpty
-          ? altPhoneController.text
-          : null,
-      "email_address": emailController.text,
-      "home_address": addressController.text,
-      "employment": {
-        "employment_type": selectedEmploymentType.value,
-        "title": jobTitleController.text,
-        "duration": selectedEmploymentDuration.value,
-        "location": workLocationController.text,
-        "contacts": employerContactController.text.isNotEmpty
-            ? employerContactController.text
-            : null,
-      },
-      "requested_loan_amount": int.tryParse(loanAmountController.text),
+      "requested_loan_amount": loanAmount,
       "collateral_category": selectedLoanCategoryType.value,
       "collateral_description": collateralDescController.text,
       "surety_description": suretyDescController.text.isNotEmpty
           ? suretyDescController.text
           : null,
-      "declared_asset_value": int.tryParse(assetValueController.text),
-      "declaration_text":
-          "I declare that all information provided is true and accurate.",
+      "declared_asset_value": assetValue,
+      "collateral_images": imageUrls,
+      "repayment_type": selectedRepaymentType.value,
+      "repayment_days": _calculateRepaymentDays(),
+      "declaration_text": _getDeclarationText(),
       "declaration_signed_at": DateTime.now().toIso8601String(),
-      "declaration_signature_name": fullNameController.text,
-      "national_id_url": nationalIdUrl.value,
-      "passport_url": passportUrl.value,
-      "proof_of_resident_url": proofOfResidentUrl.value,
-      "proof_of_employment_url": proofOfEmploymentUrl.value,
+      "declaration_signature_name": userData.value?['fullName'] ?? 'Customer',
+      "custom_terms_and_conditions": _getCustomTerms(),
     };
 
-    // Next of kin
-    if (nextOfKinNameController.text.isNotEmpty ||
-        nextOfKinRelationshipController.text.isNotEmpty ||
-        nextOfKinPhoneController.text.isNotEmpty ||
-        nextOfKinEmailController.text.isNotEmpty ||
-        nextOfKinAddressController.text.isNotEmpty) {
-      payload["next_of_kin"] = {
-        "full_name": nextOfKinNameController.text,
-        "relationship": nextOfKinRelationshipController.text,
-        "phone_number": nextOfKinPhoneController.text,
-        "email": nextOfKinEmailController.text.isNotEmpty
-            ? nextOfKinEmailController.text
-            : null,
-        "address": nextOfKinAddressController.text,
-      };
-    }
-
-    // Category details
+    // Add category-specific details
     if (selectedLoanCategoryType.value == 'motor_vehicle') {
       payload["motor_vehicle_details"] = {
         "make": vehicleMakeController.text,
@@ -669,13 +494,21 @@ class LoanApplicationControllerTwo extends GetxController {
         "description": jewelDescController.text,
         "weight": double.tryParse(jewelWeightController.text),
         "purity": jewelPurityController.text,
-        "estimated_value": int.tryParse(jewelEstimatedValueController.text),
+        "estimated_value": double.tryParse(jewelEstimatedValueController.text),
       };
     }
 
-    DevLogs.logError(
-      "Selected Loan Category Type: ${selectedLoanCategoryType.value}",
-    );
+    // Add installment-specific fields if applicable
+    if (selectedRepaymentType.value == 'installment') {
+      payload["installment_count"] = installmentCount.value;
+      payload["installment_frequency"] = selectedInstallmentFrequency.value;
+
+      // Calculate approximate installment amount (simplified - actual calculation may vary)
+      double estimatedInstallmentAmount = loanAmount / installmentCount.value;
+      payload["installment_amount"] = estimatedInstallmentAmount;
+    }
+
+    DevLogs.logInfo("Submitting loan application payload: $payload");
 
     // Show loader
     Get.dialog(
@@ -704,9 +537,6 @@ class LoanApplicationControllerTwo extends GetxController {
         return;
       }
 
-      // Store this successful application as the last one for auto-fill
-      await CacheUtils.storeLastLoanApplication(currentUserId, payload);
-
       Get.to(
         () => LoanApplicationUploadScreen(
           loanId: result.loanId!,
@@ -726,28 +556,62 @@ class LoanApplicationControllerTwo extends GetxController {
     }
   }
 
+  int _calculateRepaymentDays() {
+    // Default to 30 days for once-off
+    if (selectedRepaymentType.value == 'once_off') return 30;
+
+    // For installment, calculate based on frequency and count
+    int daysPerFrequency = 30; // default monthly
+    switch (selectedInstallmentFrequency.value) {
+      case 'weekly':
+        daysPerFrequency = 7;
+        break;
+      case 'biweekly':
+        daysPerFrequency = 14;
+        break;
+      case 'monthly':
+        daysPerFrequency = 30;
+        break;
+      case 'quarterly':
+        daysPerFrequency = 90;
+        break;
+    }
+    return installmentCount.value * daysPerFrequency;
+  }
+
+  String _getDeclarationText() {
+    String itemDescription = '';
+    if (selectedLoanCategoryType.value == 'small_loans') {
+      itemDescription =
+          '${electronicTypeController.text} ${electronicModelController.text}';
+    } else if (selectedLoanCategoryType.value == 'motor_vehicle') {
+      itemDescription =
+          '${vehicleMakeController.text} ${vehicleModelController.text}';
+    } else if (selectedLoanCategoryType.value == 'jewellery') {
+      itemDescription = jewelTypeController.text;
+    }
+
+    return 'I confirm that the $itemDescription offered as collateral is fully owned by me with no outstanding loans or disputes.';
+  }
+
+  String _getCustomTerms() {
+    if (selectedRepaymentType.value == 'once_off') {
+      return 'Standard loan terms apply. Late payment penalty of 10% of outstanding amount. Full repayment due within ${_calculateRepaymentDays()} days.';
+    } else {
+      return 'Standard loan terms apply. Late payment penalty of 10% of outstanding amount. ${installmentCount.value} installments on a ${selectedInstallmentFrequency.value} basis.';
+    }
+  }
+
   @override
   void onClose() {
     // Dispose all controllers
-    fullNameController.dispose();
-    nationalIdController.dispose();
-    dateOfBirthController.dispose();
-    phoneController.dispose();
-    altPhoneController.dispose();
-    emailController.dispose();
-    addressController.dispose();
-    jobTitleController.dispose();
-    workLocationController.dispose();
-    employerContactController.dispose();
     loanAmountController.dispose();
     collateralDescController.dispose();
     suretyDescController.dispose();
     assetValueController.dispose();
-    nextOfKinNameController.dispose();
-    nextOfKinRelationshipController.dispose();
-    nextOfKinPhoneController.dispose();
-    nextOfKinEmailController.dispose();
-    nextOfKinAddressController.dispose();
+    electronicTypeController.dispose();
+    electronicModelController.dispose();
+    electronicSerialController.dispose();
     vehicleMakeController.dispose();
     vehicleModelController.dispose();
     vehicleRegController.dispose();
@@ -755,9 +619,6 @@ class LoanApplicationControllerTwo extends GetxController {
     vehicleEngineController.dispose();
     vehicleChassisController.dispose();
     vehicleYearController.dispose();
-    electronicTypeController.dispose();
-    electronicModelController.dispose();
-    electronicSerialController.dispose();
     jewelTypeController.dispose();
     jewelDescController.dispose();
     jewelWeightController.dispose();

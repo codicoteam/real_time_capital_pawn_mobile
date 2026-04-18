@@ -1264,8 +1264,7 @@ class _HomePageState extends State<HomePage> {
           currency: loan['currency'],
           interestRatePercent: (loan['interest_rate_percent'] as num?)
               ?.toDouble(),
-          interestPeriodDays: (loan['interest_period_days'] as num?)
-              ?.toDouble(),
+
           storageChargePercent: (loan['storage_charge_percent'] as num?)
               ?.toDouble(),
           penaltyPercent: (loan['penalty_percent'] as num?)?.toInt(),

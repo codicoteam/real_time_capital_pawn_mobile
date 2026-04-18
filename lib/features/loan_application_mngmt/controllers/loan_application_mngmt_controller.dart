@@ -99,45 +99,45 @@ class LoanApplicationController extends GetxController {
   // =====================
   // Update loan application
   // =====================
-  Future<APIResponse<LoanApplicationModel>> updateLoanApplication({
-    required String loanApplicationId,
-    required Map<String, dynamic> payload,
-  }) async {
-    try {
-      isLoading(true);
+  // Future<APIResponse<String>> updateLoanApplication({
+  //   required String loanApplicationId,
+  //   required Map<String, dynamic> payload,
+  // }) async {
+  //   try {
+  //     isLoading(true);
 
-      final response = await LoanApplicationService.updateLoanApplication(
-        loanApplicationId: loanApplicationId,
-        payload: payload,
-      );
+  //     final response = await LoanApplicationService.updateLoanApplication(
+  //       loanApplicationId: loanApplicationId,
+  //       payload: payload,
+  //     );
 
-      if (response.success && response.data != null) {
-        successMessage.value = response.message!;
+  //     if (response.success && response.data != null) {
+  //       successMessage.value = response.message!;
 
-        // Update item in list
-        final index = loanApplications.indexWhere(
-          (e) => e.id == loanApplicationId,
-        );
-        if (index != -1) {
-          loanApplications[index] = response.data!;
-        }
+  //       // Update item in list
+  //       final index = loanApplications.indexWhere(
+  //         (e) => e.id == loanApplicationId,
+  //       );
+  //       if (index != -1) {
+  //         loanApplications[index] = response.data!;
+  //       }
 
-        return response;
-      } else {
-        errorMessage.value = response.message!;
-        return response;
-      }
-    } catch (e) {
-      DevLogs.logError('Update loan application error: $e');
-      errorMessage.value = 'An error occurred while updating loan application';
-      return APIResponse<LoanApplicationModel>(
-        success: false,
-        message: errorMessage.value,
-      );
-    } finally {
-      isLoading(false);
-    }
-  }
+  //       return response;
+  //     } else {
+  //       errorMessage.value = response.message!;
+  //       return response;
+  //     }
+  //   } catch (e) {
+  //     DevLogs.logError('Update loan application error: $e');
+  //     errorMessage.value = 'An error occurred while updating loan application';
+  //     return APIResponse<LoanApplicationModel>(
+  //       success: false,
+  //       message: errorMessage.value,
+  //     );
+  //   } finally {
+  //     isLoading(false);
+  //   }
+  // }
 
   // =====================
   // Refresh
@@ -161,11 +161,6 @@ class LoanApplicationController extends GetxController {
         case 'applicationNo':
           return loan.applicationNo?.toLowerCase().contains(query) ?? false;
 
-        case 'fullName':
-          return loan.fullName?.toLowerCase().contains(query) ?? false;
-
-        case 'nationalId':
-          return loan.nationalIdNumber?.toLowerCase().contains(query) ?? false;
 
         case 'status':
           return loan.status?.toLowerCase().contains(query) ?? false;
@@ -173,10 +168,6 @@ class LoanApplicationController extends GetxController {
         case 'amount':
           return loan.requestedLoanAmount?.toString().contains(query) ?? false;
 
-        case 'customerName':
-          final firstName = loan.customerUser?.firstName?.toLowerCase() ?? '';
-          final lastName = loan.customerUser?.lastName?.toLowerCase() ?? '';
-          return ('$firstName $lastName').contains(query);
 
         default:
           return false;

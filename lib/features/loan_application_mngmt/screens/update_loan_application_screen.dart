@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/models/loan_application_model.dart';
 import 'package:real_time_pawn/widgets/custom_button.dart';
@@ -19,6 +22,10 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     final controller = Get.put(UpdateLoanApplicationController());
     controller.initWithModel(application);
 
+    // Check if application is editable
+    final bool isEditable = _isApplicationEditable(application.status);
+    final String? statusMessage = _getStatusMessage(application.status);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
@@ -30,7 +37,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Edit Loan Application',
+              isEditable ? 'Edit Loan Application' : 'View Application',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -39,7 +46,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'Update your information',
+              isEditable ? 'Update your loan details' : 'Application details',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: AppColors.subtextColor,
@@ -52,7 +59,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Progress indicator (optional, we can reuse or remove)
+          // Progress indicator
           Container(
             height: 4,
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -60,22 +67,49 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               color: RealTimeColors.grey200,
               borderRadius: BorderRadius.circular(2),
             ),
-            child: Stack(
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Container(
-                      width: constraints.maxWidth * 1.0, // full width for edit
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    );
-                  },
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Container(
+                  width: constraints.maxWidth,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                );
+              },
             ),
           ),
+
+          // Status Banner (if not editable)
+          if (!isEditable)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _getStatusBannerColor(application.status),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _getStatusBannerIcon(application.status),
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      statusMessage ?? 'This application cannot be edited',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           Expanded(
             child: SingleChildScrollView(
@@ -84,421 +118,53 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Personal Information Card
-                  _buildSectionCard(
-                        title: 'Personal Information',
-                        icon: Icons.person_outline,
-                        children: [
-                          CustomTextField(
-                            controller: controller.fullNameController,
-                            labelText: 'Full Name',
-                            prefixIcon: const Icon(
-                              Icons.person_outline,
-                              size: 20,
-                            ),
-                          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.nationalIdController,
-                            labelText: 'National ID Number',
-                            prefixIcon: const Icon(
-                              Icons.credit_card_outlined,
-                              size: 20,
-                            ),
-                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          _buildSelectionRow(
-                            label: 'Gender',
-                            options: controller.genderOptions,
-                            selectedValue: controller.selectedGender,
-                            onSelected: (value) =>
-                                controller.selectedGender.value = value,
-                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          _buildDatePickerField(
-                            controller: controller.dateOfBirthController,
-                            label: 'Date of Birth',
-                            icon: Icons.calendar_today_outlined,
-                          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          _buildSelectionRow(
-                            label: 'Marital Status',
-                            options: controller.maritalStatusOptions,
-                            selectedValue: controller.selectedMaritalStatus,
-                            onSelected: (value) =>
-                                controller.selectedMaritalStatus.value = value,
-                          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.phoneController,
-                            labelText: 'Phone Number',
-                            prefixIcon: const Icon(
-                              Icons.phone_outlined,
-                              size: 20,
-                            ),
-                            keyboardType: TextInputType.phone,
-                          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.altPhoneController,
-                            labelText: 'Alternative Phone (Optional)',
-                            prefixIcon: const Icon(
-                              Icons.phone_outlined,
-                              size: 20,
-                            ),
-                            keyboardType: TextInputType.phone,
-                          ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.emailController,
-                            labelText: 'Email Address',
-                            prefixIcon: const Icon(
-                              Icons.email_outlined,
-                              size: 20,
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                          ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.addressController,
-                            labelText: 'Home Address',
-                            prefixIcon: const Icon(
-                              Icons.location_on_outlined,
-                              size: 20,
-                            ),
-                            maxLength: 200,
-                          ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.1),
-                        ],
-                      )
-                      .animate()
-                      .fadeIn(duration: 500.ms)
-                      .scale(begin: const Offset(0.95, 0.95)),
+                  // Application Info Card (Read-only)
+                  _buildInfoCard(application).animate().fadeIn(
+                        delay: 100.ms,
+                        duration: 500.ms,
+                      ),
 
                   const SizedBox(height: 24),
 
-                  // Employment Information Card
-                  _buildSectionCard(
-                        title: 'Employment Information',
-                        icon: Icons.work_outline,
-                        children: [
-                          _buildSelectionRow(
-                            label: 'Employment Type',
-                            options: controller.employmentTypeOptions,
-                            selectedValue: controller.selectedEmploymentType,
-                            onSelected: (value) =>
-                                controller.selectedEmploymentType.value = value,
-                          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.jobTitleController,
-                            labelText: 'Job Title',
-                            prefixIcon: const Icon(
-                              Icons.work_outline,
-                              size: 20,
-                            ),
-                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          _buildSelectionRow(
-                            label: 'Employment Duration',
-                            options: controller.employmentDurationOptions,
-                            selectedValue:
-                                controller.selectedEmploymentDuration,
-                            onSelected: (value) =>
-                                controller.selectedEmploymentDuration.value =
-                                    value,
-                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.workLocationController,
-                            labelText: 'Work Location',
-                            prefixIcon: const Icon(
-                              Icons.business_outlined,
-                              size: 20,
-                            ),
-                          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.employerContactController,
-                            labelText: 'Employer Contact (Optional)',
-                            prefixIcon: const Icon(
-                              Icons.contact_phone_outlined,
-                              size: 20,
-                            ),
-                          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
-                        ],
-                      )
+                  // Loan Details Card (Editable)
+                  _buildLoanDetailsCard(controller, isEditable)
                       .animate()
-                      .fadeIn(duration: 500.ms, delay: 300.ms)
-                      .scale(begin: const Offset(0.95, 0.95)),
+                      .fadeIn(delay: 200.ms, duration: 500.ms),
 
                   const SizedBox(height: 24),
 
-                  // Next of Kin Card
-                  _buildSectionCard(
-                        title: 'Next of Kin (Optional)',
-                        icon: Icons.family_restroom,
-                        children: [
-                          CustomTextField(
-                            controller: controller.nextOfKinNameController,
-                            labelText: 'Full Name',
-                            prefixIcon: const Icon(
-                              Icons.person_outline,
-                              size: 20,
-                            ),
-                          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller:
-                                controller.nextOfKinRelationshipController,
-                            labelText: 'Relationship',
-                            prefixIcon: const Icon(
-                              Icons.people_outline,
-                              size: 20,
-                            ),
-                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.nextOfKinPhoneController,
-                            labelText: 'Phone Number',
-                            prefixIcon: const Icon(
-                              Icons.phone_outlined,
-                              size: 20,
-                            ),
-                            keyboardType: TextInputType.phone,
-                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.nextOfKinEmailController,
-                            labelText: 'Email (Optional)',
-                            prefixIcon: const Icon(
-                              Icons.email_outlined,
-                              size: 20,
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.nextOfKinAddressController,
-                            labelText: 'Address',
-                            prefixIcon: const Icon(
-                              Icons.location_on_outlined,
-                              size: 20,
-                            ),
-                            maxLength: 200,
-                          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
-                        ],
-                      )
-                      .animate()
-                      .fadeIn(duration: 500.ms, delay: 400.ms)
-                      .scale(begin: const Offset(0.95, 0.95)),
+                  // Collateral Details Card (Editable)
+                  Obx(() {
+                    if (controller.selectedLoanCategoryType.value != null) {
+                      return _buildCollateralDetailsCard(controller, isEditable)
+                          .animate()
+                          .fadeIn(delay: 300.ms, duration: 500.ms);
+                    }
+                    return const SizedBox.shrink();
+                  }),
 
                   const SizedBox(height: 24),
 
-                  // Loan Details Card
-                  _buildSectionCard(
-                        title: 'Loan Details',
-                        icon: Icons.monetization_on_outlined,
-                        children: [
-                          CustomTextField(
-                            controller: controller.loanAmountController,
-                            labelText: 'Loan Amount',
-                            prefixIcon: const Icon(
-                              Icons.attach_money_outlined,
-                              size: 20,
-                            ),
-                            keyboardType: TextInputType.number,
-                          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          Text(
-                            'Select Loan Category',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 0.8,
-                                ),
-                            itemCount: controller.loanCategories.length,
-                            itemBuilder: (context, index) {
-                              final category = controller.loanCategories[index];
-                              return Obx(
-                                () => _buildCategoryCard(
-                                  title: category['title'] as String,
-                                  icon: category['icon'] as IconData,
-                                  color: category['color'] as Color,
-                                  description:
-                                      category['description'] as String,
-                                  isSelected:
-                                      controller.selectedLoanCategory.value ==
-                                      category['title'],
-                                  onTap: () {
-                                    controller.selectedLoanCategory.value =
-                                        category['title'] as String?;
-                                    controller.selectedLoanCategoryType.value =
-                                        category['type'] as String?;
-                                  },
-                                ),
-                              ).animate().fadeIn(delay: (200 + index * 100).ms);
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Category-specific fields
-                          Obx(() {
-                            if (controller.selectedLoanCategoryType.value !=
-                                null) {
-                              return _buildCategorySpecificFields(controller)
-                                  .animate()
-                                  .fadeIn(duration: 300.ms)
-                                  .slideY(begin: 0.1, end: 0);
-                            }
-                            return const SizedBox.shrink();
-                          }),
-
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.collateralDescController,
-                            labelText: 'Collateral Description',
-                            prefixIcon: const Icon(
-                              Icons.description_outlined,
-                              size: 20,
-                            ),
-                            maxLength: 300,
-                          ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.suretyDescController,
-                            labelText: 'Surety Description (Optional)',
-                            prefixIcon: const Icon(
-                              Icons.security_outlined,
-                              size: 20,
-                            ),
-                            maxLength: 200,
-                          ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-
-                          CustomTextField(
-                            controller: controller.assetValueController,
-                            labelText: 'Declared Asset Value',
-                            prefixIcon: const Icon(
-                              Icons.assessment_outlined,
-                              size: 20,
-                            ),
-                            keyboardType: TextInputType.number,
-                          ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.1),
-                        ],
-                      )
+                  // Repayment Options Card (Editable)
+                  _buildRepaymentCard(controller, isEditable)
                       .animate()
-                      .fadeIn(duration: 500.ms, delay: 600.ms)
-                      .scale(begin: const Offset(0.95, 0.95)),
+                      .fadeIn(delay: 400.ms, duration: 500.ms),
 
                   const SizedBox(height: 24),
 
-                  // Declaration Card
-                  _buildSectionCard(
-                        title: 'Declaration',
-                        icon: Icons.verified_outlined,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () =>
-                                    controller.isDeclarationChecked.toggle(),
-                                child: Obx(
-                                  () => AnimatedContainer(
-                                    duration: 200.ms,
-                                    width: 20,
-                                    height: 20,
-                                    margin: const EdgeInsets.only(top: 2),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          controller.isDeclarationChecked.value
-                                          ? AppColors.primaryColor
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(
-                                        color:
-                                            controller
-                                                .isDeclarationChecked
-                                                .value
-                                            ? AppColors.primaryColor
-                                            : RealTimeColors.grey400,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: controller.isDeclarationChecked.value
-                                        ? const Icon(
-                                            Icons.check,
-                                            size: 14,
-                                            color: Colors.white,
-                                          )
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'I declare that all information provided is true and accurate.',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        color: AppColors.textColor,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'I agree to the terms and conditions and understand that false information may lead to rejection.',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: AppColors.subtextColor,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                        ],
-                      )
+                  // Collateral Images Card (Editable)
+                  _buildCollateralImagesCard(controller, isEditable)
                       .animate()
-                      .fadeIn(duration: 500.ms, delay: 900.ms)
-                      .scale(begin: const Offset(0.95, 0.95)),
+                      .fadeIn(delay: 500.ms, duration: 500.ms),
+
+                  const SizedBox(height: 24),
+
+                  // Declaration Card (Editable)
+                  if (isEditable)
+                    _buildDeclarationCard(controller).animate().fadeIn(
+                          delay: 600.ms,
+                          duration: 500.ms,
+                        ),
 
                   const SizedBox(height: 100),
                 ],
@@ -508,96 +174,137 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         ],
       ),
 
-      // Update Button
-      bottomSheet: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Obx(
-              () => CustomButton(
-                btnColor:
-                    controller.isFormValid.value &&
-                        !controller.isSubmitting.value
-                    ? AppColors.primaryColor
-                    : RealTimeColors.grey300,
-                width: double.infinity,
-                borderRadius: 12,
-                onTap: () {
-                  if (controller.isFormValid.value &&
-                      !controller.isSubmitting.value) {
-                    controller.submitUpdate();
-                  } else {
-                    // Show validation errors via missing fields
-                    final missing = controller.getMissingFields();
-                    if (missing.isNotEmpty) {
-                      Get.snackbar(
-                        'Incomplete Form',
-                        'Missing: ${missing.join(', ')}',
-                        backgroundColor: AppColors.errorColor,
-                        colorText: Colors.white,
-                        snackPosition: SnackPosition.TOP,
-                      );
-                    }
-                  }
-                },
-                child: controller.isSubmitting.value
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : Text(
-                        'Update Application',
-                        style: GoogleFonts.poppins(
-                          color:
-                              controller.isFormValid.value &&
-                                  !controller.isSubmitting.value
-                              ? Colors.white
-                              : RealTimeColors.grey600,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+      // Update Button (only if editable)
+      bottomSheet: isEditable
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Obx(
+                    () => CustomButton(
+                      btnColor: controller.isFormValid.value &&
+                              !controller.isSubmitting.value
+                          ? AppColors.primaryColor
+                          : RealTimeColors.grey300,
+                      width: double.infinity,
+                      borderRadius: 12,
+                      onTap: () {
+                        if (controller.isFormValid.value &&
+                            !controller.isSubmitting.value) {
+                          controller.submitUpdate();
+                        } else {
+                          final missing = controller.getMissingFields();
+                          if (missing.isNotEmpty) {
+                            Get.snackbar(
+                              'Incomplete Form',
+                              'Missing: ${missing.join(', ')}',
+                              backgroundColor: AppColors.errorColor,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.TOP,
+                            );
+                          }
+                        }
+                      },
+                      child: controller.isSubmitting.value
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              'Update Application',
+                              style: GoogleFonts.poppins(
+                                color: controller.isFormValid.value &&
+                                        !controller.isSubmitting.value
+                                    ? Colors.white
+                                    : RealTimeColors.grey600,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Only loan-specific fields can be updated',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 
-  // Reusable UI components (same as in LoanApplicationScreen)
+  bool _isApplicationEditable(String? status) {
+    if (status == null) return true;
+    final lowerStatus = status.toLowerCase();
+    // Cannot edit approved, rejected, or cancelled applications
+    return lowerStatus != 'approved' &&
+        lowerStatus != 'rejected' &&
+        lowerStatus != 'cancelled';
+  }
 
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
+  String? _getStatusMessage(String? status) {
+    if (status == null) return null;
+    final lowerStatus = status.toLowerCase();
+    if (lowerStatus == 'approved') {
+      return 'This application has been approved and cannot be edited.';
+    } else if (lowerStatus == 'rejected') {
+      return 'This application has been rejected and cannot be edited.';
+    } else if (lowerStatus == 'cancelled') {
+      return 'This application has been cancelled and cannot be edited.';
+    }
+    return null;
+  }
+
+  Color _getStatusBannerColor(String? status) {
+    if (status == null) return AppColors.warningColor;
+    final lowerStatus = status.toLowerCase();
+    if (lowerStatus == 'approved') return AppColors.successColor;
+    if (lowerStatus == 'rejected') return AppColors.errorColor;
+    if (lowerStatus == 'cancelled') return AppColors.warningColor;
+    return AppColors.warningColor;
+  }
+
+  IconData _getStatusBannerIcon(String? status) {
+    if (status == null) return Icons.info_outline;
+    final lowerStatus = status.toLowerCase();
+    if (lowerStatus == 'approved') return Icons.check_circle_outline;
+    if (lowerStatus == 'rejected') return Icons.cancel_presentation;
+    if (lowerStatus == 'cancelled') return Icons.block_outlined;
+    return Icons.info_outline;
+  }
+
+  Widget _buildInfoCard(LoanApplicationModel application) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
+            blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
@@ -607,10 +314,21 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: AppColors.primaryColor),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
-                title,
+                'Application Information',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -620,62 +338,922 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          ...children,
+          _buildReadOnlyRow(
+            'Application Number',
+            application.applicationNo ?? 'N/A',
+            Icons.confirmation_number_outlined,
+          ),
+          const SizedBox(height: 16),
+          _buildReadOnlyRow(
+            'Status',
+            _formatStatus(application.status),
+            Icons.flag_outlined,
+            statusColor: _getStatusColor(application.status),
+          ),
+          const SizedBox(height: 16),
+          _buildReadOnlyRow(
+            'Submitted On',
+            _formatDate(application.createdAt),
+            Icons.calendar_today_outlined,
+          ),
+          const SizedBox(height: 16),
+          _buildReadOnlyRow(
+            'Last Updated',
+            _formatDate(application.updatedAt),
+            Icons.update_outlined,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSelectionRow({
-    required String label,
-    required List<String> options,
-    required RxnString? selectedValue,
-    required ValueChanged<String> onSelected,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textColor,
+  Widget _buildLoanDetailsCard(UpdateLoanApplicationController controller, bool isEditable) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: options.map((option) {
-              return Obx(() {
-                final isSelected = selectedValue?.value == option;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(option),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) onSelected(option);
-                    },
-                    selectedColor: AppColors.primaryColor,
-                    backgroundColor: AppColors.surfaceColor,
-                    labelStyle: GoogleFonts.poppins(
-                      color: isSelected ? Colors.white : AppColors.textColor,
-                      fontSize: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.primaryColor
-                            : AppColors.borderColor,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.monetization_on_outlined,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Loan Details',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          CustomTextField(
+            controller: controller.loanAmountController,
+            labelText: 'Requested Loan Amount',
+            prefixIcon: const Icon(Icons.attach_money_outlined, size: 20),
+            keyboardType: TextInputType.number,
+            enabled: isEditable,
+          ),
+          const SizedBox(height: 16),
+          CustomTextField(
+            controller: controller.assetValueController,
+            labelText: 'Declared Asset Value',
+            prefixIcon: const Icon(Icons.assessment_outlined, size: 20),
+            keyboardType: TextInputType.number,
+            enabled: isEditable,
+          ),
+          const SizedBox(height: 16),
+          CustomTextField(
+            controller: controller.collateralDescController,
+            labelText: 'Collateral Description',
+            prefixIcon: const Icon(Icons.description_outlined, size: 20),
+            maxLength: 300,
+            enabled: isEditable,
+          ),
+          const SizedBox(height: 16),
+          CustomTextField(
+            controller: controller.suretyDescController,
+            labelText: 'Surety Description (Optional)',
+            prefixIcon: const Icon(Icons.security_outlined, size: 20),
+            maxLength: 200,
+            enabled: isEditable,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollateralDetailsCard(UpdateLoanApplicationController controller, bool isEditable) {
+    final categoryType = controller.selectedLoanCategoryType.value;
+    final categoryTitle = controller.selectedLoanCategory.value;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.category_outlined,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Collateral Details',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Category Selection
+          Text(
+            'Collateral Category',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.8,
+            ),
+            itemCount: controller.loanCategories.length,
+            itemBuilder: (context, index) {
+              final category = controller.loanCategories[index];
+              return Obx(
+                () => _buildCategoryCard(
+                  title: category['title'] as String,
+                  icon: category['icon'] as IconData,
+                  color: category['color'] as Color,
+                  isSelected: controller.selectedLoanCategory.value == category['title'],
+                  isEnabled: isEditable,
+                  onTap: isEditable
+                      ? () {
+                          controller.selectedLoanCategory.value = category['title'] as String?;
+                          controller.selectedLoanCategoryType.value = category['type'] as String?;
+                        }
+                      : null,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Category-specific fields
+          if (categoryType != null) ...[
+            const Divider(height: 24),
+            if (categoryType == 'motor_vehicle') ...[
+              Text(
+                'Motor Vehicle Details',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: controller.vehicleMakeController,
+                labelText: 'Make',
+                prefixIcon: const Icon(Icons.directions_car, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.vehicleModelController,
+                labelText: 'Model',
+                prefixIcon: const Icon(Icons.model_training, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.vehicleRegController,
+                labelText: 'Registration Number',
+                prefixIcon: const Icon(Icons.confirmation_number, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.vehicleCcSerialController,
+                labelText: 'CC/Serial Number',
+                prefixIcon: const Icon(Icons.numbers, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.vehicleEngineController,
+                labelText: 'Engine Number',
+                prefixIcon: const Icon(Icons.engineering, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.vehicleChassisController,
+                labelText: 'Chassis Number',
+                prefixIcon: const Icon(Icons.format_quote, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.vehicleYearController,
+                labelText: 'Year',
+                prefixIcon: const Icon(Icons.calendar_today, size: 20),
+                keyboardType: TextInputType.number,
+                enabled: isEditable,
+              ),
+            ] else if (categoryType == 'small_loans') ...[
+              Text(
+                'Electronic Gadget Details',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: controller.electronicTypeController,
+                labelText: 'Type (e.g., Laptop, Phone)',
+                prefixIcon: const Icon(Icons.devices, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.electronicModelController,
+                labelText: 'Model',
+                prefixIcon: const Icon(Icons.model_training, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.electronicSerialController,
+                labelText: 'Serial Number',
+                prefixIcon: const Icon(Icons.numbers, size: 20),
+                enabled: isEditable,
+              ),
+            ] else if (categoryType == 'jewellery') ...[
+              Text(
+                'Jewellery Details',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: controller.jewelTypeController,
+                labelText: 'Type (e.g., Ring, Necklace)',
+                prefixIcon: const Icon(Icons.diamond, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.jewelDescController,
+                labelText: 'Description',
+                prefixIcon: const Icon(Icons.description, size: 20),
+                maxLength: 200,
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.jewelWeightController,
+                labelText: 'Weight (grams)',
+                prefixIcon: const Icon(Icons.monitor_weight, size: 20),
+                keyboardType: TextInputType.number,
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.jewelPurityController,
+                labelText: 'Purity (e.g., 18k, 22k)',
+                prefixIcon: const Icon(Icons.percent, size: 20),
+                enabled: isEditable,
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: controller.jewelEstimatedValueController,
+                labelText: 'Estimated Value',
+                prefixIcon: const Icon(Icons.attach_money, size: 20),
+                keyboardType: TextInputType.number,
+                enabled: isEditable,
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRepaymentCard(UpdateLoanApplicationController controller, bool isEditable) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.payment_rounded,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Repayment Plan',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Repayment Type Selector
+          Text(
+            'Repayment Type',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: controller.repaymentTypeOptions.map((option) {
+              final isSelected = controller.selectedRepaymentType.value == option['value'];
+              return Expanded(
+                child: GestureDetector(
+                  onTap: isEditable
+                      ? () => controller.selectedRepaymentType.value = option['value'] as String
+                      : null,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primaryColor : AppColors.surfaceColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primaryColor : AppColors.borderColor,
+                        width: 1.5,
                       ),
                     ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          option['icon'] as IconData,
+                          color: isSelected ? Colors.white : AppColors.textColor,
+                          size: 24,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          option['title'] as String,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isSelected ? Colors.white : AppColors.textColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              });
+                ),
+              );
             }).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          // Installment Options
+          Obx(() {
+            if (controller.selectedRepaymentType.value == 'installment') {
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Number of Installments',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.borderColor),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: isEditable && controller.installmentCount.value > 1
+                                        ? () => controller.installmentCount.value--
+                                        : null,
+                                    icon: const Icon(Icons.remove, size: 20),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      '${controller.installmentCount.value}',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: isEditable && controller.installmentCount.value < 48
+                                        ? () => controller.installmentCount.value++
+                                        : null,
+                                    icon: const Icon(Icons.add, size: 20),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Payment Frequency',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Obx(
+                              () => DropdownButtonFormField<String>(
+                                value: controller.selectedInstallmentFrequency.value,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: AppColors.borderColor),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                items: controller.installmentFrequencyOptions.map((option) {
+                                  return DropdownMenuItem(
+                                    value: option['value'] as String,
+                                    child: Text(
+                                      option['title'] as String,
+                                      style: GoogleFonts.poppins(fontSize: 13),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: isEditable
+                                    ? (value) {
+                                        if (value != null) {
+                                          controller.selectedInstallmentFrequency.value = value;
+                                        }
+                                      }
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollateralImagesCard(UpdateLoanApplicationController controller, bool isEditable) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.photo_library_rounded,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Collateral Photos',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textColor,
+                  ),
+                ),
+              ),
+              if (isEditable)
+                GestureDetector(
+                  onTap: controller.pickCollateralImages,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.add, size: 16, color: AppColors.primaryColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Add Photos',
+                          style: GoogleFonts.poppins(
+                            color: AppColors.primaryColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Existing Images
+          if (controller.existingCollateralImageUrls.isNotEmpty) ...[
+            Text(
+              'Current Photos',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.subtextColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: controller.existingCollateralImageUrls.length,
+                itemBuilder: (context, index) {
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderColor),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            controller.existingCollateralImageUrls[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: RealTimeColors.grey200,
+                              child: const Icon(Icons.broken_image),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (isEditable)
+                        Positioned(
+                          top: 4,
+                          right: 16,
+                          child: GestureDetector(
+                            onTap: () => controller.removeExistingCollateralImage(index),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // New Images
+          if (controller.collateralImages.isNotEmpty) ...[
+            Text(
+              'New Photos',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.subtextColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: controller.collateralImages.length,
+                itemBuilder: (context, index) {
+                  final image = controller.collateralImages[index];
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderColor),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(image.path),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 16,
+                        child: GestureDetector(
+                          onTap: () => controller.removeNewCollateralImage(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+
+          if (controller.existingCollateralImageUrls.isEmpty && controller.collateralImages.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: [
+                    Icon(Icons.photo_library, size: 48, color: AppColors.subtextColor),
+                    const SizedBox(height: 8),
+                    Text(
+                      isEditable ? 'No photos yet. Tap "Add Photos" to upload.' : 'No photos available',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.subtextColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeclarationCard(UpdateLoanApplicationController controller) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.verified_outlined,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Declaration',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () => controller.isDeclarationChecked.toggle(),
+                child: Obx(
+                  () => AnimatedContainer(
+                    duration: 200.ms,
+                    width: 20,
+                    height: 20,
+                    margin: const EdgeInsets.only(top: 2),
+                    decoration: BoxDecoration(
+                      color: controller.isDeclarationChecked.value
+                          ? AppColors.primaryColor
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: controller.isDeclarationChecked.value
+                            ? AppColors.primaryColor
+                            : RealTimeColors.grey400,
+                        width: 2,
+                      ),
+                    ),
+                    child: controller.isDeclarationChecked.value
+                        ? const Icon(Icons.check, size: 14, color: Colors.white)
+                        : null,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'I declare that all information provided is true and accurate.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: AppColors.textColor,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'I confirm that the collateral is fully owned by me with no outstanding loans or disputes.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.subtextColor,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyRow(String label, String value, IconData icon, {Color? statusColor}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: RealTimeColors.grey100,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 16, color: AppColors.subtextColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.subtextColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor ?? AppColors.textColor,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -686,12 +1264,12 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     required String title,
     required IconData icon,
     required Color color,
-    required String description,
     required bool isSelected,
-    required VoidCallback onTap,
+    required bool isEnabled,
+    required VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isEnabled ? onTap : null,
       child: AnimatedContainer(
         duration: 200.ms,
         padding: const EdgeInsets.all(5),
@@ -715,27 +1293,16 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: color),
+            Icon(icon, size: 24, color: isEnabled ? color : AppColors.subtextColor),
             const SizedBox(height: 5),
             Text(
               title,
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textColor,
+                color: isEnabled ? AppColors.textColor : AppColors.subtextColor,
               ),
               textAlign: TextAlign.center,
-              maxLines: 2,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: AppColors.subtextColor,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
             ),
           ],
         ),
@@ -743,189 +1310,36 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDatePickerField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-  }) {
-    return GestureDetector(
-      onTap: () async {
-        final DateTime? pickedDate = await showDatePicker(
-          context: Get.context!,
-          initialDate: DateTime.now(),
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-          builder: (BuildContext context, Widget? child) {
-            return Theme(
-              data: ThemeData.light().copyWith(
-                colorScheme: ColorScheme.light(
-                  primary: AppColors.primaryColor,
-                  onPrimary: Colors.white,
-                ),
-                dialogTheme: const DialogThemeData(
-                  backgroundColor: Colors.white,
-                ),
-              ),
-              child: child!,
-            );
-          },
-        );
-        if (pickedDate != null) {
-          controller.text =
-              "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
-        }
-      },
-      child: AbsorbPointer(
-        child: CustomTextField(
-          controller: controller,
-          labelText: label,
-          prefixIcon: Icon(icon, size: 20),
-          readOnly: true,
-        ),
-      ),
-    );
+  String _formatStatus(String? status) {
+    if (status == null || status.isEmpty) return 'Submitted';
+    return status
+        .split('_')
+        .map((word) => word.isEmpty
+            ? ''
+            : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
   }
 
-  Widget _buildCategorySpecificFields(
-    UpdateLoanApplicationController controller,
-  ) {
-    if (controller.selectedLoanCategoryType.value == 'motor_vehicle') {
-      return Column(
-        children: [
-          const Divider(height: 24),
-          Text(
-            'Motor Vehicle Details',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: controller.vehicleMakeController,
-            labelText: 'Make',
-            prefixIcon: const Icon(Icons.directions_car, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.vehicleModelController,
-            labelText: 'Model',
-            prefixIcon: const Icon(Icons.model_training, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.vehicleRegController,
-            labelText: 'Registration Number',
-            prefixIcon: const Icon(Icons.confirmation_number, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.vehicleCcSerialController,
-            labelText: 'CC/Serial Number',
-            prefixIcon: const Icon(Icons.numbers, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.vehicleEngineController,
-            labelText: 'Engine Number',
-            prefixIcon: const Icon(Icons.engineering, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.vehicleChassisController,
-            labelText: 'Chassis Number',
-            prefixIcon: const Icon(Icons.format_quote, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.vehicleYearController,
-            labelText: 'Year',
-            prefixIcon: const Icon(Icons.calendar_today, size: 20),
-            keyboardType: TextInputType.number,
-          ),
-        ],
-      );
-    } else if (controller.selectedLoanCategoryType.value == 'small_loans') {
-      return Column(
-        children: [
-          const Divider(height: 24),
-          Text(
-            'Electronic Gadget Details',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: controller.electronicTypeController,
-            labelText: 'Type (e.g., Laptop, Phone)',
-            prefixIcon: const Icon(Icons.devices, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.electronicModelController,
-            labelText: 'Model',
-            prefixIcon: const Icon(Icons.model_training, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.electronicSerialController,
-            labelText: 'Serial Number',
-            prefixIcon: const Icon(Icons.numbers, size: 20),
-          ),
-        ],
-      );
-    } else if (controller.selectedLoanCategoryType.value == 'jewellery') {
-      return Column(
-        children: [
-          const Divider(height: 24),
-          Text(
-            'Jewellery Details',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: controller.jewelTypeController,
-            labelText: 'Type (e.g., Ring, Necklace)',
-            prefixIcon: const Icon(Icons.diamond, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.jewelDescController,
-            labelText: 'Description',
-            prefixIcon: const Icon(Icons.description, size: 20),
-            maxLength: 200,
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.jewelWeightController,
-            labelText: 'Weight (grams)',
-            prefixIcon: const Icon(Icons.monitor_weight, size: 20),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.jewelPurityController,
-            labelText: 'Purity (e.g., 18k, 22k)',
-            prefixIcon: const Icon(Icons.percent, size: 20),
-          ),
-          const SizedBox(height: 12),
-          CustomTextField(
-            controller: controller.jewelEstimatedValueController,
-            labelText: 'Estimated Value',
-            prefixIcon: const Icon(Icons.attach_money, size: 20),
-            keyboardType: TextInputType.number,
-          ),
-        ],
-      );
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat('MMM dd, yyyy').format(date);
+  }
+
+  Color _getStatusColor(String? status) {
+    if (status == null) return AppColors.warningColor;
+    switch (status.toLowerCase()) {
+      case 'processing':
+        return const Color(0xFFF57C00);
+      case 'submitted':
+        return const Color(0xFF1976D2);
+      case 'approved':
+        return const Color(0xFF388E3C);
+      case 'rejected':
+        return const Color(0xFFD32F2F);
+      case 'cancelled':
+        return const Color(0xFFC2185B);
+      default:
+        return AppColors.warningColor;
     }
-    return const SizedBox.shrink();
   }
 }

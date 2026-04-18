@@ -147,21 +147,7 @@ class HomeController extends GetxController {
     return LoanApplicationModel(
       id: json['_id'],
       applicationNo: json['_application_no'] ?? json['application_no'],
-      fullName: json['full_name'],
-      nationalIdNumber: json['national_id_number'],
-      gender: json['gender'],
-      dateOfBirth: json['date_of_birth'] != null
-          ? DateTime.parse(json['date_of_birth'])
-          : null,
-      maritalStatus: json['marital_status'],
-      contactDetails: json['contact_details'],
-      alternativeNumber: json['alternative_number'],
-      emailAddress: json['email_address'],
-      homeAddress: json['home_address'],
-      nationalIdUrl: json['national_id_url'],
-      passportUrl: json['passport_url'],
-      proofOfResidentUrl: json['proof_of_resident_url'],
-      proofOfEmploymentUrl: json['proof_of_employment_url'],
+   
       requestedLoanAmount: json['requested_loan_amount'],
       collateralCategory: json['collateral_category'],
       collateralDescription: json['collateral_description'],
@@ -180,28 +166,6 @@ class HomeController extends GetxController {
               phone: json['customer_user']['phone'],
               firstName: json['customer_user']['first_name'],
               lastName: json['customer_user']['last_name'],
-            )
-          : null,
-
-      // Next of kin
-      nextOfKin: json['next_of_kin'] != null
-          ? NextOfKin(
-              fullName: json['next_of_kin']['full_name'],
-              relationship: json['next_of_kin']['relationship'],
-              phoneNumber: json['next_of_kin']['phone_number'],
-              email: json['next_of_kin']['email'],
-              address: json['next_of_kin']['address'],
-            )
-          : null,
-
-      // Employment
-      employment: json['employment'] != null
-          ? Employment(
-              employmentType: json['employment']['employment_type'],
-              title: json['employment']['title'],
-              duration: json['employment']['duration'],
-              location: json['employment']['location'],
-              contacts: json['employment']['contacts'],
             )
           : null,
 

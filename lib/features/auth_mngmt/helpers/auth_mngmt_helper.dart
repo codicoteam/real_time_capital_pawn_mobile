@@ -3,21 +3,49 @@ import 'package:flutter/material.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/widgets/loading_widgets/circular_loader.dart';
-
+import '../../../models/register_body_model.dart';
 import '../controllers/auth_controller.dart';
 
 class AuthHelper {
   static final AuthController _authController = Get.find<AuthController>();
+
+  // Validation helpers
+  static bool _hasUppercase(String value) => value.contains(RegExp(r'[A-Z]'));
+  static bool _hasLowercase(String value) => value.contains(RegExp(r'[a-z]'));
+  static bool _hasNumber(String value) => value.contains(RegExp(r'[0-9]'));
+
+  static void _clearErrors() {
+    // Implement if using reactive error states
+  }
+
+  static void _showValidationError(String message, String field) {
+    Get.snackbar(
+      'Validation Error',
+      message,
+      backgroundColor: Colors.red[50],
+      colorText: Colors.red[700],
+      icon: Icon(Icons.error_outline, color: Colors.red[700]),
+      snackPosition: SnackPosition.TOP,
+      duration: 3.seconds,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      isDismissible: true,
+      dismissDirection: DismissDirection.horizontal,
+      forwardAnimationCurve: Curves.easeOutCubic,
+    );
+  }
+
+  static void _showShakeAnimation() {
+    // This would be handled in the UI layer
+  }
 
   /// LOGIN VALIDATION + SUBMISSION
   static Future<bool> validateAndSubmitForm({
     required String email,
     required String password,
   }) async {
-    // Clear any existing errors
     _clearErrors();
 
-    // Validation with detailed messages
     bool isValid = true;
 
     if (email.isEmpty) {
@@ -58,7 +86,6 @@ class AuthHelper {
       return false;
     }
 
-    // Call the authentication service
     try {
       Get.dialog(
         const CustomLoader(message: 'Signing in...'),
@@ -70,19 +97,15 @@ class AuthHelper {
         password: password,
       );
 
-      // Close loader
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
 
       if (success) {
-        // ✅ Success animation
         _showSuccessAnimation();
         Get.offNamed(RoutesHelper.main_home_page);
-
         return true;
       } else {
-        // ❌ Show error from controller
         _showErrorDialog(_authController.errorMessage.value);
         return false;
       }
@@ -95,20 +118,10 @@ class AuthHelper {
     }
   }
 
-  // Validation helpers
-  static bool _hasUppercase(String value) => value.contains(RegExp(r'[A-Z]'));
-  static bool _hasLowercase(String value) => value.contains(RegExp(r'[a-z]'));
-  static bool _hasNumber(String value) => value.contains(RegExp(r'[0-9]'));
-
-  // Cool validation feedback methods
-  static void _clearErrors() {
-    // Implement if using reactive error states
-  }
-
-  static void _showValidationError(String message, String field) {
+  static void _showTermsError() {
     Get.snackbar(
-      'Validation Error',
-      message,
+      'Terms & Conditions',
+      'Please accept the terms and conditions to continue',
       backgroundColor: Colors.red[50],
       colorText: Colors.red[700],
       icon: Icon(Icons.error_outline, color: Colors.red[700]),
@@ -117,15 +130,139 @@ class AuthHelper {
       margin: const EdgeInsets.all(16),
       borderRadius: 12,
       isDismissible: true,
-      dismissDirection: DismissDirection.horizontal,
-      forwardAnimationCurve: Curves.easeOutCubic,
     );
   }
 
-  static void _showShakeAnimation() {
-    // This would be handled in the UI layer
-    // You can use GetX to trigger a shake animation
-    // Example: Get.find<LoginController>().triggerShake();
+  /// REGISTER VALIDATION + SUBMISSION - UPDATED with ID type and employment options
+  /// REGISTER SUBMISSION (No validation in UI - backend will handle)
+  static Future<bool> validateRegisterForm({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+    required String confirmPassword,
+    String? phone,
+    String? identificationType,
+    String? nationalIdNumber,
+    String? passportNumber,
+    DateTime? passportExpiryDate,
+    DateTime? nationalIdExpiryDate,
+    String? nationalIdImageUrl,
+    String? passportImageUrl,
+    String? profilePicUrl,
+    String? proofOfAddressUrl,
+    String? dateOfBirth,
+    String? address,
+    String? location,
+    String? gender,
+    String? maritalStatus,
+    String? alternativePhone,
+    bool isEmployed = false,
+    String? employerName,
+    String? jobTitle,
+    String? employmentDuration,
+    String? employmentLocation,
+    String? employmentContacts,
+    String? nextOfKinFullName,
+    String? nextOfKinRelationship,
+    String? nextOfKinPhone,
+    String? nextOfKinEmail,
+    String? nextOfKinAddress,
+    bool acceptTerms = true,
+  }) async {
+    // Check terms acceptance only
+    if (!acceptTerms) {
+      _showTermsError();
+      return false;
+    }
+
+    // Build RegisterBodyModel
+    final registerBody = RegisterBodyModel(
+      email: email.trim(),
+      password: password,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone?.trim(),
+      roles: ["customer"],
+      dateOfBirth: dateOfBirth != null && dateOfBirth.isNotEmpty
+          ? DateTime.tryParse(dateOfBirth)
+          : null,
+      address: address?.trim(),
+      location: location?.trim(),
+      gender: gender,
+      maritalStatus: maritalStatus,
+      alternativePhone: alternativePhone?.trim(),
+      nationalIdNumber: identificationType == 'national_id'
+          ? nationalIdNumber?.trim()
+          : null,
+      nationalIdImageUrl: identificationType == 'national_id'
+          ? nationalIdImageUrl
+          : null,
+      nationalIdExpiryDate: identificationType == 'national_id'
+          ? nationalIdExpiryDate
+          : null,
+      passportImageUrl: identificationType == 'passport'
+          ? passportImageUrl
+          : null,
+      passportExpiryDate: identificationType == 'passport'
+          ? passportExpiryDate
+          : null,
+      isEmployed: isEmployed,
+      employmentDetails:
+          isEmployed && employerName != null && employerName.isNotEmpty
+          ? EmploymentDetails(
+              employerName: employerName,
+              jobTitle: jobTitle,
+              duration: employmentDuration,
+              location: employmentLocation,
+              contacts: employmentContacts,
+            )
+          : null,
+      nextOfKin: nextOfKinFullName != null && nextOfKinFullName.isNotEmpty
+          ? NextOfKin(
+              fullName: nextOfKinFullName,
+              relationship: nextOfKinRelationship,
+              phoneNumber: nextOfKinPhone,
+              email: nextOfKinEmail,
+              address: nextOfKinAddress,
+            )
+          : null,
+      termsAcceptedAt: acceptTerms ? DateTime.now() : null,
+    );
+
+    // Call the registration service
+    try {
+      Get.dialog(
+        const CustomLoader(message: 'Creating your account...'),
+        barrierDismissible: false,
+      );
+
+      final success = await _authController.authRegisterRequest(
+        registerBody: registerBody,
+      );
+
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      if (success) {
+        _showSuccessAnimationRegister();
+        await Future.delayed(300.milliseconds);
+        Get.offNamed(RoutesHelper.EmailVerificationScreen, arguments: email);
+        return true;
+      } else {
+        _showErrorDialogRegister(_authController.errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      _showErrorDialogRegister(
+        'An error occurred during registration: ${e.toString()}',
+      );
+      return false;
+    }
   }
 
   static void _showSuccessAnimation() {
@@ -137,6 +274,22 @@ class AuthHelper {
       icon: Icon(Icons.check_circle, color: Colors.green[700]),
       snackPosition: SnackPosition.TOP,
       duration: 2.seconds,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      isDismissible: true,
+      forwardAnimationCurve: Curves.easeOutBack,
+    );
+  }
+
+  static void _showSuccessAnimationRegister() {
+    Get.snackbar(
+      'Registration Successful!',
+      'Your account has been created successfully. Please check your email for verification OTP.',
+      backgroundColor: Colors.green[50],
+      colorText: Colors.green[700],
+      icon: Icon(Icons.check_circle, color: Colors.green[700]),
+      snackPosition: SnackPosition.TOP,
+      duration: 3.seconds,
       margin: const EdgeInsets.all(16),
       borderRadius: 12,
       isDismissible: true,
@@ -165,239 +318,6 @@ class AuthHelper {
     );
   }
 
-  /// REGISTER VALIDATION + SUBMISSION
-  /// REGISTER VALIDATION + SUBMISSION - Updated to match new payload
-  static Future<bool> validateRegisterForm({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String password,
-    required String confirmPassword,
-    String? phone,
-    String? nationalIdNumber,
-    String? dateOfBirth,
-    String? address,
-    String? location,
-    bool acceptTerms = true,
-  }) async {
-    // Clear any existing errors
-    _clearErrors();
-
-    // Validation with detailed messages
-    bool isValid = true;
-
-    // First Name Validation
-    if (firstName.isEmpty) {
-      _showValidationError('First name is required', 'firstName');
-      isValid = false;
-    } else if (firstName.trim().length < 2) {
-      _showValidationError(
-        'First name must be at least 2 characters',
-        'firstName',
-      );
-      isValid = false;
-    }
-
-    // Last Name Validation
-    if (lastName.isEmpty) {
-      _showValidationError('Last name is required', 'lastName');
-      isValid = false;
-    } else if (lastName.trim().length < 2) {
-      _showValidationError(
-        'Last name must be at least 2 characters',
-        'lastName',
-      );
-      isValid = false;
-    }
-
-    // Email Validation
-    if (email.isEmpty) {
-      _showValidationError('Email is required', 'email');
-      isValid = false;
-    } else {
-      final emailRegExp = RegExp(
-        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-      );
-      if (!emailRegExp.hasMatch(email.trim())) {
-        _showValidationError('Please enter a valid email address', 'email');
-        isValid = false;
-      }
-    }
-
-    // Phone Validation (Optional)
-    if (phone != null && phone.isNotEmpty) {
-      // Basic phone validation for Zimbabwe format
-      final phoneRegExp = RegExp(r'^\+263[0-9]{9}$');
-      if (!phoneRegExp.hasMatch(phone.trim())) {
-        _showValidationError(
-          'Please enter a valid Zimbabwe phone number (e.g., +263771234567)',
-          'phone',
-        );
-        isValid = false;
-      }
-    }
-
-    // Password Validation
-    if (password.isEmpty) {
-      _showValidationError('Password is required', 'password');
-      isValid = false;
-    } else if (password.length < 8) {
-      _showValidationError(
-        'Password must be at least 8 characters',
-        'password',
-      );
-      isValid = false;
-    } else if (!_hasUppercase(password)) {
-      _showValidationError('Include at least one uppercase letter', 'password');
-      isValid = false;
-    } else if (!_hasLowercase(password)) {
-      _showValidationError('Include at least one lowercase letter', 'password');
-      isValid = false;
-    } else if (!_hasNumber(password)) {
-      _showValidationError('Include at least one number', 'password');
-      isValid = false;
-    }
-
-    // Confirm Password Validation
-    if (confirmPassword.isEmpty) {
-      _showValidationError('Please confirm your password', 'confirmPassword');
-      isValid = false;
-    } else if (password != confirmPassword) {
-      _showValidationError('Passwords do not match', 'confirmPassword');
-      isValid = false;
-    }
-
-    // Date of Birth Validation (Optional)
-    if (dateOfBirth != null && dateOfBirth.isNotEmpty) {
-      try {
-        final dob = DateTime.parse(dateOfBirth);
-        final now = DateTime.now();
-        final age = now.year - dob.year;
-
-        if (dob.isAfter(now)) {
-          _showValidationError(
-            'Date of birth cannot be in the future',
-            'dateOfBirth',
-          );
-          isValid = false;
-        } else if (age < 18) {
-          _showValidationError(
-            'You must be at least 18 years old',
-            'dateOfBirth',
-          );
-          isValid = false;
-        }
-      } catch (e) {
-        _showValidationError(
-          'Please enter a valid date (YYYY-MM-DD)',
-          'dateOfBirth',
-        );
-        isValid = false;
-      }
-    }
-
-    // National ID Validation (Optional)
-    if (nationalIdNumber != null && nationalIdNumber.isNotEmpty) {
-      final formattedId = nationalIdNumber.trim().toUpperCase();
-
-      // Zimbabwe National ID format: XX-XXXXXX(X)-[A-Z|X]-XX
-      final idRegExp = RegExp(r'^\d{2}-\d{6,7}-[A-Z]-\d{2}$');
-
-      if (!idRegExp.hasMatch(formattedId)) {
-        _showValidationError(
-          'Please enter a valid Zimbabwe National ID (e.g., 63-1234567-A-12)',
-          'nationalIdNumber',
-        );
-        isValid = false;
-      }
-    }
-
-    // Terms Acceptance Validation
-    if (!acceptTerms) {
-      _showValidationError('You must accept the terms and conditions', 'terms');
-      isValid = false;
-    }
-
-    if (!isValid) {
-      _showShakeAnimation();
-      return false;
-    }
-
-    // Call the registration service
-    try {
-      Get.dialog(
-        const CustomLoader(message: 'Creating your account...'),
-        barrierDismissible: false,
-      );
-
-      final success = await _authController.authRegisterRequest(
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim(),
-        password: password,
-        phone: phone?.trim(),
-        nationalIdNumber: nationalIdNumber?.trim(),
-        dateOfBirth: dateOfBirth?.trim(),
-        address: address?.trim(),
-        location: location?.trim(),
-        acceptTerms: acceptTerms,
-      );
-
-      // Close loader
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-
-      if (success) {
-        // ✅ Success animation
-        _showSuccessAnimationRegister();
-
-        // Navigate to appropriate page
-        await Future.delayed(300.milliseconds); // Small delay for animation
-
-        // Option 1: Go to home if email verification not required
-        // Get.offNamed(RoutesHelper.main_home_page);
-
-        // Option 2: Go to email verification screen
-        Get.offNamed(RoutesHelper.EmailVerificationScreen, arguments: email);
-
-        // Option 3: Go to complete profile page for additional KYC
-        // Get.offNamed(RoutesHelper.complete_profile_page);
-
-        return true;
-      } else {
-        // ❌ Show error from controller
-        _showErrorDialogRegister(_authController.errorMessage.value);
-        return false;
-      }
-    } catch (e) {
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-      _showErrorDialogRegister(
-        'An error occurred during registration: ${e.toString()}',
-      );
-      return false;
-    }
-  }
-
-  // Additional helper methods for register-specific feedback
-  static void _showSuccessAnimationRegister() {
-    Get.snackbar(
-      'Registration Successful!',
-      'Your account has been created successfully',
-      backgroundColor: Colors.green[50],
-      colorText: Colors.green[700],
-      icon: Icon(Icons.check_circle, color: Colors.green[700]),
-      snackPosition: SnackPosition.TOP,
-      duration: 3.seconds,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
-      forwardAnimationCurve: Curves.easeOutBack,
-    );
-  }
-
   static void _showErrorDialogRegister(String message) {
     Get.defaultDialog(
       title: 'Registration Failed',
@@ -405,18 +325,15 @@ class AuthHelper {
         fontWeight: FontWeight.bold,
         color: Colors.red[700],
       ),
-      contentPadding: const EdgeInsets.all(20),
-      titlePadding: const EdgeInsets.only(top: 20),
       middleText: message,
       middleTextStyle: const TextStyle(color: Colors.black54),
       confirm: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red[700],
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          minimumSize: const Size(120, 48),
         ),
         onPressed: () => Get.back(),
-        child: const Text('OK', style: TextStyle(color: Colors.white)),
+        child: const Text('Try Again', style: TextStyle(color: Colors.white)),
       ),
       radius: 12,
     );

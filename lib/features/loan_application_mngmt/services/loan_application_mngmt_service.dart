@@ -109,7 +109,7 @@ class LoanApplicationService {
   }
 
   /// 🔹 Update loan application
-  static Future<APIResponse<LoanApplicationModel>> updateLoanApplication({
+  static Future<APIResponse<String>> updateLoanApplication({
     required String loanApplicationId,
     required Map<String, dynamic> payload,
   }) async {
@@ -118,6 +118,9 @@ class LoanApplicationService {
     final String url =
         '${ApiKeys.baseUrl}/loan-applications/$loanApplicationId';
     try {
+      DevLogs.logInfo(
+        'Updating loan application with payload as json: ${jsonEncode(payload)}',
+      );
       final response = await http.put(
         Uri.parse(url),
         headers: {
@@ -129,16 +132,15 @@ class LoanApplicationService {
       );
       DevLogs.logInfo('Update loan application response: ${response.body}');
       final decoded = json.decode(response.body);
-      if (response.statusCode == 200) {
-        final application = LoanApplicationModel.fromMap(decoded['data']);
-        return APIResponse<LoanApplicationModel>(
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return APIResponse<String>(
           success: true,
-          data: application,
+          data: "Sucess",
           message:
               decoded['message'] ?? 'Loan application updated successfully',
         );
       } else {
-        return APIResponse<LoanApplicationModel>(
+        return APIResponse<String>(
           success: false,
           message:
               decoded['message'] ??
@@ -147,7 +149,7 @@ class LoanApplicationService {
       }
     } catch (e) {
       DevLogs.logError('Update loan application error: $e');
-      return APIResponse<LoanApplicationModel>(
+      return APIResponse<String>(
         success: false,
         message: 'Error updating loan application: $e',
       );

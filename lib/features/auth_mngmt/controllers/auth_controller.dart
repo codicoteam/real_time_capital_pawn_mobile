@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/features/auth_mngmt/services/auth_service.dart';
 import '../../../core/utils/logs.dart';
+import '../../../models/register_body_model.dart';
 
 class AuthController extends GetxController {
   var isLoading = false.obs;
@@ -39,34 +40,14 @@ class AuthController extends GetxController {
   /// REGISTER
 
   Future<bool> authRegisterRequest({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String password,
-    String? phone,
-    String? nationalIdNumber,
-    String? dateOfBirth,
-    String? address,
-    String? location,
-    bool acceptTerms = true,
+    required RegisterBodyModel registerBody,
   }) async {
     try {
       isLoading(true);
       successMessage.value = '';
       errorMessage.value = '';
 
-      final response = await AuthServices.register(
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        password: password,
-        phone: phone,
-        nationalIdNumber: nationalIdNumber,
-        dateOfBirth: dateOfBirth,
-        address: address,
-        location: location,
-        acceptTerms: acceptTerms,
-      );
+      final response = await AuthServices.register(registerBody: registerBody);
 
       if (response.success) {
         successMessage.value = response.message ?? 'Registration successful!';
@@ -83,7 +64,7 @@ class AuthController extends GetxController {
           'An error occurred while registering: ${e.toString()}';
       return false;
     } finally {
-      isLoading(false); // End loading
+      isLoading(false);
     }
   }
 

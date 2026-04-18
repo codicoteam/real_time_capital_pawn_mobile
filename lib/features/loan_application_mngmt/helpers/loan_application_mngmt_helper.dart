@@ -85,48 +85,48 @@ class LoanApplicationHelper {
   // ============================
   // Update Loan Application
   // ============================
-  static Future<bool> updateLoanApplication({
-    required String loanApplicationId,
-    required Map<String, dynamic> payload,
-  }) async {
-    _clearMessages();
+  // static Future<bool> updateLoanApplication({
+  //   required String loanApplicationId,
+  //   required Map<String, dynamic> payload,
+  // }) async {
+  //   _clearMessages();
 
-    try {
-      Get.dialog(
-        const CustomLoader(message: 'Updating loan application...'),
-        barrierDismissible: false,
-      );
+  //   try {
+  //     Get.dialog(
+  //       const CustomLoader(message: 'Updating loan application...'),
+  //       barrierDismissible: false,
+  //     );
 
-      final APIResponse response = await _loanController.updateLoanApplication(
-        loanApplicationId: loanApplicationId,
-        payload: payload,
-      );
+  //     final APIResponse response = await _loanController.updateLoanApplication(
+  //       loanApplicationId: loanApplicationId,
+  //       payload: payload,
+  //     );
 
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
+  //     if (Get.isDialogOpen ?? false) {
+  //       Get.back();
+  //     }
 
-      if (response.success) {
-        _showSuccessSnackbar(
-          response.message ?? 'Loan application updated successfully',
-        );
-        return true;
-      } else {
-        _showErrorDialog(
-          response.message ?? 'Failed to update loan application',
-        );
-        return false;
-      }
-    } catch (e) {
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-      _showErrorDialog(
-        'An unexpected error occurred while updating the loan application',
-      );
-      return false;
-    }
-  }
+  //     if (response.success) {
+  //       _showSuccessSnackbar(
+  //         response.message ?? 'Loan application updated successfully',
+  //       );
+  //       return true;
+  //     } else {
+  //       _showErrorDialog(
+  //         response.message ?? 'Failed to update loan application',
+  //       );
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     if (Get.isDialogOpen ?? false) {
+  //       Get.back();
+  //     }
+  //     _showErrorDialog(
+  //       'An unexpected error occurred while updating the loan application',
+  //     );
+  //     return false;
+  //   }
+  // }
 
   // ============================
   // UI Helpers

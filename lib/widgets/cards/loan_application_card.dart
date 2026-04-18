@@ -33,13 +33,12 @@ class LoanApplicationCard extends StatelessWidget {
 
     switch (category.toLowerCase()) {
       case 'small_loans':
-        return 'Small Loans';
+        return 'Electronics';
       case 'motor_vehicle':
         return 'Motor Vehicle';
       case 'jewellery':
         return 'Jewellery';
       default:
-        // Convert snake_case to Title Case
         return category
             .split('_')
             .map(
@@ -56,11 +55,11 @@ class LoanApplicationCard extends StatelessWidget {
 
     switch (category.toLowerCase()) {
       case 'small_loans':
-        return Icons.attach_money_rounded;
+        return Icons.devices_rounded;
       case 'motor_vehicle':
-        return Icons.directions_car_outlined;
+        return Icons.directions_car_rounded;
       case 'jewellery':
-        return Icons.diamond_outlined;
+        return Icons.diamond_rounded;
       default:
         return Icons.category_outlined;
     }
@@ -81,6 +80,56 @@ class LoanApplicationCard extends StatelessWidget {
     }
   }
 
+  Color _getStatusColor(String? status) {
+    if (status == null) return RealTimeColors.grey600;
+
+    switch (status.toLowerCase()) {
+      case 'processing':
+        return const Color(0xFFF57C00);
+      case 'submitted':
+        return const Color(0xFF1976D2);
+      case 'approved':
+        return const Color(0xFF388E3C);
+      case 'rejected':
+        return const Color(0xFFD32F2F);
+      case 'cancelled':
+        return const Color(0xFFC2185B);
+      default:
+        return RealTimeColors.grey600;
+    }
+  }
+
+  Color _getStatusBackgroundColor(String? status) {
+    if (status == null) return RealTimeColors.grey100;
+
+    switch (status.toLowerCase()) {
+      case 'processing':
+        return const Color(0xFFFFF3E0);
+      case 'submitted':
+        return const Color(0xFFE3F2FD);
+      case 'approved':
+        return const Color(0xFFE8F5E9);
+      case 'rejected':
+        return const Color(0xFFFFEBEE);
+      case 'cancelled':
+        return const Color(0xFFFCE4EC);
+      default:
+        return RealTimeColors.grey100;
+    }
+  }
+
+  String _getRepaymentTypeText(String? type) {
+    if (type == null) return 'N/A';
+    switch (type.toLowerCase()) {
+      case 'once_off':
+        return 'Once Off';
+      case 'installment':
+        return 'Installment';
+      default:
+        return type;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -89,132 +138,71 @@ class LoanApplicationCard extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primaryColor.withOpacity(0.3),
-                width: 1.5,
-              ),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryColor.withOpacity(0.08),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               child: Stack(
                 children: [
-                  // Subtle gradient overlay
-                  Positioned(
-                    top: 0,
-                    right: 0,
+                  // Animated gradient background on hover (optional)
+                  Positioned.fill(
                     child: Container(
-                      width: 120,
-                      height: 120,
                       decoration: BoxDecoration(
-                        gradient: RadialGradient(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                           colors: [
-                            AppColors.primaryColor.withOpacity(0.05),
-                            AppColors.primaryColor.withOpacity(0.0),
+                            _getCategoryColor(
+                              application.collateralCategory,
+                            ).withOpacity(0.05),
+                            Colors.transparent,
                           ],
                         ),
                       ),
                     ),
                   ),
 
-                  // Content
+                  // Main content
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Application Number and Status
+                        // Header Row - Application Number and Status
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryColor.withOpacity(
-                                        0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Icons.receipt_long_rounded,
-                                      color: AppColors.primaryColor,
-                                      size: 18,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      application.applicationNo ?? 'N/A',
-                                      style: GoogleFonts.poppins(
-                                        color: AppColors.textColor,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: -0.3,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                            // Application Number with icon
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.primaryColor.withOpacity(0.15),
+                                    AppColors.primaryColor.withOpacity(0.05),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.receipt_long_rounded,
+                                color: AppColors.primaryColor,
+                                size: 20,
                               ),
                             ),
                             const SizedBox(width: 12),
-                            _buildStatusChip(application.status ?? 'draft'),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Divider
-                        Container(
-                          height: 1,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.borderColor.withOpacity(0.1),
-                                AppColors.borderColor,
-                                AppColors.borderColor.withOpacity(0.1),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Applicant Name
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryColor.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.person_outline_rounded,
-                                color: AppColors.primaryColor,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Applicant',
+                                    'Application Number',
                                     style: GoogleFonts.poppins(
                                       color: AppColors.subtextColor,
                                       fontSize: 11,
@@ -224,102 +212,53 @@ class LoanApplicationCard extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    application.fullName ?? 'N/A',
+                                    application.applicationNo ?? 'N/A',
                                     style: GoogleFonts.poppins(
                                       color: AppColors.textColor,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.3,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Collateral Category and Date
-                        Row(
-                          children: [
-                            // Collateral Category
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getCategoryColor(
-                                    application.collateralCategory,
-                                  ).withOpacity(0.08),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _getCategoryColor(
-                                      application.collateralCategory,
-                                    ).withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      _getCategoryIcon(
-                                        application.collateralCategory,
-                                      ),
-                                      color: _getCategoryColor(
-                                        application.collateralCategory,
-                                      ),
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        _formatCollateralCategory(
-                                          application.collateralCategory,
-                                        ),
-                                        style: GoogleFonts.poppins(
-                                          color: _getCategoryColor(
-                                            application.collateralCategory,
-                                          ),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-
-                            // Date
+                            // Status Chip
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 10,
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: RealTimeColors.grey100,
+                                color: _getStatusBackgroundColor(
+                                  application.status,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppColors.borderColor,
+                                  color: _getStatusColor(
+                                    application.status,
+                                  ).withOpacity(0.3),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.calendar_today_outlined,
-                                    color: AppColors.subtextColor,
+                                    _getStatusIcon(application.status),
                                     size: 14,
+                                    color: _getStatusColor(application.status),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    _formatDate(application.createdAt),
+                                    _formatStatus(
+                                      application.status ?? 'draft',
+                                    ),
                                     style: GoogleFonts.poppins(
-                                      color: AppColors.subtextColor,
+                                      color: _getStatusColor(
+                                        application.status,
+                                      ),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -329,83 +268,84 @@ class LoanApplicationCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
 
-                        // Amount with accent background
+                        const SizedBox(height: 20),
+
+                        // Divider with animation
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          height: 1,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
                               colors: [
-                                AppColors.primaryColor.withOpacity(0.12),
-                                AppColors.primaryColor.withOpacity(0.05),
+                                Colors.transparent,
+                                AppColors.borderColor,
+                                Colors.transparent,
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: AppColors.primaryColor.withOpacity(0.25),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.account_balance_wallet_outlined,
-                                        size: 14,
-                                        color: AppColors.primaryColor,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Requested Amount',
-                                        style: GoogleFonts.poppins(
-                                          color: AppColors.primaryColor,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _formatCurrency(
-                                      application.requestedLoanAmount,
-                                    ),
-                                    style: GoogleFonts.poppins(
-                                      color: AppColors.primaryColor,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.5,
-                                      height: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
-                                    0.15,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.arrow_forward_rounded,
-                                  color: AppColors.primaryColor,
-                                  size: 20,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
+
+                        const SizedBox(height: 20),
+
+                        // Key Field 1: Loan Amount (Primary)
+                        _buildInfoRow(
+                          icon: Icons.account_balance_wallet_rounded,
+                          label: 'Loan Amount',
+                          value: _formatCurrency(
+                            application.requestedLoanAmount,
+                          ),
+                          isPrimary: true,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Key Field 2: Collateral Category
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildInfoRow(
+                                icon: _getCategoryIcon(
+                                  application.collateralCategory,
+                                ),
+                                label: 'Collateral',
+                                value: _formatCollateralCategory(
+                                  application.collateralCategory,
+                                ),
+                                iconColor: _getCategoryColor(
+                                  application.collateralCategory,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildInfoRow(
+                                icon: Icons.payment_rounded,
+                                label: 'Repayment',
+                                value: _getRepaymentTypeText(
+                                  application.repaymentType,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Key Field 3: Application Date
+                        _buildInfoRow(
+                          icon: Icons.calendar_today_rounded,
+                          label: 'Applied On',
+                          value: _formatDate(application.createdAt),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Optional: Quick details for the specific collateral
+                        if (application.collateralCategory != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildCollateralQuickInfo(),
+                          ),
                       ],
                     ),
                   ),
@@ -414,94 +354,220 @@ class LoanApplicationCard extends StatelessWidget {
             ),
           ),
         )
-        .animate()
-        .fadeIn(delay: (index * 80).ms, duration: 400.ms)
+        .animate(onPlay: (controller) => controller.repeat(reverse: false))
+        .fadeIn(
+          delay: (index * 100).ms,
+          duration: 500.ms,
+          curve: Curves.easeOutCubic,
+        )
         .slideX(
-          begin: 0.2,
+          begin: 0.3,
           end: 0,
-          delay: (index * 80).ms,
+          delay: (index * 100).ms,
+          duration: 600.ms,
+          curve: Curves.easeOutCubic,
+        )
+        .scale(
+          begin: const Offset(0.95, 0.95),
+          end: const Offset(1, 1),
+          delay: (index * 100).ms,
           duration: 400.ms,
           curve: Curves.easeOutCubic,
         )
+        .then()
         .shimmer(
-          delay: (index * 100 + 1000).ms,
-          duration: 1800.ms,
-          color: Colors.white.withOpacity(0.3),
+          delay: (index * 150 + 500).ms,
+          duration: 1500.ms,
+          color: Colors.white.withOpacity(0.4),
         );
   }
 
-  Widget _buildStatusChip(String status) {
-    Color backgroundColor;
-    Color textColor;
-    IconData icon;
-
-    switch (status.toLowerCase()) {
-      case 'processing':
-      case 'under_review':
-        backgroundColor = const Color(0xFFFFF3E0);
-        textColor = const Color(0xFFF57C00);
-        icon = Icons.hourglass_empty_rounded;
-        break;
-      case 'submitted':
-        backgroundColor = const Color(0xFFE3F2FD);
-        textColor = const Color(0xFF1976D2);
-        icon = Icons.send_rounded;
-        break;
-      case 'approved':
-        backgroundColor = const Color(0xFFE8F5E9);
-        textColor = const Color(0xFF388E3C);
-        icon = Icons.check_circle_outline_rounded;
-        break;
-      case 'rejected':
-      case 'declined':
-        backgroundColor = const Color(0xFFFFEBEE);
-        textColor = const Color(0xFFD32F2F);
-        icon = Icons.cancel_outlined;
-        break;
-      case 'cancelled':
-        backgroundColor = const Color(0xFFFCE4EC);
-        textColor = const Color(0xFFC2185B);
-        icon = Icons.block_rounded;
-        break;
-      case 'draft':
-        backgroundColor = const Color(0xFFF5F5F5);
-        textColor = const Color(0xFF616161);
-        icon = Icons.edit_note_rounded;
-        break;
-      default:
-        backgroundColor = RealTimeColors.grey200;
-        textColor = RealTimeColors.grey700;
-        icon = Icons.help_outline_rounded;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: textColor.withOpacity(0.3), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 6),
-          Text(
-            _formatStatus(status),
-            style: GoogleFonts.poppins(
-              color: textColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    bool isPrimary = false,
+    Color? iconColor,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: (iconColor ?? AppColors.primaryColor).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
           ),
-        ],
-      ),
+          child: Icon(
+            icon,
+            size: isPrimary ? 20 : 18,
+            color: iconColor ?? AppColors.primaryColor,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  color: AppColors.subtextColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  color: isPrimary
+                      ? AppColors.primaryColor
+                      : AppColors.textColor,
+                  fontSize: isPrimary ? 20 : 14,
+                  fontWeight: isPrimary ? FontWeight.w800 : FontWeight.w600,
+                  letterSpacing: isPrimary ? -0.5 : 0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
+  Widget _buildCollateralQuickInfo() {
+    final category = application.collateralCategory?.toLowerCase();
+
+    if (category == 'small_loans' && application.smallLoanDetails != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: _getCategoryColor(category).withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _getCategoryColor(category).withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.devices_rounded,
+              size: 16,
+              color: _getCategoryColor(category),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${application.smallLoanDetails?.type ?? ''} ${application.smallLoanDetails?.model ?? ''}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: _getCategoryColor(category),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1);
+    }
+
+    if (category == 'motor_vehicle' &&
+        application.motorVehicleDetails != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: _getCategoryColor(category).withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _getCategoryColor(category).withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.directions_car_rounded,
+              size: 16,
+              color: _getCategoryColor(category),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${application.motorVehicleDetails?.make ?? ''} ${application.motorVehicleDetails?.model ?? ''}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: _getCategoryColor(category),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1);
+    }
+
+    if (category == 'jewellery' && application.jewelleryDetails != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: _getCategoryColor(category).withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _getCategoryColor(category).withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.diamond_rounded,
+              size: 16,
+              color: _getCategoryColor(category),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${application.jewelleryDetails?.type ?? ''} • ${application.jewelleryDetails?.purity ?? ''}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: _getCategoryColor(category),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1);
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  IconData _getStatusIcon(String? status) {
+    if (status == null) return Icons.help_outline_rounded;
+
+    switch (status.toLowerCase()) {
+      case 'processing':
+        return Icons.hourglass_empty_rounded;
+      case 'submitted':
+        return Icons.send_rounded;
+      case 'approved':
+        return Icons.check_circle_outline_rounded;
+      case 'rejected':
+        return Icons.cancel_outlined;
+      case 'cancelled':
+        return Icons.block_rounded;
+      default:
+        return Icons.edit_note_rounded;
+    }
+  }
+
   String _formatStatus(String status) {
-    // Convert to title case
     return status
         .split('_')
         .map(
