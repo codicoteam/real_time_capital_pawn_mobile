@@ -51,7 +51,8 @@ class _LoanApplicationDetailsScreenState
     super.dispose();
   }
 
-  String _formatCurrency(int? amount) {
+  // ✅ Fixed: accepts double? so it works for both int and double amounts
+  String _formatCurrency(double? amount) {
     if (amount == null) return '\$0.00';
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     return formatter.format(amount);
@@ -483,7 +484,8 @@ class _LoanApplicationDetailsScreenState
           ),
           const SizedBox(height: 16),
           Text(
-            _formatCurrency(widget.application.requestedLoanAmount),
+            // ✅ Cast int? to double? for the unified _formatCurrency
+            _formatCurrency(widget.application.requestedLoanAmount?.toDouble()),
             style: GoogleFonts.poppins(
               color: Colors.white,
               fontSize: 44,
@@ -549,6 +551,7 @@ class _LoanApplicationDetailsScreenState
             Icons.badge_outlined,
           ),
           const SizedBox(height: 16),
+          // ✅ Fixed: customer.email is now String? — no more enum mismatch
           _buildDetailRow(
             'Email',
             customer.email ?? 'N/A',
@@ -651,7 +654,6 @@ class _LoanApplicationDetailsScreenState
           const SizedBox(height: 20),
           _buildDetailRow('Category', categoryDisplay, Icons.category_outlined),
 
-          // Category-specific details
           if (category.toLowerCase() == 'jewellery' &&
               widget.application.jewelleryDetails != null) ...[
             const SizedBox(height: 16),
@@ -681,8 +683,10 @@ class _LoanApplicationDetailsScreenState
             if (widget.application.jewelleryDetails!.estimatedValue != null)
               _buildDetailRow(
                 'Estimated Value',
+                // ✅ Cast int? to double?
                 _formatCurrency(
-                  widget.application.jewelleryDetails!.estimatedValue,
+                  widget.application.jewelleryDetails!.estimatedValue
+                      ?.toDouble(),
                 ),
                 Icons.monetization_on_outlined,
                 indent: true,
@@ -791,7 +795,10 @@ class _LoanApplicationDetailsScreenState
             const SizedBox(height: 16),
             _buildDetailRow(
               'Declared Value',
-              _formatCurrency(widget.application.declaredAssetValue),
+              // ✅ Cast int? to double?
+              _formatCurrency(
+                widget.application.declaredAssetValue?.toDouble(),
+              ),
               Icons.monetization_on_outlined,
             ),
           ],
@@ -910,12 +917,14 @@ class _LoanApplicationDetailsScreenState
             ],
             if (installmentAmount != null) ...[
               const SizedBox(height: 16),
+              // ✅ Fixed: installmentAmount is double?, _formatCurrency now accepts double?
               _buildDetailRow(
                 'Installment Amount',
                 _formatCurrency(installmentAmount),
                 Icons.install_mobile_rounded,
               ),
               const SizedBox(height: 16),
+              // ✅ Fixed: arithmetic stays as double, no int cast needed
               _buildDetailRow(
                 'Total Repayment',
                 _formatCurrency(installmentAmount * (installmentCount ?? 0)),
@@ -1210,6 +1219,7 @@ class _LoanApplicationDetailsScreenState
                           color: AppColors.subtextColor,
                         ),
                         const SizedBox(width: 4),
+                        // ✅ Fixed: createdBy.firstName is now String?
                         Text(
                           note.createdBy?.firstName ?? 'Admin',
                           style: GoogleFonts.poppins(
@@ -1363,7 +1373,6 @@ class _LoanApplicationDetailsScreenState
             'Application Source',
             widget.application.applicationSource ?? 'N/A',
           ),
-          _buildMetaRow('Created By', _getCreatedByName()),
           _buildMetaRow(
             'Created At',
             _formatDate(widget.application.createdAt),
@@ -1407,15 +1416,6 @@ class _LoanApplicationDetailsScreenState
         ],
       ),
     );
-  }
-
-  String _getCreatedByName() {
-    final createdBy = widget.application.createdBy;
-    if (createdBy == null) return 'N/A';
-    if (createdBy.firstName != null || createdBy.lastName != null) {
-      return '${createdBy.firstName ?? ''} ${createdBy.lastName ?? ''}'.trim();
-    }
-    return createdBy.email ?? 'N/A';
   }
 
   Widget _buildSubsectionHeader(String title, IconData icon) {

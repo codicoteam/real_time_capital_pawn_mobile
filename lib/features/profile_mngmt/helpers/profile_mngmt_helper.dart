@@ -1,10 +1,23 @@
 // lib/features/profile_mngmt/helpers/profile_mngmt_helper.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:real_time_pawn/core/utils/logs.dart';
+import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/profile_mngmt/controllers/profile_mngmt_controller.dart';
 import 'package:real_time_pawn/models/profile_mngmt_model.dart';
+import 'package:real_time_pawn/models/profile_mngmt_model.dart' as profile_mngmt_model show EmploymentDetails, NextOfKin, Document;
+import 'package:real_time_pawn/models/register_body_model.dart';
+import 'package:real_time_pawn/models/register_body_model.dart' as register_body_model;
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../models/profile_mngmt_model.dart' as profile_mngmt_model show EmploymentDetails, NextOfKin;
 
 class ProfileMngmtHelper {
+  static final _supabase = Supabase.instance.client;
+
   /// Initialize controller if not already done
   static ProfileController get _profileController {
     if (!Get.isRegistered<ProfileController>()) {
@@ -23,42 +36,134 @@ class ProfileMngmtHelper {
     }
   }
 
-  /// Update profile with validation
-  static Future<bool> updateProfile({
-    required String firstName,
-    required String lastName,
-    String? phone,
-    // ❌ REMOVED: These fields don't exist in your backend
-    // String? dateOfBirth,
-    // String? address,
-    // String? location,
-    String? profilePicUrl,
+  /// Upload document to Supabase
+  static Future<String?> uploadDocumentToSupabase({
+    required File imageFile,
+    required String userId,
+    required String documentType,
+  }) async {
+    try {
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${userId}_${documentType}.jpg';
+      final filePath = 'users/$userId/$documentType/$fileName';
+
+      DevLogs.logInfo('📤 Uploading $documentType to storage: $filePath');
+
+      await _supabase.storage
+          .from('topics')
+          .upload(
+            filePath,
+            imageFile,
+            fileOptions: const FileOptions(
+              upsert: false,
+              contentType: 'image/jpeg',
+            ),
+          );
+
+      final publicUrl = _supabase.storage.from('topics').getPublicUrl(filePath);
+      DevLogs.logInfo('🔗 Public URL for $documentType: $publicUrl');
+
+      return publicUrl;
+    } on StorageException catch (e) {
+      DevLogs.logError(
+        '❌ Storage Exception for $documentType: ${e.toString()}',
+      );
+      return null;
+    } catch (e) {
+      DevLogs.logError('❌ Error uploading $documentType: ${e.toString()}');
+      return null;
+    }
+  }
+
+  /// Convert UserProfile EmploymentDetails to RegisterBodyModel EmploymentDetails
+  static register_body_model.EmploymentDetails? _convertEmploymentDetails(
+      profile_mngmt_model.EmploymentDetails? details) {
+    if (details == null) return null;
+    return register_body_model.EmploymentDetails(
+      employerName: details.employerName,
+      jobTitle: details.jobTitle,
+      duration: details.duration,
+      location: details.location,
+      contacts: details.contacts,
+    );
+  }
+
+  /// Convert UserProfile NextOfKin to RegisterBodyModel NextOfKin
+  static register_body_model.NextOfKin? _convertNextOfKin(
+      profile_mngmt_model.NextOfKin? kin) {
+    if (kin == null) return null;
+    return register_body_model.NextOfKin(
+      fullName: kin.fullName,
+      relationship: kin.relationship,
+      phoneNumber: kin.phoneNumber,
+      email: kin.email,
+      address: kin.address,
+    );
+  }
+
+  /// Convert UserProfile Document to RegisterBodyModel Document
+  static List<register_body_model.Document>? _convertDocuments(
+      List<profile_mngmt_model.Document>? docs) {
+    if (docs == null) return null;
+    return docs.map((doc) => register_body_model.Document(
+      type: doc.type,
+      url: doc.url,
+      fileName: doc.fileName,
+      mimeType: doc.mimeType,
+      notes: doc.notes,
+    )).toList();
+  }
+
+  /// Convert UserProfile to RegisterBodyModel for update
+  static RegisterBodyModel userProfileToRegisterBody(UserProfile user) {
+    return RegisterBodyModel(
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      dateOfBirth: user.dateOfBirth,
+      address: user.address,
+      location: user.location,
+      gender: user.gender,
+      maritalStatus: user.maritalStatus,
+      alternativePhone: user.alternativePhone,
+      nationalIdNumber: user.nationalIdNumber,
+      nationalIdImageUrl: user.nationalIdImageUrl,
+      profilePicUrl: user.profilePicUrl,
+      passportExpiryDate: user.passportExpiryDate != null
+          ? DateTime.tryParse(user.passportExpiryDate.toString())
+          : null,
+      isEmployed: user.isEmployed,
+      employmentDetails: _convertEmploymentDetails(user.employmentDetails),
+      nextOfKin: _convertNextOfKin(user.nextOfKin),
+      documents: _convertDocuments(user.documents),
+    );
+  }
+
+  /// Update profile with RegisterBodyModel
+  static Future<bool> updateProfileWithModel({
+    required RegisterBodyModel profileData,
   }) async {
     // Validation
-    if (firstName.isEmpty) {
+    if (profileData.firstName?.isEmpty ?? true) {
       showError('First name is required');
       return false;
     }
-    if (lastName.isEmpty) {
+    if (profileData.lastName?.isEmpty ?? true) {
       showError('Last name is required');
       return false;
     }
 
     try {
-      // ✅ UPDATED: Only pass fields that exist
       final success = await _profileController.updateProfile(
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone?.trim(),
-        // ❌ REMOVED: dateOfBirth, address, location
-        profilePicUrl: profilePicUrl,
+        profileData: profileData,
       );
 
       if (success) {
         showSuccess('Profile updated successfully');
         return true;
       } else {
-        showError(_profileController.currentErrorMessage);
+        showError(_profileController.errorMessage.value);
         return false;
       }
     } catch (e) {
@@ -67,71 +172,46 @@ class ProfileMngmtHelper {
     }
   }
 
-  /// Upload document
-  static Future<bool> uploadDocument({
-    required String type,
-    required String url,
-    required String fileName,
-    required String mimeType,
-    String? notes,
+  /// Update profile with individual fields (convenience method)
+  static Future<bool> updateProfile({
+    required String firstName,
+    required String lastName,
+    String? phone,
+    DateTime? dateOfBirth,
+    String? address,
+    String? location,
+    String? gender,
+    String? maritalStatus,
+    String? alternativePhone,
+    String? nationalIdNumber,
+    String? profilePicUrl,
+    bool? isEmployed,
+    profile_mngmt_model.EmploymentDetails? employmentDetails,
+    profile_mngmt_model.NextOfKin? nextOfKin,
   }) async {
-    try {
-      final success = await _profileController.uploadDocument(
-        type: type,
-        url: url,
-        fileName: fileName,
-        mimeType: mimeType,
-        notes: notes,
-      );
-
-      if (success) {
-        showSuccess('Document uploaded successfully');
-        return true;
-      } else {
-        showError(_profileController.currentErrorMessage);
-        return false;
-      }
-    } catch (e) {
-      showError('An error occurred: ${e.toString()}');
-      return false;
-    }
-  }
-
-  /// Delete document
-  static Future<bool> deleteDocument(String documentId) async {
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('Delete Document'),
-        content: const Text('Are you sure you want to delete this document?'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+    // Get current user data to preserve existing fields
+    final currentUser = _profileController.userProfile.value;
+    
+    final profileData = RegisterBodyModel(
+      email: currentUser?.email,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone?.trim(),
+      dateOfBirth: dateOfBirth,
+      address: address,
+      location: location,
+      gender: gender,
+      maritalStatus: maritalStatus,
+      alternativePhone: alternativePhone?.trim(),
+      nationalIdNumber: nationalIdNumber?.trim(),
+      profilePicUrl: profilePicUrl,
+      isEmployed: isEmployed ?? currentUser?.isEmployed,
+      employmentDetails: _convertEmploymentDetails(employmentDetails ?? currentUser?.employmentDetails),
+      nextOfKin: _convertNextOfKin(nextOfKin ?? currentUser?.nextOfKin),
+      documents: _convertDocuments(currentUser?.documents),
     );
 
-    if (confirmed != true) return false;
-
-    try {
-      final success = await _profileController.deleteDocument(documentId);
-
-      if (success) {
-        showSuccess('Document deleted successfully');
-        return true;
-      } else {
-        showError(_profileController.currentErrorMessage);
-        return false;
-      }
-    } catch (e) {
-      showError('An error occurred: ${e.toString()}');
-      return false;
-    }
+    return updateProfileWithModel(profileData: profileData);
   }
 
   /// Request account deletion
@@ -192,6 +272,91 @@ class ProfileMngmtHelper {
     }
   }
 
+  /// Upload and update profile picture
+  static Future<bool> uploadProfilePicture(File imageFile) async {
+    try {
+      final user = _profileController.userProfile.value;
+      if (user == null) {
+        showError('User not found');
+        return false;
+      }
+
+      showLoading('Uploading profile picture...');
+
+      final url = await uploadDocumentToSupabase(
+        imageFile: imageFile,
+        userId: user.id!,
+        documentType: 'profile_pic',
+      );
+
+      if (url != null) {
+        // Update profile with new picture URL
+        final success = await updateProfile(
+          firstName: user.firstName!,
+          lastName: user.lastName!,
+          phone: user.phone,
+          profilePicUrl: url,
+        );
+
+        hideLoading();
+        if (success) {
+          showSuccess('Profile picture updated successfully');
+          return true;
+        }
+      }
+
+      hideLoading();
+      showError('Failed to upload profile picture');
+      return false;
+    } catch (e) {
+      hideLoading();
+      showError('Error uploading picture: ${e.toString()}');
+      return false;
+    }
+  }
+
+  // Loading dialog
+  static OverlayEntry? _loadingOverlay;
+
+  static void showLoading(String message) {
+    _loadingOverlay = OverlayEntry(
+      builder: (context) => Material(
+        color: Colors.black.withOpacity(0.5),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  color: AppColors.primaryColor,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(Get.overlayContext!).insert(_loadingOverlay!);
+  }
+
+  static void hideLoading() {
+    _loadingOverlay?.remove();
+    _loadingOverlay = null;
+  }
+
   // UI Feedback methods
   static void showSuccess(String message) {
     Get.snackbar(
@@ -205,18 +370,6 @@ class ProfileMngmtHelper {
       margin: const EdgeInsets.all(16),
       borderRadius: 12,
     );
-  }
-
-  /// Get document ID for deletion (handles mock data)
-  static String? getDocumentIdForDeletion(Document document) {
-    // If the document ID is "string" (mock data), we can't delete it
-    if (document.id == 'string') {
-      showError(
-        'Cannot delete mock document. Please upload a real document first.',
-      );
-      return null;
-    }
-    return document.id;
   }
 
   static void showError(String message) {
@@ -242,7 +395,6 @@ class ProfileMngmtHelper {
     try {
       final controller = _profileController;
 
-      // If profile not loaded, fetch it first
       if (controller.userProfile.value == null) {
         await fetchUserProfile();
       }
@@ -250,66 +402,18 @@ class ProfileMngmtHelper {
       final user = controller.userProfile.value;
       if (user == null) return null;
 
-      // ✅ ONLY USE FIELDS FROM YOUR BACKEND
       return {
-        // ✅ Available from profile response
         'fullName': '${user.firstName} ${user.lastName}',
         'firstName': user.firstName,
         'lastName': user.lastName,
         'email': user.email,
         'phone': user.phone ?? '',
-
-        // ✅ Document info if available
-        'hasDocuments': user.documents.isNotEmpty,
-        'documentCount': user.documents.length,
-
-        // ✅ Status information
-        'isEmailVerified': user.isEmailVerified,
+        'isEmailVerified': user.emailVerified ?? false,
         'status': user.status.toString(),
-
-        // ✅ Calculate profile completeness based on ACTUAL fields
-        'hasBasicInfo': _hasBasicInfo(user),
-        'hasCompleteProfile': _hasCompleteProfile(user),
-        'missingFields': _getMissingFields(user),
       };
     } catch (e) {
       showError('Error fetching user data: ${e.toString()}');
       return null;
     }
-  }
-
-  /// ✅ Update: Check if we have minimum required for auto-fill
-  static bool _hasBasicInfo(UserProfile user) {
-    return user.firstName.isNotEmpty &&
-        user.lastName.isNotEmpty &&
-        user.email.isNotEmpty &&
-        user.isEmailVerified;
-  }
-
-  /// ✅ Update: Check if profile is complete based on ACTUAL requirements
-  static bool _hasCompleteProfile(UserProfile user) {
-    return _hasBasicInfo(user) &&
-        user.phone != null &&
-        user.phone!.isNotEmpty &&
-        user.documents.isNotEmpty;
-  }
-
-  /// ✅ Update: Get list of missing fields based on ACTUAL fields
-  static List<String> _getMissingFields(UserProfile user) {
-    List<String> missing = [];
-
-    if (user.phone == null || user.phone!.isEmpty) {
-      missing.add('Phone Number');
-    }
-
-    if (!user.isEmailVerified) {
-      missing.add('Email Verification');
-    }
-
-    if (user.documents.isEmpty) {
-      missing.add('Documents (ID, Proof of Address)');
-    }
-
-    return missing;
   }
 }

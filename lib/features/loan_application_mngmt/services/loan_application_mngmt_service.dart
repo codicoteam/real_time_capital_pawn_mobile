@@ -1,56 +1,55 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:real_time_pawn/config/api_config/api_keys.dart';
 import '../../../core/utils/api_response.dart';
 import '../../../core/utils/logs.dart';
 import '../../../core/utils/shared_pref_methods.dart';
+import '../../../models/application_response_model.dart';
 import '../../../models/loan_application_model.dart';
 
 class LoanApplicationService {
   /// 🔹 Create loan application
-  static Future<APIResponse<LoanApplicationModel>> createLoanApplication({
-    required Map<String, dynamic> payload,
-  }) async {
-    final token = await CacheUtils.checkToken();
-    final String url = '${ApiKeys.baseUrl}/loan-applications';
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(payload),
+static Future<APIResponse<LoanApplicationResponseModel>> createLoanApplication({
+  required Map<String, dynamic> payload,
+}) async {
+  final token = await CacheUtils.checkToken();
+  final String url = '${ApiKeys.baseUrl}/loan-applications';
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
+    DevLogs.logInfo('Create loan application response: ${response.body}');
+    debugPrint('Create loan application response: ${response.body}', wrapWidth: 1024);
+    final decoded = json.decode(response.body);
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final application = LoanApplicationResponseModel.fromMap(decoded['data']);
+      return APIResponse<LoanApplicationResponseModel>(
+        success: true,
+        data: application,
+        message: decoded['message'] ?? 'Loan application created successfully',
       );
-      DevLogs.logInfo('Create loan application response: ${response.body}');
-      final decoded = json.decode(response.body);
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final application = LoanApplicationModel.fromMap(decoded['data']);
-        return APIResponse<LoanApplicationModel>(
-          success: true,
-          data: application,
-          message:
-              decoded['message'] ?? 'Loan application created successfully',
-        );
-      } else {
-        return APIResponse<LoanApplicationModel>(
-          success: false,
-          message:
-              decoded['message'] ??
-              'Failed to create loan application. HTTP ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      DevLogs.logError('Create loan application error: $e');
-      return APIResponse<LoanApplicationModel>(
+    } else {
+      return APIResponse<LoanApplicationResponseModel>(
         success: false,
-        message: 'Error creating loan application: $e',
+        message: decoded['message'] ?? 'Failed to create loan application. HTTP ${response.statusCode}',
       );
     }
+  } catch (e) {
+    DevLogs.logError('Create loan application error: $e');
+    return APIResponse<LoanApplicationResponseModel>(
+      success: false,
+      message: 'Error creating loan application: $e',
+    );
   }
-
+}
   /// 🔹 Get loan applications by customer user
   static Future<APIResponse<List<LoanApplicationModel>>>
   getLoanApplicationsByCustomer({

@@ -4,6 +4,7 @@ import 'package:real_time_pawn/models/loan_application_model.dart'
     show LoanApplicationModel;
 
 import '../../../core/utils/api_response.dart';
+import '../../../models/application_response_model.dart';
 import '../../../widgets/loading_widgets/circular_loader.dart';
 import '../../../core/utils/pallete.dart';
 import '../controllers/loan_application_mngmt_controller.dart';
@@ -40,7 +41,7 @@ class LoanApplicationHelper {
         barrierDismissible: false,
       );
 
-      final APIResponse<LoanApplicationModel> response = await _loanController
+      final APIResponse<LoanApplicationResponseModel> response = await _loanController
           .createLoanApplication(payload);
       Get.back();
       if (Get.isDialogOpen ?? false) {
@@ -57,7 +58,7 @@ class LoanApplicationHelper {
 
         return LoanApplicationResult(
           success: true,
-          loanId: loanApplication.id,
+          loanId: loanApplication.loanId,
           applicationNo: loanApplication.applicationNo,
           message: response.message,
         );

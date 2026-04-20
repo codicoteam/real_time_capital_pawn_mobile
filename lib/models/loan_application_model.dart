@@ -9,27 +9,29 @@ class LoanApplicationModel {
   final String? collateralDescription;
   final String? suretyDescription;
   final int? declaredAssetValue;
-  final JewelleryDetails? jewelleryDetails;
+  final SmallLoanDetails? smallLoanDetails;
   final List<String>? collateralImages;
   final String? repaymentType;
   final int? repaymentDays;
+  final int? installmentCount;
+  final String? installmentFrequency;
+  final double? installmentAmount;
   final String? declarationText;
   final DateTime? declarationSignedAt;
   final String? declarationSignatureName;
   final String? status;
   final DebtorCheck? debtorCheck;
   final String? customTermsAndConditions;
-  final CreatedBy? createdBy;
-  final String? applicationSource;
+  final EdBy? createdBy;
+  final String? applicationSource; // ✅ was: ApplicationSource?
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final List<AdminNote>? adminNotes;
   final int? v;
-  final int? installmentCount;
-  final String? installmentFrequency;
-  final int? installmentAmount;
   final MotorVehicleDetails? motorVehicleDetails;
-  final SmallLoanDetails? smallLoanDetails;
+  final String? internalNotes;
+  final EdBy? processedBy;
+  final JewelleryDetails? jewelleryDetails;
 
   LoanApplicationModel({
     this.id,
@@ -40,10 +42,13 @@ class LoanApplicationModel {
     this.collateralDescription,
     this.suretyDescription,
     this.declaredAssetValue,
-    this.jewelleryDetails,
+    this.smallLoanDetails,
     this.collateralImages,
     this.repaymentType,
     this.repaymentDays,
+    this.installmentCount,
+    this.installmentFrequency,
+    this.installmentAmount,
     this.declarationText,
     this.declarationSignedAt,
     this.declarationSignatureName,
@@ -56,11 +61,10 @@ class LoanApplicationModel {
     this.updatedAt,
     this.adminNotes,
     this.v,
-    this.installmentCount,
-    this.installmentFrequency,
-    this.installmentAmount,
     this.motorVehicleDetails,
-    this.smallLoanDetails,
+    this.internalNotes,
+    this.processedBy,
+    this.jewelleryDetails,
   });
 
   factory LoanApplicationModel.fromJson(String str) =>
@@ -80,14 +84,17 @@ class LoanApplicationModel {
         collateralDescription: json["collateral_description"],
         suretyDescription: json["surety_description"],
         declaredAssetValue: json["declared_asset_value"],
-        jewelleryDetails: json["jewellery_details"] == null
+        smallLoanDetails: json["small_loan_details"] == null
             ? null
-            : JewelleryDetails.fromMap(json["jewellery_details"]),
+            : SmallLoanDetails.fromMap(json["small_loan_details"]),
         collateralImages: json["collateral_images"] == null
             ? []
             : List<String>.from(json["collateral_images"]!.map((x) => x)),
         repaymentType: json["repayment_type"],
         repaymentDays: json["repayment_days"],
+        installmentCount: json["installment_count"],
+        installmentFrequency: json["installment_frequency"],
+        installmentAmount: json["installment_amount"]?.toDouble(),
         declarationText: json["declaration_text"],
         declarationSignedAt: json["declaration_signed_at"] == null
             ? null
@@ -100,8 +107,8 @@ class LoanApplicationModel {
         customTermsAndConditions: json["custom_terms_and_conditions"],
         createdBy: json["created_by"] == null
             ? null
-            : CreatedBy.fromMap(json["created_by"]),
-        applicationSource: json["application_source"],
+            : EdBy.fromMap(json["created_by"]),
+        applicationSource: json["application_source"], // ✅ plain string
         createdAt: json["created_at"] == null
             ? null
             : DateTime.parse(json["created_at"]),
@@ -114,15 +121,16 @@ class LoanApplicationModel {
                 json["admin_notes"]!.map((x) => AdminNote.fromMap(x)),
               ),
         v: json["__v"],
-        installmentCount: json["installment_count"],
-        installmentFrequency: json["installment_frequency"],
-        installmentAmount: json["installment_amount"],
         motorVehicleDetails: json["motor_vehicle_details"] == null
             ? null
             : MotorVehicleDetails.fromMap(json["motor_vehicle_details"]),
-        smallLoanDetails: json["small_loan_details"] == null
+        internalNotes: json["internal_notes"],
+        processedBy: json["processed_by"] == null
             ? null
-            : SmallLoanDetails.fromMap(json["small_loan_details"]),
+            : EdBy.fromMap(json["processed_by"]),
+        jewelleryDetails: json["jewellery_details"] == null
+            ? null
+            : JewelleryDetails.fromMap(json["jewellery_details"]),
       );
 
   Map<String, dynamic> toMap() => {
@@ -134,12 +142,15 @@ class LoanApplicationModel {
     "collateral_description": collateralDescription,
     "surety_description": suretyDescription,
     "declared_asset_value": declaredAssetValue,
-    "jewellery_details": jewelleryDetails?.toMap(),
+    "small_loan_details": smallLoanDetails?.toMap(),
     "collateral_images": collateralImages == null
         ? []
         : List<dynamic>.from(collateralImages!.map((x) => x)),
     "repayment_type": repaymentType,
     "repayment_days": repaymentDays,
+    "installment_count": installmentCount,
+    "installment_frequency": installmentFrequency,
+    "installment_amount": installmentAmount,
     "declaration_text": declarationText,
     "declaration_signed_at": declarationSignedAt?.toIso8601String(),
     "declaration_signature_name": declarationSignatureName,
@@ -147,71 +158,40 @@ class LoanApplicationModel {
     "debtor_check": debtorCheck?.toMap(),
     "custom_terms_and_conditions": customTermsAndConditions,
     "created_by": createdBy?.toMap(),
-    "application_source": applicationSource,
+    "application_source": applicationSource, // ✅ plain string
     "created_at": createdAt?.toIso8601String(),
     "updated_at": updatedAt?.toIso8601String(),
     "admin_notes": adminNotes == null
         ? []
         : List<dynamic>.from(adminNotes!.map((x) => x.toMap())),
     "__v": v,
-    "installment_count": installmentCount,
-    "installment_frequency": installmentFrequency,
-    "installment_amount": installmentAmount,
     "motor_vehicle_details": motorVehicleDetails?.toMap(),
-    "small_loan_details": smallLoanDetails?.toMap(),
+    "internal_notes": internalNotes,
+    "processed_by": processedBy?.toMap(),
+    "jewellery_details": jewelleryDetails?.toMap(),
   };
 }
 
-class AdminNote {
-  final String? note;
-  final CreatedBy? createdBy;
-  final DateTime? createdAt;
-  final String? id;
-
-  AdminNote({this.note, this.createdBy, this.createdAt, this.id});
-
-  factory AdminNote.fromJson(String str) => AdminNote.fromMap(json.decode(str));
-
-  String toJson() => json.encode(toMap());
-
-  factory AdminNote.fromMap(Map<String, dynamic> json) => AdminNote(
-    note: json["note"],
-    createdBy: json["created_by"] == null
-        ? null
-        : CreatedBy.fromMap(json["created_by"]),
-    createdAt: json["created_at"] == null
-        ? null
-        : DateTime.parse(json["created_at"]),
-    id: json["_id"],
-  );
-
-  Map<String, dynamic> toMap() => {
-    "note": note,
-    "created_by": createdBy?.toMap(),
-    "created_at": createdAt?.toIso8601String(),
-    "_id": id,
-  };
-}
-
-class CreatedBy {
+// ✅ All enum fields replaced with plain String?
+class EdBy {
   final String? id;
   final String? email;
   final List<String>? roles;
   final String? firstName;
   final String? lastName;
 
-  CreatedBy({this.id, this.email, this.roles, this.firstName, this.lastName});
+  EdBy({this.id, this.email, this.roles, this.firstName, this.lastName});
 
-  factory CreatedBy.fromJson(String str) => CreatedBy.fromMap(json.decode(str));
+  factory EdBy.fromJson(String str) => EdBy.fromMap(json.decode(str));
 
   String toJson() => json.encode(toMap());
 
-  factory CreatedBy.fromMap(Map<String, dynamic> json) => CreatedBy(
+  factory EdBy.fromMap(Map<String, dynamic> json) => EdBy(
     id: json["_id"],
     email: json["email"],
     roles: json["roles"] == null
         ? []
-        : List<String>.from(json["roles"]!.map((x) => x)),
+        : List<String>.from(json["roles"]!.map((x) => x.toString())),
     firstName: json["first_name"],
     lastName: json["last_name"],
   );
@@ -225,6 +205,7 @@ class CreatedBy {
   };
 }
 
+// ✅ All enum fields replaced with plain String?
 class CustomerUser {
   final String? id;
   final String? email;
@@ -281,6 +262,37 @@ class CustomerUser {
     "address": address,
     "gender": gender,
     "marital_status": maritalStatus,
+  };
+}
+
+class AdminNote {
+  final String? note;
+  final EdBy? createdBy;
+  final DateTime? createdAt;
+  final String? id;
+
+  AdminNote({this.note, this.createdBy, this.createdAt, this.id});
+
+  factory AdminNote.fromJson(String str) => AdminNote.fromMap(json.decode(str));
+
+  String toJson() => json.encode(toMap());
+
+  factory AdminNote.fromMap(Map<String, dynamic> json) => AdminNote(
+    note: json["note"],
+    createdBy: json["created_by"] == null
+        ? null
+        : EdBy.fromMap(json["created_by"]),
+    createdAt: json["created_at"] == null
+        ? null
+        : DateTime.parse(json["created_at"]),
+    id: json["_id"],
+  );
+
+  Map<String, dynamic> toMap() => {
+    "note": note,
+    "created_by": createdBy?.toMap(),
+    "created_at": createdAt?.toIso8601String(),
+    "_id": id,
   };
 }
 
@@ -422,3 +434,6 @@ class SmallLoanDetails {
     "serial_no": serialNo,
   };
 }
+
+// ✅ EnumValues and all stale enums (Email, FirstName, LastName, Id,
+//    ApplicationSource) removed — no longer needed anywhere in this file.

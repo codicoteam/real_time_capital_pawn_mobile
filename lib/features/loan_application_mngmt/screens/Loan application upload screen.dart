@@ -6,6 +6,8 @@ import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/widgets/custom_button.dart';
 
+import '../../../global/user_controller.dart';
+
 class LoanApplicationUploadScreen extends StatefulWidget {
   final String loanId;
   final String loanCategory;
@@ -27,6 +29,9 @@ class LoanApplicationUploadScreen extends StatefulWidget {
 
 class _LoanApplicationUploadScreenState
     extends State<LoanApplicationUploadScreen> {
+
+        final UserController userController = Get.find<UserController>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,15 +56,18 @@ class _LoanApplicationUploadScreenState
               elevation: 0,
               backgroundColor: AppColors.backgroundColor,
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
-                    
+
                     // Success Animation Container
                     Container(
                       padding: const EdgeInsets.all(30),
@@ -72,10 +80,13 @@ class _LoanApplicationUploadScreenState
                         size: 100,
                         color: AppColors.successColor,
                       ),
-                    ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
-                    
+                    ).animate().scale(
+                      duration: 500.ms,
+                      curve: Curves.elasticOut,
+                    ),
+
                     const SizedBox(height: 32),
-                    
+
                     // Success Title
                     Text(
                       'Loan Application Submitted!',
@@ -86,9 +97,9 @@ class _LoanApplicationUploadScreenState
                       ),
                       textAlign: TextAlign.center,
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Success Message
                     Text(
                       'Your loan application has been received and is being processed.',
@@ -99,9 +110,9 @@ class _LoanApplicationUploadScreenState
                       ),
                       textAlign: TextAlign.center,
                     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Application Details Card
                     Container(
                       padding: const EdgeInsets.all(24),
@@ -123,7 +134,9 @@ class _LoanApplicationUploadScreenState
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(0.1),
+                                  color: AppColors.primaryColor.withOpacity(
+                                    0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -164,7 +177,9 @@ class _LoanApplicationUploadScreenState
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(0.1),
+                                  color: AppColors.primaryColor.withOpacity(
+                                    0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -205,7 +220,9 @@ class _LoanApplicationUploadScreenState
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.successColor.withOpacity(0.1),
+                                  color: AppColors.successColor.withOpacity(
+                                    0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -233,7 +250,8 @@ class _LoanApplicationUploadScreenState
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.successColor.withOpacity(0.1),
+                                        color: AppColors.successColor
+                                            .withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
@@ -253,9 +271,9 @@ class _LoanApplicationUploadScreenState
                         ],
                       ),
                     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Info Card - What happens next
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -292,30 +310,33 @@ class _LoanApplicationUploadScreenState
                           _buildTimelineStep(
                             number: '1',
                             title: 'Application Review',
-                            description: 'Our team will review your application and collateral details.',
+                            description:
+                                'Our team will review your application and collateral details.',
                           ),
                           const SizedBox(height: 16),
                           _buildTimelineStep(
                             number: '2',
                             title: 'Verification',
-                            description: 'We may contact you for additional information or verification.',
+                            description:
+                                'We may contact you for additional information or verification.',
                           ),
                           const SizedBox(height: 16),
                           _buildTimelineStep(
                             number: '3',
                             title: 'Decision',
-                            description: 'You\'ll be notified of the loan decision within 24-48 hours.',
+                            description:
+                                'You\'ll be notified of the loan decision within 24-48 hours.',
                           ),
                         ],
                       ),
                     ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
-                    
+
                     const SizedBox(height: 40),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom Buttons
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -339,7 +360,13 @@ class _LoanApplicationUploadScreenState
                     borderRadius: 12,
                     onTap: () {
                       // Navigate to My Loans page
-                      Get.offAllNamed(RoutesHelper.loanApplicationsScreen);
+                      Get.offAllNamed(
+                        RoutesHelper.loanApplicationsScreen,
+                        arguments: {
+
+                          'customerUserId':  userController.user?.userId ?? '',
+                        },
+                      );
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -361,12 +388,13 @@ class _LoanApplicationUploadScreenState
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Back to Home Button
                   TextButton(
-                    onPressed: () => Get.offAllNamed(RoutesHelper.main_home_page),
+                    onPressed: () =>
+                        Get.offAllNamed(RoutesHelper.main_home_page),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -387,7 +415,7 @@ class _LoanApplicationUploadScreenState
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
                 ],
               ),

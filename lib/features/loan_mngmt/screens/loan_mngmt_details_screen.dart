@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
-import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/loan_mngmt/controllers/loan_mngmt_controller.dart';
 import 'package:real_time_pawn/models/loan_mngmt_model.dart';
@@ -26,16 +25,25 @@ class LoanDetailsScreen extends StatefulWidget {
 
 class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     with SingleTickerProviderStateMixin {
-  // Controllers
   late final LoanController _loanController;
   late final AttachmentController _attachmentController;
   late final LoanTermsController _loanTermsController;
 
-  // Local state
   late LoanModel _loan;
   bool _isRefreshing = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  // Statuses where Make Payment is disabled
+  static const Set<String> _disabledPaymentStatuses = {
+    'draft',
+    'pending_approval',
+    'approved',
+    'redeemed',
+    'defaulted',
+    'written_off',
+    'cancelled',
+  };
 
   @override
   void initState() {
@@ -78,7 +86,9 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Future<void> _loadLoanTerms() async {
-    await _loanTermsController.fetchLoanTerms(_loan.id!, refresh: true);
+    if (_loan.id != null) {
+      await _loanTermsController.fetchLoanTerms(_loan.id!, refresh: true);
+    }
   }
 
   Future<void> _refreshLoan() async {
@@ -93,48 +103,66 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     }
   }
 
+  bool get _isPaymentEnabled {
+    final status = (_loan.status ?? '').toLowerCase();
+    return !_disabledPaymentStatuses.contains(status);
+  }
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'active':
-        return RealTimeColors.success;
+        return const Color(0xFF22C55E);
       case 'overdue':
-        return RealTimeColors.error;
-      case 'settled':
+        return const Color(0xFFEF4444);
       case 'redeemed':
-      case 'closed':
-        return RealTimeColors.success;
+        return const Color(0xFF22C55E);
       case 'pending_approval':
       case 'draft':
-        return RealTimeColors.warning;
+      case 'approved':
+        return const Color(0xFFF59E0B);
       case 'defaulted':
       case 'written_off':
       case 'cancelled':
-        return RealTimeColors.error;
+        return const Color(0xFFEF4444);
       case 'in_grace':
-        return Colors.orange;
-      case 'auction':
-      case 'sold':
-        return Colors.purple;
+        return const Color(0xFFF97316);
+      case 'partially_paid':
+        return const Color(0xFF3B82F6);
       default:
         return AppColors.subtextColor;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return Icons.check_circle_rounded;
+      case 'overdue':
+        return Icons.warning_rounded;
+      case 'redeemed':
+        return Icons.verified_rounded;
+      case 'pending_approval':
+      case 'draft':
+      case 'approved':
+        return Icons.hourglass_top_rounded;
+      case 'defaulted':
+      case 'written_off':
+      case 'cancelled':
+        return Icons.cancel_rounded;
+      case 'in_grace':
+        return Icons.timer_rounded;
+      case 'partially_paid':
+        return Icons.pie_chart_rounded;
+      default:
+        return Icons.help_outline_rounded;
     }
   }
 
   String _formatDateFull(DateTime? date) {
     if (date == null) return 'N/A';
     const monthNames = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return '${date.day} ${monthNames[date.month - 1]} ${date.year}';
   }
@@ -147,7 +175,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   String _formatCurrency(int? amount) {
     if (amount == null) return 'N/A';
     final currency = _loan.currency ?? 'USD';
-    return '$currency ${amount.toStringAsFixed(2)}';
+    final formatted = amount.abs().toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '$currency $formatted';
   }
 
   String _getCustomerName() {
@@ -155,6 +187,23 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     final last = _loan.customerUser?.lastName ?? '';
     if (first.isNotEmpty || last.isNotEmpty) return '$first $last'.trim();
     return 'N/A';
+  }
+
+  String _getStatusLabel(String? status) {
+    switch ((status ?? '').toLowerCase()) {
+      case 'draft': return 'Draft';
+      case 'pending_approval': return 'Pending Approval';
+      case 'approved': return 'Approved';
+      case 'active': return 'Active';
+      case 'overdue': return 'Overdue';
+      case 'in_grace': return 'In Grace Period';
+      case 'partially_paid': return 'Partially Paid';
+      case 'redeemed': return 'Redeemed';
+      case 'defaulted': return 'Defaulted';
+      case 'written_off': return 'Written Off';
+      case 'cancelled': return 'Cancelled';
+      default: return (status ?? 'Unknown').toUpperCase();
+    }
   }
 
   @override
@@ -166,22 +215,27 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
           onRefresh: _refreshLoan,
           color: AppColors.primaryColor,
           child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              _buildAnimatedAppBar(),
+              _buildAppBar(),
               SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: _isRefreshing
-                          ? const Center(child: CircularProgressIndicator())
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 60),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
                           : Column(
                               children: [
+                                const SizedBox(height: 16),
                                 _buildQuickStats(),
                                 const SizedBox(height: 20),
                                 _buildQuickActions(),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
                                 _buildLoanInfo(),
                                 const SizedBox(height: 16),
                                 _buildRepaymentInfo(),
@@ -189,8 +243,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                                 _buildCollateralInfo(),
                                 const SizedBox(height: 16),
                                 _buildCustomerInfo(),
-                                const SizedBox(height: 16),
-                                _buildCustomerDocuments(),
                                 const SizedBox(height: 16),
                                 _buildPaymentsHistory(),
                                 const SizedBox(height: 16),
@@ -200,10 +252,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                                 const SizedBox(height: 16),
                                 _buildAttachmentsSection(),
                                 const SizedBox(height: 16),
-                                if (_loan.status?.toLowerCase() == 'active' ||
-                                    _loan.status?.toLowerCase() == 'overdue')
-                                  _buildStatusManagement(),
-                                const SizedBox(height: 24),
+                            
                               ],
                             ),
                     ),
@@ -217,17 +266,29 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     );
   }
 
-  Widget _buildAnimatedAppBar() {
+  Widget _buildAppBar() {
+    final statusColor = _getStatusColor(_loan.status ?? 'unknown');
     return SliverAppBar(
       pinned: true,
       floating: true,
-      expandedHeight: 120,
+      expandedHeight: 110,
       backgroundColor: AppColors.surfaceColor,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.textColor),
+        icon: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.backgroundColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColors.textColor, size: 16),
+        ),
         onPressed: () => Get.back(),
       ),
       flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 56, bottom: 14),
         title: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,37 +296,45 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
             Text(
               'Loan Details',
               style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textColor,
               ),
             ),
             Text(
               _loan.loanNo ?? 'N/A',
               style: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: 11,
                 color: AppColors.subtextColor,
               ),
             ),
           ],
         ),
-        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
       ),
       actions: [
         Container(
-          margin: const EdgeInsets.only(right: 16),
+          margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _getStatusColor(_loan.status ?? 'unknown').withOpacity(0.1),
+            color: statusColor.withOpacity(0.12),
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: statusColor.withOpacity(0.4)),
           ),
-          child: Text(
-            (_loan.status ?? 'UNKNOWN').toUpperCase(),
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: _getStatusColor(_loan.status ?? 'unknown'),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(_getStatusIcon(_loan.status ?? 'unknown'),
+                  size: 13, color: statusColor),
+              const SizedBox(width: 5),
+              Text(
+                _getStatusLabel(_loan.status),
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -278,16 +347,17 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     final progress = _loan.principalAmount != null && _loan.principalAmount! > 0
         ? (paidAmount / _loan.principalAmount!).clamp(0.0, 1.0)
         : 0.0;
+    final statusColor = _getStatusColor(_loan.status ?? 'unknown');
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
             AppColors.surfaceColor,
-            AppColors.surfaceColor.withOpacity(0.8),
+            AppColors.surfaceColor.withOpacity(0.95),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -295,8 +365,8 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -305,84 +375,102 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
           Row(
             children: [
               Expanded(
-                child: _buildAnimatedAmountCard(
+                child: _buildStatCard(
                   label: 'Loan Amount',
-                  amount: _formatCurrency(_loan.principalAmount),
-                  color: AppColors.textColor,
-                  icon: Icons.attach_money,
+                  value: _formatCurrency(_loan.principalAmount),
+                  color: AppColors.primaryColor,
+                  icon: Icons.monetization_on_outlined,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildAnimatedAmountCard(
-                  label: 'Paid',
-                  amount: _formatCurrency(paidAmount),
-                  color: RealTimeColors.success,
-                  icon: Icons.check_circle_outline,
+                child: _buildStatCard(
+                  label: 'Amount Paid',
+                  value: _formatCurrency(paidAmount),
+                  color: const Color(0xFF22C55E),
+                  icon: Icons.check_circle_outline_rounded,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          _buildAnimatedAmountCard(
+          _buildStatCard(
             label: 'Outstanding Balance',
-            amount: _formatCurrency(_loan.currentBalance),
-            color: RealTimeColors.warning,
+            value: _formatCurrency(_loan.currentBalance),
+            color: const Color(0xFFF59E0B),
             icon: Icons.account_balance_wallet_outlined,
-            isLarge: true,
+            isWide: true,
           ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[300],
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                RealTimeColors.success,
+          const SizedBox(height: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Repayment Progress',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).toStringAsFixed(1)}%',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                    ),
+                  ),
+                ],
               ),
-              minHeight: 8,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${(progress * 100).toStringAsFixed(1)}% Repaid',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: AppColors.subtextColor,
-            ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: AppColors.borderColor,
+                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                  minHeight: 8,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAnimatedAmountCard({
+  Widget _buildStatCard({
     required String label,
-    required String amount,
+    required String value,
     required Color color,
     required IconData icon,
-    bool isLarge = false,
+    bool isWide = false,
   }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 800),
-      builder: (context, value, child) {
-        return Opacity(opacity: value, child: child);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 16, color: AppColors.subtextColor),
-                const SizedBox(width: 4),
                 Text(
                   label,
                   style: GoogleFonts.poppins(
@@ -390,34 +478,39 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                     color: AppColors.subtextColor,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: isWide ? 18 : 14,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              amount,
-              style: GoogleFonts.poppins(
-                fontSize: isLarge ? 20 : 16,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildQuickActions() {
+    final paymentEnabled = _isPaymentEnabled;
+    final disabledReason = paymentEnabled
+        ? null
+        : 'Payment not available for ${_getStatusLabel(_loan.status)} loans';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Quick Actions',
           style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
             color: AppColors.textColor,
           ),
         ),
@@ -425,56 +518,30 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
         Row(
           children: [
             Expanded(
-              child: _buildAnimatedActionButton(
+              child: _buildActionButton(
                 icon: Icons.payments_outlined,
                 label: 'Make Payment',
-                onTap: () => Get.toNamed(
-                  RoutesHelper.CreatePaymentScreen,
-                  arguments: {'loanId': _loan.id},
-                ),
-                color: RealTimeColors.success,
+                onTap: paymentEnabled
+                    ? () => Get.toNamed(
+                          RoutesHelper.CreatePaymentScreen,
+                          arguments: {'loanId': _loan.id},
+                        )
+                    : null,
+                color: const Color(0xFF22C55E),
+                isDisabled: !paymentEnabled,
+                disabledReason: disabledReason,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildAnimatedActionButton(
+              child: _buildActionButton(
                 icon: Icons.receipt_long_outlined,
                 label: 'View Charges',
-                onTap: () {
-                  Get.toNamed(
-                    RoutesHelper.LoanChargesScreen,
-                    arguments: {'loanId': _loan.id},
-                  );
-                },
-                color: Colors.blue,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildAnimatedActionButton(
-                icon: Icons.list_alt_outlined,
-                label: 'Loan Terms',
                 onTap: () => Get.toNamed(
-                  RoutesHelper.loanTermsDisplayScreen,
-                  arguments: {'loanId': _loan.id, 'loanNo': _loan.loanNo},
+                  RoutesHelper.LoanChargesScreen,
+                  arguments: {'loanId': _loan.id},
                 ),
-                color: Colors.purple,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildAnimatedActionButton(
-                icon: Icons.payment_outlined,
-                label: 'View Payments',
-                onTap: () => Get.toNamed(
-                  RoutesHelper.PaymentListScreen,
-                  arguments: {'loanId': _loan.id, 'isLoanPayments': true},
-                ),
-                color: Colors.orange,
+                color: const Color(0xFF3B82F6),
               ),
             ),
           ],
@@ -483,46 +550,72 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     );
   }
 
-  Widget _buildAnimatedActionButton({
+  Widget _buildActionButton({
     required IconData icon,
     required String label,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     required Color color,
+    bool isDisabled = false,
+    String? disabledReason,
   }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 500),
-      builder: (context, value, child) {
-        return Transform.scale(scale: value, child: child);
-      },
+    final effectiveColor = isDisabled ? AppColors.subtextColor : color;
+
+    return Tooltip(
+      message: isDisabled ? (disabledReason ?? '') : '',
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.surfaceColor, color.withOpacity(0.05)],
+            color: isDisabled
+                ? AppColors.surfaceColor.withOpacity(0.5)
+                : effectiveColor.withOpacity(0.07),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDisabled
+                  ? AppColors.borderColor
+                  : effectiveColor.withOpacity(0.3),
             ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.3)),
           ),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 24),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isDisabled
+                      ? AppColors.borderColor.withOpacity(0.5)
+                      : effectiveColor.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isDisabled ? Icons.block_rounded : icon,
+                  color: effectiveColor,
+                  size: 22,
+                ),
+              ),
               const SizedBox(height: 8),
               Text(
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textColor,
+                  fontWeight: FontWeight.w600,
+                  color: isDisabled ? AppColors.subtextColor : AppColors.textColor,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
               ),
+              if (isDisabled && disabledReason != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Not Available',
+                  style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    color: AppColors.subtextColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
           ),
         ),
@@ -531,21 +624,18 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Widget _buildLoanInfo() {
-    return _buildAnimatedSectionCard(
+    return _buildSectionCard(
       title: 'Loan Information',
-      icon: Icons.info_outline,
+      icon: Icons.info_outline_rounded,
       children: [
         _buildInfoRow('Loan Number', _loan.loanNo ?? 'N/A'),
         _buildInfoRow('Loan Date', _formatDateFull(_loan.startDate)),
         _buildInfoRow('Due Date', _formatDateFull(_loan.dueDate)),
         _buildInfoRow(
           'Interest Rate',
-          '${_loan.interestRatePercent ?? 0}% per month',
+          '${_loan.interestRatePercent ?? 0}% / month',
         ),
-        _buildInfoRow(
-          'Interest Period',
-          '${_loan.interestPeriodDays ?? 0} days',
-        ),
+        _buildInfoRow('Interest Period', '${_loan.interestPeriodDays ?? 0} days'),
         _buildInfoRow('Grace Period', '${_loan.graceDays ?? 0} days'),
         _buildInfoRow('Repayment Type', _loan.repaymentType ?? 'N/A'),
         _buildInfoRow('Currency', _loan.currency ?? 'USD'),
@@ -557,13 +647,14 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Widget _buildRepaymentInfo() {
-    if (_loan.payments == null || _loan.payments!.isEmpty)
+    if (_loan.payments == null || _loan.payments!.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     final totalPaid = _loan.totalPaid ?? 0;
     final expectedTotal = _loan.principalAmount ?? 0;
 
-    return _buildAnimatedSectionCard(
+    return _buildSectionCard(
       title: 'Repayment Summary',
       icon: Icons.account_balance_outlined,
       children: [
@@ -572,20 +663,10 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
         _buildInfoRow('Payments Count', '${_loan.payments!.length}'),
         if (_loan.payments!.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text(
-            'Latest Payment',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
-            ),
-          ),
+          _buildSubTitle('Latest Payment'),
           const SizedBox(height: 4),
           _buildInfoRow('Amount', _formatCurrency(_loan.payments!.last.amount)),
-          _buildInfoRow(
-            'Date',
-            _formatDateTime(_loan.payments!.last.paymentDate),
-          ),
+          _buildInfoRow('Date', _formatDateTime(_loan.payments!.last.paymentDate)),
           _buildInfoRow('Method', _loan.payments!.last.paymentMethod ?? 'N/A'),
         ],
       ],
@@ -593,54 +674,38 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Widget _buildCollateralInfo() {
-    List<Widget> children = [
+    final List<Widget> children = [
       _buildInfoRow('Category', _loan.collateralCategory ?? 'N/A'),
     ];
 
     if (_loan.asset != null) {
-      children.add(_buildInfoRow('Asset No', _loan.asset!.assetNo ?? 'N/A'));
-      children.add(_buildInfoRow('Asset Title', _loan.asset!.title ?? 'N/A'));
-      children.add(
-        _buildInfoRow('Asset Category', _loan.asset!.category ?? 'N/A'),
-      );
-      children.add(_buildInfoRow('Asset Status', _loan.asset!.status ?? 'N/A'));
-      if (_loan.asset!.evaluatedValue != null) {
-        children.add(
-          _buildInfoRow(
-            'Evaluated Value',
-            _formatCurrency(_loan.asset!.evaluatedValue),
-          ),
-        );
+      final asset = _loan.asset!;
+      children.add(_buildInfoRow('Asset Number', asset.assetNo ?? 'N/A'));
+      children.add(_buildInfoRow('Asset Title', asset.title ?? 'N/A'));
+      children.add(_buildInfoRow('Asset Category', asset.category ?? 'N/A'));
+      children.add(_buildInfoRow('Asset Status', asset.status ?? 'N/A'));
+      if (asset.evaluatedValue != null) {
+        children.add(_buildInfoRow(
+          'Evaluated Value',
+          _formatCurrency(asset.evaluatedValue),
+        ));
       }
 
-      // Asset Images Gallery
-      if (_loan.asset!.assetImages != null &&
-          _loan.asset!.assetImages!.isNotEmpty) {
-        children.add(const SizedBox(height: 12));
-        children.add(
-          Text(
-            'Asset Images',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
-            ),
-          ),
-        );
-        children.add(const SizedBox(height: 8));
-        children.add(_buildImageGallery(_loan.asset!.assetImages!));
+      if (asset.assetImages != null && asset.assetImages!.isNotEmpty) {
+        children.add(const SizedBox(height: 14));
+        children.add(_buildSubTitle('Asset Images'));
+        children.add(const SizedBox(height: 10));
+        children.add(_buildImageGrid(asset.assetImages!));
       }
     }
 
     final app = _loan.application;
     if (app != null) {
       if (app.declaredAssetValue != null) {
-        children.add(
-          _buildInfoRow(
-            'Declared Value',
-            _formatCurrency(app.declaredAssetValue),
-          ),
-        );
+        children.add(_buildInfoRow(
+          'Declared Value',
+          _formatCurrency(app.declaredAssetValue),
+        ));
       }
       if (app.collateralDescription != null &&
           app.collateralDescription!.isNotEmpty) {
@@ -648,7 +713,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
       }
     }
 
-    return _buildAnimatedSectionCard(
+    return _buildSectionCard(
       title: 'Collateral Information',
       icon: Icons.inventory_2_outlined,
       children: children,
@@ -657,20 +722,17 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
 
   Widget _buildCustomerInfo() {
     final app = _loan.application;
-    return _buildAnimatedSectionCard(
+    return _buildSectionCard(
       title: 'Customer Information',
-      icon: Icons.person_outline,
+      icon: Icons.person_outline_rounded,
       children: [
         _buildInfoRow('Name', _getCustomerName()),
         if (_loan.customerUser != null) ...[
           _buildInfoRow('Email', _loan.customerUser!.email ?? 'N/A'),
           _buildInfoRow('Phone', _loan.customerUser!.phone ?? 'N/A'),
-          _buildInfoRow(
-            'National ID',
-            _loan.customerUser!.nationalIdNumber ?? 'N/A',
-          ),
+          _buildInfoRow('National ID', _loan.customerUser!.nationalIdNumber ?? 'N/A'),
         ],
-        if (app != null && app.id != null) ...[
+        if (app != null) ...[
           const Divider(height: 24),
           _buildInfoRow('Application No', app.applicationNo ?? 'N/A'),
           _buildInfoRow(
@@ -683,85 +745,94 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     );
   }
 
-  Widget _buildCustomerDocuments() {
-    final app = _loan.application;
-    if (app == null) return const SizedBox.shrink();
-
-    final documents = <String, String>{};
-    // Note: These fields would need to be added to your Application model
-    // For now, we'll show a message or skip
-
-    if (documents.isEmpty) return const SizedBox.shrink();
-
-    return _buildAnimatedSectionCard(
-      title: 'Customer Documents (${documents.length})',
-      icon: Icons.description_outlined,
-      children: [
-        _buildImageGallery(
-          documents.values.toList(),
-          titles: documents.keys.toList(),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPaymentsHistory() {
     if (_loan.payments == null || _loan.payments!.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return _buildAnimatedSectionCard(
+    final displayCount =
+        _loan.payments!.length > 5 ? 5 : _loan.payments!.length;
+
+    return _buildSectionCard(
       title: 'Payment History',
-      icon: Icons.history_outlined,
+      icon: Icons.history_rounded,
       children: [
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _loan.payments!.length > 5 ? 5 : _loan.payments!.length,
-          separatorBuilder: (_, __) => const Divider(),
+          itemCount: displayCount,
+          separatorBuilder: (_, __) => Divider(
+            height: 1,
+            color: AppColors.borderColor,
+          ),
           itemBuilder: (context, index) {
             final payment = _loan.payments![index];
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: RealTimeColors.success.withOpacity(0.1),
-                child: Icon(
-                  Icons.payment,
-                  color: RealTimeColors.success,
-                  size: 20,
-                ),
-              ),
-              title: Text(
-                _formatCurrency(payment.amount),
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  color: RealTimeColors.success,
-                ),
-              ),
-              subtitle: Text(
-                payment.paymentMethod ?? 'Unknown method',
-                style: GoogleFonts.poppins(fontSize: 11),
-              ),
-              trailing: Text(
-                _formatDateFull(payment.paymentDate),
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: AppColors.subtextColor,
-                ),
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.payment_rounded,
+                      color: Color(0xFF22C55E),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatCurrency(payment.amount),
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: const Color(0xFF22C55E),
+                          ),
+                        ),
+                        Text(
+                          payment.paymentMethod ?? 'Unknown method',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: AppColors.subtextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    _formatDateFull(payment.paymentDate),
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+                ],
               ),
             );
           },
         ),
         if (_loan.payments!.length > 5)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 10),
             child: Center(
-              child: TextButton(
+              child: TextButton.icon(
                 onPressed: () => Get.toNamed(
                   RoutesHelper.PaymentListScreen,
                   arguments: {'loanId': _loan.id, 'isLoanPayments': true},
                 ),
-                child: Text('View All ${_loan.payments!.length} Payments'),
+                icon: const Icon(Icons.visibility_outlined, size: 16),
+                label: Text(
+                  'View All ${_loan.payments!.length} Payments',
+                  style: GoogleFonts.poppins(fontSize: 13),
+                ),
               ),
             ),
           ),
@@ -770,57 +841,33 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Widget _buildSuperAdminApprovals() {
-    if ((_loan.requestedSuperAdmins == null ||
-            _loan.requestedSuperAdmins!.isEmpty) &&
-        (_loan.superAdminApprovals == null ||
-            _loan.superAdminApprovals!.isEmpty)) {
-      return const SizedBox.shrink();
-    }
+    final hasRequests = _loan.requestedSuperAdmins?.isNotEmpty ?? false;
+    final hasApprovals = _loan.superAdminApprovals?.isNotEmpty ?? false;
 
-    return _buildAnimatedSectionCard(
+    if (!hasRequests && !hasApprovals) return const SizedBox.shrink();
+
+    return _buildSectionCard(
       title: 'Super Admin Approvals',
       icon: Icons.verified_outlined,
       children: [
-        if (_loan.requestedSuperAdmins != null &&
-            _loan.requestedSuperAdmins!.isNotEmpty) ...[
-          Text(
-            'Requests',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
-            ),
-          ),
+        if (hasRequests) ...[
+          _buildSubTitle('Requests'),
           const SizedBox(height: 8),
           ..._loan.requestedSuperAdmins!.map(
-            (req) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildInfoRow(
-                'Super Admin',
-                'Status: ${req.status ?? 'pending'}',
-              ),
+            (req) => _buildInfoRow(
+              'Request Status',
+              req.status ?? 'Pending',
             ),
           ),
         ],
-        if (_loan.superAdminApprovals != null &&
-            _loan.superAdminApprovals!.isNotEmpty) ...[
+        if (hasApprovals) ...[
           const SizedBox(height: 12),
-          Text(
-            'Approvals',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
-            ),
-          ),
+          _buildSubTitle('Approvals'),
           const SizedBox(height: 8),
           ..._loan.superAdminApprovals!.map(
-            (approval) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildInfoRow(
-                'Approved By',
-                _formatDateTime(approval.approvedAt),
-              ),
+            (approval) => _buildInfoRow(
+              'Approved On',
+              _formatDateTime(approval.approvedAt),
             ),
           ),
         ],
@@ -829,130 +876,191 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Widget _buildAdditionalDetails() {
-    return _buildAnimatedSectionCard(
+    return _buildSectionCard(
       title: 'Additional Details',
-      icon: Icons.more_horiz_outlined,
+      icon: Icons.tune_rounded,
       children: [
         _buildInfoRow('Storage Charge', '${_loan.storageChargePercent ?? 0}%'),
         _buildInfoRow('Penalty Rate', '${_loan.penaltyPercent ?? 0}%'),
         _buildInfoRow('Created By', _loan.createdBy ?? 'N/A'),
         _buildInfoRow('Created Date', _formatDateTime(_loan.createdAt)),
         _buildInfoRow('Last Updated', _formatDateTime(_loan.updatedAt)),
-        if (_loan.v != null) _buildInfoRow('Version', _loan.v.toString()),
       ],
     );
   }
 
   Widget _buildAttachmentsSection() {
     return Obx(() {
-      final attachments = _attachmentController.attachments;
       if (_attachmentController.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return _buildSectionCard(
+          title: 'Attachments',
+          icon: Icons.attach_file_rounded,
+          children: [
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          ],
+        );
       }
-      if (attachments.isEmpty) {
-        return const SizedBox.shrink();
-      }
-      return _buildAnimatedSectionCard(
+
+      final attachments = _attachmentController.attachments;
+      if (attachments.isEmpty) return const SizedBox.shrink();
+
+      final imageUrls = attachments
+          .map((att) => att.url ?? '')
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      if (imageUrls.isEmpty) return const SizedBox.shrink();
+
+      return _buildSectionCard(
         title: 'Attachments (${attachments.length})',
-        icon: Icons.attach_file_outlined,
-        children: [
-          _buildImageGallery(
-            attachments
-                .map((att) => att.url ?? '')
-                .where((url) => url.isNotEmpty)
-                .toList(),
-          ),
-        ],
+        icon: Icons.attach_file_rounded,
+        children: [_buildImageGrid(imageUrls)],
       );
     });
   }
 
-  Widget _buildImageGallery(List<String> imageUrls, {List<String>? titles}) {
+  /// Builds a 3-per-row image grid that wraps
+  Widget _buildImageGrid(List<String> imageUrls, {List<String>? titles}) {
     if (imageUrls.isEmpty) return const SizedBox.shrink();
 
-    return SizedBox(
-      height: 120,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: imageUrls.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () => _showFullScreenGallery(imageUrls, initialIndex: index),
-            child: Container(
-              width: 100,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+    // Build rows of 3
+    final rows = <Widget>[];
+    for (int i = 0; i < imageUrls.length; i += 3) {
+      final rowItems = <Widget>[];
+      for (int j = i; j < i + 3 && j < imageUrls.length; j++) {
+        rowItems.add(
+          Expanded(
+            child: _buildImageTile(imageUrls, j, titles: titles),
+          ),
+        );
+      }
+      // Fill remaining slots if last row is incomplete
+      while (rowItems.length < 3) {
+        rowItems.add(const Expanded(child: SizedBox()));
+      }
+
+      rows.add(Row(
+        children: [
+          for (int k = 0; k < rowItems.length; k++) ...[
+            rowItems[k],
+            if (k < rowItems.length - 1) const SizedBox(width: 8),
+          ],
+        ],
+      ));
+      if (i + 3 < imageUrls.length) rows.add(const SizedBox(height: 8));
+    }
+
+    return Column(children: rows);
+  }
+
+  Widget _buildImageTile(
+    List<String> allUrls,
+    int index, {
+    List<String>? titles,
+  }) {
+    final url = allUrls[index];
+    return GestureDetector(
+      onTap: () => _showFullScreenGallery(allUrls, initialIndex: index),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Hero(
+                  tag: 'img_$url',
+                  child: CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(color: Colors.white),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      color: AppColors.borderColor,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.broken_image_rounded,
+                              color: AppColors.subtextColor, size: 24),
+                          const SizedBox(height: 4),
+                          Text(
+                            'No image',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: AppColors.subtextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Hero(
-                      tag: 'image_${imageUrls[index]}',
-                      child: CachedNetworkImage(
-                        imageUrl: imageUrls[index],
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
-                          child: Container(color: Colors.white),
-                        ),
-                        errorWidget: (_, __, ___) => Container(
-                          color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.7),
-                            ],
-                          ),
-                        ),
-                        child: Text(
-                          titles != null && titles.length > index
-                              ? titles[index]
-                              : '',
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
+                // Tap overlay hint
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(Icons.zoom_in_rounded,
+                        color: Colors.white, size: 12),
+                  ),
+                ),
+                if (titles != null && titles.length > index)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                        ),
+                      ),
+                      child: Text(
+                        titles[index],
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -961,205 +1069,204 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     List<String> imageUrls, {
     required int initialIndex,
   }) {
+    final pageController = PageController(initialPage: initialIndex);
+    final currentIndex = initialIndex.obs;
+
     Get.to(
       () => Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            PhotoViewGallery.builder(
-              itemCount: imageUrls.length,
-              builder: (context, index) {
-                return PhotoViewGalleryPageOptions(
-                  imageProvider: CachedNetworkImageProvider(imageUrls[index]),
-                  minScale: PhotoViewComputedScale.contained * 0.8,
-                  maxScale: PhotoViewComputedScale.covered * 2,
-                  heroAttributes: PhotoViewHeroAttributes(
-                    tag: 'image_${imageUrls[index]}',
-                  ),
-                );
-              },
-              scrollPhysics: const BouncingScrollPhysics(),
-              backgroundDecoration: const BoxDecoration(color: Colors.black),
-              pageController: PageController(initialPage: initialIndex),
-            ),
-            Positioned(
-              top: 40,
-              right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Get.back(),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              PhotoViewGallery.builder(
+                itemCount: imageUrls.length,
+                pageController: pageController,
+                onPageChanged: (index) => currentIndex.value = index,
+                builder: (context, index) {
+                  return PhotoViewGalleryPageOptions(
+                    imageProvider:
+                        CachedNetworkImageProvider(imageUrls[index]),
+                    minScale: PhotoViewComputedScale.contained * 0.8,
+                    maxScale: PhotoViewComputedScale.covered * 2.5,
+                    heroAttributes: PhotoViewHeroAttributes(
+                      tag: 'img_${imageUrls[index]}',
+                    ),
+                  );
+                },
+                scrollPhysics: const BouncingScrollPhysics(),
+                backgroundDecoration:
+                    const BoxDecoration(color: Colors.black),
               ),
-            ),
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+              // Close button
+              Positioned(
+                top: 12,
+                right: 12,
+                child: GestureDetector(
+                  onTap: () => Get.back(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                        color: Colors.white, size: 22),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                ),
+              ),
+              // Page indicator
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Center(
                   child: Obx(
-                    () => Text(
-                      '${(initialIndex + 1).toString().padLeft(2, '0')} / ${imageUrls.length.toString().padLeft(2, '0')}',
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${currentIndex.value + 1} / ${imageUrls.length}',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+              // Navigation arrows for multiple images
+              if (imageUrls.length > 1) ...[
+                Positioned(
+                  left: 8,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Obx(() => currentIndex.value > 0
+                        ? GestureDetector(
+                            onTap: () => pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.chevron_left_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink()),
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Obx(() =>
+                        currentIndex.value < imageUrls.length - 1
+                            ? GestureDetector(
+                                onTap: () => pageController.nextPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink()),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
       fullscreenDialog: true,
     );
   }
 
-  void _showImageDialog(String? url) {
-    if (url == null) return;
-    _showFullScreenGallery([url], initialIndex: 0);
-  }
 
-  Widget _buildStatusManagement() {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            RealTimeColors.warning.withOpacity(0.1),
-            AppColors.surfaceColor,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: RealTimeColors.warning.withOpacity(0.3)),
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Loan Status Management',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
-            ),
-          ),
-          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final confirmed = await Get.dialog<bool>(
-                      AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        title: const Text('Mark as Settled'),
-                        content: const Text(
-                          'Are you sure you want to mark this loan as settled?\n\nThis action will mark the loan as fully repaid.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Get.back(result: false),
-                            child: const Text('Cancel'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Get.back(result: true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: RealTimeColors.success,
-                            ),
-                            child: const Text('Yes, Settle'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmed == true) {
-                      final success = await _loanController.updateLoanStatus(
-                        loanId: _loan.id!,
-                        status: 'redeemed',
-                        notes: 'Loan settled from mobile app',
-                      );
-                      if (success) {
-                        _refreshLoan();
-                        Get.snackbar(
-                          'Success',
-                          'Loan marked as settled',
-                          backgroundColor: RealTimeColors.success,
-                          colorText: Colors.white,
-                          snackPosition: SnackPosition.BOTTOM,
-                        );
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Mark as Settled'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: RealTimeColors.success,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, size: 16, color: AppColors.primaryColor),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textColor,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 14),
+          Divider(color: AppColors.borderColor, height: 1),
+          const SizedBox(height: 12),
+          ...children,
         ],
       ),
     );
   }
 
-  Widget _buildAnimatedSectionCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 600),
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 50 * (1 - value)),
-          child: Opacity(opacity: value, child: child),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: AppColors.primaryColor),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textColor,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
+  Widget _buildSubTitle(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: AppColors.subtextColor,
+        letterSpacing: 0.5,
       ),
     );
   }
@@ -1171,7 +1278,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 2,
+            flex: 5,
             child: Text(
               label,
               style: GoogleFonts.poppins(
@@ -1180,14 +1287,17 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
-            flex: 3,
+            flex: 5,
             child: Text(
               value,
               style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
-                color: highlight ? RealTimeColors.warning : AppColors.textColor,
+                fontSize: 12,
+                fontWeight: highlight ? FontWeight.w700 : FontWeight.w600,
+                color: highlight
+                    ? const Color(0xFFF59E0B)
+                    : AppColors.textColor,
               ),
               textAlign: TextAlign.right,
             ),

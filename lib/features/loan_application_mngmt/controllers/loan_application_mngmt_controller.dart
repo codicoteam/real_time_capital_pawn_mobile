@@ -2,6 +2,7 @@
 import 'package:get/get.dart';
 import '../../../core/utils/api_response.dart';
 import '../../../core/utils/logs.dart';
+import '../../../models/application_response_model.dart';
 import '../../../models/loan_application_model.dart';
 import '../services/loan_application_mngmt_service.dart'
     show LoanApplicationService;
@@ -18,6 +19,7 @@ class LoanApplicationController extends GetxController {
   // Loan applications list
   // =====================
   var loanApplications = <LoanApplicationModel>[].obs;
+  final loanApplicationResponses = <LoanApplicationResponseModel>[].obs;
 
   // =====================
   // Search & filter
@@ -29,7 +31,7 @@ class LoanApplicationController extends GetxController {
   // =====================
   // Create loan application
   // =====================
-  Future<APIResponse<LoanApplicationModel>> createLoanApplication(
+  Future<APIResponse<LoanApplicationResponseModel>> createLoanApplication(
     Map<String, dynamic> payload,
   ) async {
     try {
@@ -43,7 +45,14 @@ class LoanApplicationController extends GetxController {
         successMessage.value = response.message!;
         // Optionally add new loan to list
         if (response.data != null) {
-          loanApplications.insert(0, response.data!);
+          // Since LoanApplicationResponseModel is different from LoanApplicationModel,
+          // you might need to convert it or handle separately
+          // Option 1: If you want to store in a separate list
+          loanApplicationResponses.insert(0, response.data!);
+
+          // Option 2: If you need to convert to LoanApplicationModel
+          // final loanAppModel = convertToLoanApplicationModel(response.data!);
+          // loanApplications.insert(0, loanAppModel);
         }
         return response;
       } else {
@@ -54,7 +63,7 @@ class LoanApplicationController extends GetxController {
     } catch (e) {
       DevLogs.logError('Create loan application error: $e');
       errorMessage.value = 'An error occurred while creating loan application';
-      return APIResponse<LoanApplicationModel>(
+      return APIResponse<LoanApplicationResponseModel>(
         success: false,
         message: errorMessage.value,
       );
@@ -161,13 +170,11 @@ class LoanApplicationController extends GetxController {
         case 'applicationNo':
           return loan.applicationNo?.toLowerCase().contains(query) ?? false;
 
-
         case 'status':
           return loan.status?.toLowerCase().contains(query) ?? false;
 
         case 'amount':
           return loan.requestedLoanAmount?.toString().contains(query) ?? false;
-
 
         default:
           return false;
