@@ -56,7 +56,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
-  // List of status filters
   final List<String> statusFilters = [
     'All',
     'Successful',
@@ -65,16 +64,13 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
     'Refunded',
   ];
 
-  // Track active status filter
   String? _activeStatusFilter;
-
   bool _isLoadingMore = false;
   bool _isRefreshing = false;
-  bool _isReversed = false; // true = oldest first, false = newest first
+  bool _isReversed = false;
 
   late AnimationController _headerAnimationController;
   late AnimationController _contentAnimationController;
-
   Timer? _searchDebounceTimer;
 
   @override
@@ -124,6 +120,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
     setState(() => _isLoadingMore = false);
   }
 
+  // Safe search – updates bidPayments only after build phase
   void _handleSearch(String query) {
     _searchDebounceTimer?.cancel();
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
@@ -138,7 +135,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
         }
         final results = _searchPaymentsLocallyImpl(query);
         if (results.isNotEmpty) {
-          _controller.bidPayments.value = results;
+          Future.microtask(() => _controller.bidPayments.value = results);
           BidPaymentHelper.showSuccess('Found ${results.length} payments');
         } else {
           BidPaymentHelper.showError('No payments found matching "$query"');
@@ -488,7 +485,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
     );
   }
 
-  // Helper for glass card effect
   Widget _buildGlassCard({required Widget child}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -517,20 +513,22 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Build method
+  // ─────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: Stack(
         children: [
-          // Main scrollable content
           RefreshIndicator(
             onRefresh: _refreshPayments,
             child: CustomScrollView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // Animated curved header
+                // Curved header
                 SliverToBoxAdapter(
                   child: AnimatedBuilder(
                     animation: _headerAnimationController,
@@ -614,12 +612,11 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                   ),
                 ),
 
-                // Content section
+                // Content
                 SliverPadding(
                   padding: const EdgeInsets.all(20),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      // Search bar
                       _buildGlassCard(
                             child: TextField(
                               controller: _searchController,
@@ -657,7 +654,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
 
                       const SizedBox(height: 12),
 
-                      // Status filter chips
+                      // Status filters
                       SizedBox(
                             height: 48,
                             child: ListView.builder(
@@ -688,7 +685,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                                         } else {
                                           if (_controller.bidPayments.isEmpty) {
                                             BidPaymentHelper.showError(
-                                              'No payments to filter. You have no payments yet.',
+                                              'No payments to filter.',
                                             );
                                             setState(
                                               () => _activeStatusFilter = null,
@@ -698,8 +695,14 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                                           final filtered =
                                               _filterPaymentsByStatus(status);
                                           if (filtered.isNotEmpty) {
-                                            _controller.bidPayments.value =
-                                                filtered;
+                                            // Safe update
+                                            Future.microtask(
+                                              () =>
+                                                  _controller
+                                                          .bidPayments
+                                                          .value =
+                                                      filtered,
+                                            );
                                             BidPaymentHelper.showSuccess(
                                               'Found ${filtered.length} ${status.toLowerCase()} payments',
                                             );
@@ -748,7 +751,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
 
                       const SizedBox(height: 8),
 
-                      // Summary card (only if there are payments)
+                      // Summary card
                       Obx(() {
                         if (_controller.bidPayments.isEmpty)
                           return const SizedBox.shrink();
@@ -820,7 +823,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
             ),
           ),
 
-          // Custom floating app bar with back, sort toggle, refresh
+          // Floating app bar
           Positioned(
             top: 0,
             left: 0,
@@ -833,7 +836,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                 ),
                 child: Row(
                   children: [
-                    // Back button
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
@@ -853,7 +855,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                       ),
                     ),
                     const Spacer(),
-                    // Sort toggle (newest/oldest)
                     Container(
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
@@ -876,7 +877,6 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                         tooltip: _isReversed ? 'Oldest first' : 'Newest first',
                       ),
                     ),
-                    // Refresh button
                     if (!_isRefreshing)
                       Container(
                         decoration: BoxDecoration(

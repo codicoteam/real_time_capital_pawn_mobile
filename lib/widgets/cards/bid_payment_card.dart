@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
+import 'package:real_time_pawn/core/utils/logs.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/bid_payment_mngmt/helpers/bid_payment_mngmt_helper.dart';
 import 'package:real_time_pawn/models/bid_payment_model.dart';
@@ -219,7 +220,13 @@ class PaymentCard extends StatelessWidget {
                       onPressed:
                           onTap ??
                           () {
-                            Get.toNamed('/payment-details/${payment.id}');
+                            DevLogs.logInfo(
+                              'Navigating to payment details for payment ID: ${payment.id}',
+                            );
+                            Get.toNamed(
+                              RoutesHelper.bidPaymentDetailsScreen,
+                              arguments: {'paymentId': payment.id},
+                            );
                           },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primaryColor,

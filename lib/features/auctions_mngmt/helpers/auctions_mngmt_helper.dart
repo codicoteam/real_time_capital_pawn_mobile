@@ -320,7 +320,7 @@ class AuctionsHelper {
           Get.back();
         }
       });
-
+          Get.back();
       return success;
     } catch (e) {
       Future.delayed(Duration.zero, () {

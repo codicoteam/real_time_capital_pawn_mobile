@@ -70,9 +70,12 @@ class BidPaymentController extends GetxController {
   }
 
   /// GET PAYER PAYMENTS
+  /// GET PAYER PAYMENTS (safe version – no build‑phase updates)
   Future<bool> getPayerPaymentsRequest({int page = 1, int limit = 10}) async {
     try {
-      isLoading(true);
+      // Schedule loading state after build phase
+      await Future.microtask(() => isLoading(true));
+
       successMessage.value = '';
       errorMessage.value = '';
 
@@ -83,13 +86,15 @@ class BidPaymentController extends GetxController {
 
       if (response.success && response.data != null) {
         if (page == 1) {
-          bidPayments.value = response.data!;
+          await Future.microtask(() => bidPayments.value = response.data!);
         } else {
-          bidPayments.addAll(response.data!);
+          await Future.microtask(() => bidPayments.addAll(response.data!));
         }
 
-        currentPage.value = page;
-        hasMorePayments.value = response.data!.length == limit;
+        await Future.microtask(() {
+          currentPage.value = page;
+          hasMorePayments.value = response.data!.length == limit;
+        });
 
         successMessage.value =
             response.message ?? 'Payments loaded successfully';
@@ -105,7 +110,7 @@ class BidPaymentController extends GetxController {
       errorMessage.value = 'An error occurred: ${e.toString()}';
       return false;
     } finally {
-      isLoading(false);
+      await Future.microtask(() => isLoading(false));
     }
   }
 

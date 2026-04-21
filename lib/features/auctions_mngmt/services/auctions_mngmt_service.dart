@@ -1,15 +1,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:real_time_pawn/core/utils/logs.dart';
+import 'package:real_time_pawn/models/auction_list_model.dart';
 import 'package:real_time_pawn/models/auction_models.dart';
 import 'package:real_time_pawn/models/user_bid_models.dart';
 import '../../../../config/api_config/api_keys.dart';
 import '../../../../core/utils/api_response.dart';
 import '../../../../core/utils/shared_pref_methods.dart';
+import '../../../models/auction_detail_response.dart' hide Auction;
 
 class AuctionsServices {
   /// GET AUCTIONS LIST with pagination and filters
-  static Future<APIResponse<AuctionsResponse>> getAuctions({
+
+  static Future<APIResponse<AuctionsListResponse>> getAuctions({
     int page = 1,
     int limit = 10,
     String? status,
@@ -81,13 +84,14 @@ class AuctionsServices {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (responseData['success'] == true) {
           final data = responseData['data'];
-          final auctions = List<Map<String, dynamic>>.from(
-            data['auctions'] ?? [],
-          ).map((auctionJson) => Auction.fromJson(auctionJson)).toList();
+          final auctions =
+              List<Map<String, dynamic>>.from(data['auctions'] ?? [])
+                  .map((auctionJson) => AuctionListModel.fromMap(auctionJson))
+                  .toList();
 
           final pagination = Pagination.fromJson(data['pagination'] ?? {});
 
-          final responseObj = AuctionsResponse(
+          final responseObj = AuctionsListResponse(
             auctions: auctions,
             pagination: pagination,
           );
@@ -96,7 +100,7 @@ class AuctionsServices {
             'Fetched ${auctions.length} auctions successfully',
           );
 
-          return APIResponse<AuctionsResponse>(
+          return APIResponse<AuctionsListResponse>(
             success: true,
             data: responseObj,
             message:
@@ -107,7 +111,7 @@ class AuctionsServices {
               responseData['message'] ?? 'Failed to fetch auctions';
           DevLogs.logError('Auctions fetch failed: $errorMessage');
 
-          return APIResponse<AuctionsResponse>(
+          return APIResponse<AuctionsListResponse>(
             success: false,
             message: errorMessage,
             data: null,
@@ -118,7 +122,7 @@ class AuctionsServices {
             responseData['message'] ?? 'HTTP Error: ${response.statusCode}';
         DevLogs.logError('Auctions HTTP error: $errorMessage');
 
-        return APIResponse<AuctionsResponse>(
+        return APIResponse<AuctionsListResponse>(
           success: false,
           message: errorMessage,
           data: null,
@@ -126,7 +130,7 @@ class AuctionsServices {
       }
     } catch (e) {
       DevLogs.logError('Error fetching auctions: $e');
-      return APIResponse<AuctionsResponse>(
+      return APIResponse<AuctionsListResponse>(
         success: false,
         message: 'An error occurred while fetching auctions: ${e.toString()}',
         data: null,
@@ -134,6 +138,7 @@ class AuctionsServices {
     }
   }
 
+  /// GET AUCTION DETAILS by ID
   /// GET AUCTION DETAILS by ID
   static Future<APIResponse<AuctionDetailResponse>> getAuctionDetails({
     required String auctionId,
@@ -156,25 +161,26 @@ class AuctionsServices {
       DevLogs.logInfo(
         'Auction details response status: ${response.statusCode}',
       );
+      DevLogs.logInfo('Auction details response body: $responseBody');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (responseData['success'] == true) {
-          final data = responseData['data'];
-          final auction = Auction.fromJson(data['auction']);
-          final currentBid = data['current_bid'] != null
-              ? Bid.fromJson(data['current_bid'])
-              : null;
-
-          final responseObj = AuctionDetailResponse(
-            auction: auction,
-            currentBid: currentBid,
+          // Parse the response using the new AuctionDetailResponse model
+          final auctionDetailResponse = AuctionDetailResponse.fromMap(
+            responseData,
           );
 
           DevLogs.logSuccess('Fetched auction details successfully');
+          DevLogs.logInfo(
+            'Auction ID: ${auctionDetailResponse.data?.auction?.id}',
+          );
+          DevLogs.logInfo(
+            'Current bid amount: ${auctionDetailResponse.data?.currentBid?.amount}',
+          );
 
           return APIResponse<AuctionDetailResponse>(
             success: true,
-            data: responseObj,
+            data: auctionDetailResponse,
             message:
                 responseData['message'] ??
                 'Auction details retrieved successfully',
@@ -669,20 +675,15 @@ class AuctionsServices {
   }
 }
 
-class AuctionsResponse {
-  final List<Auction> auctions;
+// Add this response wrapper class
+class AuctionsListResponse {
+  final List<AuctionListModel> auctions;
   final Pagination pagination;
 
-  AuctionsResponse({required this.auctions, required this.pagination});
+  AuctionsListResponse({required this.auctions, required this.pagination});
 }
 
-class AuctionDetailResponse {
-  final Auction auction;
-  final Bid? currentBid;
-
-  AuctionDetailResponse({required this.auction, this.currentBid});
-}
-
+// If you don't have Pagination class, add it:
 class Pagination {
   final int page;
   final int limit;
@@ -701,7 +702,11 @@ class Pagination {
       page: json['page'] ?? 1,
       limit: json['limit'] ?? 10,
       total: json['total'] ?? 0,
-      pages: json['pages'] ?? 1,
+      pages: json['pages'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'page': page, 'limit': limit, 'total': total, 'pages': pages};
   }
 }

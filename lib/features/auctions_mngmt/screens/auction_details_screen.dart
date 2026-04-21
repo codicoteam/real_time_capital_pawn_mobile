@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/controllers/auctions_mngmt_controller.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/helpers/auctions_mngmt_helper.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auction_bids_screen.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/bid_placement_dialog.dart';
-import 'package:real_time_pawn/features/auctions_mngmt/helpers/user_bid_history_helper.dart';
-import 'package:real_time_pawn/models/auction_models.dart';
+import 'package:real_time_pawn/models/auction_detail_response.dart';
 
 import '../../../widgets/custom_button/general_button.dart';
 
@@ -22,9 +22,10 @@ class AuctionDetailsScreen extends StatefulWidget {
 }
 
 class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
-  final AuctionsController _auctionsController = Get.put(AuctionsController());
+  final AuctionsController _auctionsController = Get.find<AuctionsController>();
   int _currentImageIndex = 0;
-  final PageController _pageController = PageController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
   @override
   void initState() {
@@ -34,15 +35,18 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
 
   @override
   void dispose() {
-    _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _loadAuctionDetails() async {
-    await AuctionsHelper.loadAuctionDetails(auctionId: widget.auctionId);
+    await _auctionsController.getAuctionDetailsRequest(
+      auctionId: widget.auctionId,
+    );
   }
 
-  String _formatTimeLeft(DateTime endDate) {
+  String _formatTimeLeft(DateTime? endDate) {
+    if (endDate == null) return 'No end date';
+
     final now = DateTime.now();
     final difference = endDate.difference(now);
 
@@ -50,58 +54,107 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
       return 'Auction Ended';
     }
 
-    final hours = difference.inHours;
+    final days = difference.inDays;
+    final hours = difference.inHours % 24;
     final minutes = difference.inMinutes % 60;
-    final seconds = difference.inSeconds % 60;
 
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
+    if (days > 0) {
+      return '${days}d ${hours}h ${minutes}m';
+    } else if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else if (minutes > 0) {
+      return '${minutes}m';
+    } else {
+      return 'Ending soon';
+    }
   }
 
-  void _showBidDialog(Auction auction) {
-    final currentBidAmount = auction.winningBidAmount ?? auction.startingBid;
+  String _getStatusText(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'live':
+        return 'LIVE';
+      case 'draft':
+        return 'DRAFT';
+      case 'closed':
+        return 'CLOSED';
+      case 'cancelled':
+        return 'CANCELLED';
+      default:
+        return status?.toUpperCase() ?? 'UNKNOWN';
+    }
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'live':
+        return RealTimeColors.success;
+      case 'draft':
+        return RealTimeColors.warning;
+      case 'closed':
+        return RealTimeColors.warning;
+      case 'cancelled':
+        return RealTimeColors.error;
+      default:
+        return RealTimeColors.grey500;
+    }
+  }
+
+  String _formatCurrency(int? amount) {
+    if (amount == null) return r'$0';
+    final formatter = NumberFormat('#,###');
+    return '\$${formatter.format(amount)}';
+  }
+
+  bool get isLive =>
+      _auctionsController.selectedAuction.value?.status?.toLowerCase() ==
+      'live';
+  bool get isClosed =>
+      _auctionsController.selectedAuction.value?.status?.toLowerCase() ==
+      'closed';
+  bool get isDraft =>
+      _auctionsController.selectedAuction.value?.status?.toLowerCase() ==
+      'draft';
+
+  void _showBidDialog(Auction auction, CurrentBid? currentBid) {
+    final currentBidAmount =
+        currentBid?.amount?.toDouble() ??
+        auction.startingBidAmount?.toDouble() ??
+        0;
 
     Get.dialog(
       BidPlacementDialog(
-        auctionTitle: auction.asset.title,
+        auctionTitle: auction.asset?.title ?? 'Auction',
         currentBid: currentBidAmount,
-        reservePrice: auction.reservePrice,
-        startingBid: auction.startingBid,
+        reservePrice: (auction.reservePrice ?? 0)
+            .toDouble(), // Convert int to double
+        startingBid: (auction.startingBidAmount ?? 0)
+            .toDouble(), // Convert int to double
         onPlaceBid: (amount) async {
-          // Close dialog
           Get.back();
 
-          // Show loading
           Get.dialog(
-            const CustomLoader(message: 'Placing your bid...'),
+            const Center(child: CircularProgressIndicator()),
             barrierDismissible: false,
           );
 
-          // Place the bid
           final success = await _auctionsController.placeBidRequest(
-            auctionId: auction.id,
-            amount: amount,
+            auctionId: auction.id!,
+            amount: amount.toDouble(),
           );
 
-          // Close loading
           Get.back();
 
           if (success) {
-            // Show success message
             Get.snackbar(
               'Bid Placed!',
-              'Your bid of \$${amount.toStringAsFixed(2)} has been placed successfully',
+              'Your bid of ${_formatCurrency(amount.toInt())} has been placed successfully',
               snackPosition: SnackPosition.TOP,
               backgroundColor: RealTimeColors.success,
               colorText: Colors.white,
               duration: const Duration(seconds: 3),
             );
-
-            // Refresh auction details
             await _loadAuctionDetails();
           } else {
-            // Show error
             Get.snackbar(
               'Bid Failed',
               _auctionsController.errorMessage.value,
@@ -124,12 +177,24 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
         return Scaffold(
           backgroundColor: AppColors.backgroundColor,
           body: Center(
-            child: CircularProgressIndicator(color: AppColors.primaryColor),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading auction details...',
+                  style: GoogleFonts.poppins(color: AppColors.subtextColor),
+                ),
+              ],
+            ),
           ),
         );
       }
 
       final auction = _auctionsController.selectedAuction.value;
+      final currentBid = _auctionsController.currentBid.value;
+
       if (auction == null) {
         return Scaffold(
           backgroundColor: AppColors.backgroundColor,
@@ -168,12 +233,19 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                     color: AppColors.subtextColor,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Get.back(),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: AppColors.primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: const Text('Go Back'),
                 ),
@@ -185,6 +257,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
 
       final dateFormat = DateFormat('MMM dd, yyyy');
       final timeFormat = DateFormat('h:mm a');
+      final assetImages = auction.asset?.assetImages ?? [];
 
       return Scaffold(
         backgroundColor: AppColors.backgroundColor,
@@ -192,51 +265,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
           child: Column(
             children: [
               // Custom App Bar
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceColor,
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.borderColor),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Get.back(),
-                      icon: const Icon(Icons.arrow_back),
-                      color: AppColors.textColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Auction Details',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textColor,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () {
-                        // Share functionality
-                      },
-                      icon: const Icon(Icons.share_outlined),
-                      color: AppColors.textColor,
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        // Bookmark functionality
-                      },
-                      icon: const Icon(Icons.bookmark_border_outlined),
-                      color: AppColors.textColor,
-                    ),
-                  ],
-                ),
-              ),
+              _buildAppBar(),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -245,531 +274,50 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Image Carousel
-                      SizedBox(
-                        height: 280,
-                        child: Stack(
-                          children: [
-                            PageView.builder(
-                              controller: _pageController,
-                              itemCount: auction.asset.attachments.length,
-                              onPageChanged: (index) {
-                                setState(() {
-                                  _currentImageIndex = index;
-                                });
-                              },
-                              itemBuilder: (context, index) {
-                                final attachment =
-                                    auction.asset.attachments[index];
-                                return Container(
-                                  decoration: attachment.url.isNotEmpty
-                                      ? BoxDecoration(
-                                          image: DecorationImage(
-                                            image: NetworkImage(attachment.url),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        )
-                                      : BoxDecoration(
-                                          color: RealTimeColors.grey200,
-                                        ),
-                                  child: attachment.url.isEmpty
-                                      ? Center(
-                                          child: Icon(
-                                            Icons.image_outlined,
-                                            size: 64,
-                                            color: RealTimeColors.grey400,
-                                          ),
-                                        )
-                                      : null,
-                                );
-                              },
-                            ),
+                      _buildImageCarousel(assetImages),
 
-                            // Status Badge
-                            Positioned(
-                              top: 16,
-                              left: 16,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AuctionsHelper.getStatusColor(
-                                    auction.status,
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  AuctionsHelper.getStatusText(auction.status),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // Image Indicators
-                            if (auction.asset.attachments.length > 1)
-                              Positioned(
-                                bottom: 16,
-                                left: 0,
-                                right: 0,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: List.generate(
-                                    auction.asset.attachments.length,
-                                    (index) => Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                      ),
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: _currentImageIndex == index
-                                            ? Colors.white
-                                            : Colors.white.withOpacity(0.5),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-
-                      // Auction Summary Section
+                      // Main Content
                       Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Auction Header
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        auction.asset.title,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.textColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        auction.auctionNo,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          color: AppColors.subtextColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryColor.withOpacity(
-                                      0.1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    AuctionsHelper.getAuctionTypeText(
-                                      auction.type,
-                                    ),
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primaryColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            _buildAuctionHeader(auction),
 
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 20),
 
-                            // Live Auction Timer (if live)
-                            if (auction.status == AuctionStatus.live)
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: RealTimeColors.success.withOpacity(
-                                    0.05,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: RealTimeColors.success.withOpacity(
-                                      0.2,
-                                    ),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Time Left',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: AppColors.subtextColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _formatTimeLeft(auction.endDate),
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: RealTimeColors.success,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          'Current Bid',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: AppColors.subtextColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '\$${(auction.winningBidAmount ?? auction.startingBid).toStringAsFixed(0)}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.primaryColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            // Live Auction Timer and Current Bid
+                            if (isLive)
+                              _buildLiveAuctionSection(auction, currentBid),
+
+                            if (isLive) const SizedBox(height: 20),
+
+                            // Bid Statistics
+                            _buildBidStatistics(auction, currentBid),
 
                             const SizedBox(height: 24),
 
                             // Auction Details Grid
-                            Column(
-                              children: [
-                                // First Row
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildDetailItem(
-                                        icon: Icons.gavel_outlined,
-                                        label: 'Starting Bid',
-                                        value:
-                                            '\$${auction.startingBid.toStringAsFixed(0)}',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _buildDetailItem(
-                                        icon: Icons.flag_outlined,
-                                        label: 'Reserve Price',
-                                        value: auction.reservePrice != null
-                                            ? '\$${auction.reservePrice!.toStringAsFixed(0)}'
-                                            : 'Not set',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                // Second Row
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildDetailItem(
-                                        icon:
-                                            Icons.format_list_numbered_outlined,
-                                        label: 'Bids',
-                                        value: '${auction.bidCount ?? 0} bids',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: AppColors.surfaceColor,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: AppColors.borderColor,
-                                          ),
-                                        ),
-                                        padding: const EdgeInsets.all(12),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.calendar_today_outlined,
-                                                  size: 16,
-                                                  color: AppColors.subtextColor,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  'Ends',
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppColors.subtextColor,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  dateFormat.format(
-                                                    auction.endDate,
-                                                  ),
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: AppColors.textColor,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  timeFormat.format(
-                                                    auction.endDate,
-                                                  ),
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: AppColors.textColor,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            _buildAuctionDetailsGrid(
+                              auction,
+                              dateFormat,
+                              timeFormat,
                             ),
 
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 24),
 
                             // Asset Details Section
-                            Text(
-                              'Asset Details',
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Asset Details List
-                            Column(
-                              children: [
-                                _buildAssetDetailItem(
-                                  label: 'Category',
-                                  value: AuctionsHelper.getCategoryDisplayText(
-                                    auction.asset.category,
-                                  ),
-                                ),
-                                const Divider(height: 24),
-                                _buildAssetDetailItem(
-                                  label: 'Condition',
-                                  value: auction.asset.condition,
-                                ),
-                                const Divider(height: 24),
-                                _buildAssetDetailItem(
-                                  label: 'Evaluated Value',
-                                  value:
-                                      '\$${auction.asset.evaluatedValue.toStringAsFixed(0)}',
-                                ),
-                                const Divider(height: 24),
-                                _buildAssetDetailItem(
-                                  label: 'Storage Location',
-                                  value: auction.asset.storageLocation,
-                                ),
-                              ],
-                            ),
+                            _buildAssetDetailsSection(auction),
 
                             const SizedBox(height: 16),
 
                             // Description
-                            Text(
-                              auction.asset.description,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: AppColors.subtextColor,
-                                height: 1.6,
-                              ),
-                            ),
+                            if (auction.asset?.description != null &&
+                                auction.asset!.description!.isNotEmpty)
+                              _buildDescription(auction.asset!.description!),
 
-                            const SizedBox(height: 32),
-
-                            // Recent Bids Section (for live auctions)
-                            if (auction.status == AuctionStatus.live)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Recent Activity',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surfaceColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: AppColors.borderColor,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'Total Bids',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14,
-                                                color: AppColors.subtextColor,
-                                              ),
-                                            ),
-                                            Text(
-                                              '${auction.bidCount ?? 0}',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.textColor,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'Highest Bid',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14,
-                                                color: AppColors.subtextColor,
-                                              ),
-                                            ),
-                                            Text(
-                                              '\$${(auction.winningBidAmount ?? auction.startingBid).toStringAsFixed(0)}',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.primaryColor,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                            // Winning Bid (for closed auctions)
-                            if (auction.status == AuctionStatus.closed &&
-                                auction.winningBidAmount != null)
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: RealTimeColors.error.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: RealTimeColors.error.withOpacity(
-                                      0.2,
-                                    ),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Winning Bid',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: AppColors.subtextColor,
-                                          ),
-                                        ),
-                                        Text(
-                                          '\$${auction.winningBidAmount!.toStringAsFixed(0)}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: RealTimeColors.error,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: RealTimeColors.error,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        'SOLD',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            const SizedBox(height: 80), // Space for bottom bar
                           ],
                         ),
                       ),
@@ -779,91 +327,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
               ),
 
               // Fixed Bottom Action Bar
-              if (auction.status == AuctionStatus.live ||
-                  auction.status == AuctionStatus.closed)
-                Container(
-                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceColor,
-                    border: Border(
-                      top: BorderSide(color: AppColors.borderColor),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        spreadRadius: 0,
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // View Bids Button
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Get.to(
-                              () => AuctionBidsScreen(
-                                auctionId: auction.id,
-                                auctionTitle: auction.asset.title,
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primaryColor,
-                            side: BorderSide(color: AppColors.primaryColor),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.list_alt_outlined, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                'View Bids (${auction.bidCount ?? 0})',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Place Bid Button (only for live auctions)
-                      if (auction.status == AuctionStatus.live)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 0,
-                          ),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: GeneralButton(
-                              onTap: () {
-                                _showBidDialog(auction);
-                              },
-                              btnColor: AppColors.primaryColor,
-                              child: Text(
-                                'Place Bid',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+              if (!isDraft) _buildBottomActionBar(auction, currentBid),
             ],
           ),
         ),
@@ -871,62 +335,586 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
     });
   }
 
-  Widget _buildDetailItem({
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        border: Border(bottom: BorderSide(color: AppColors.borderColor)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Get.back(),
+            icon: const Icon(Icons.arrow_back_ios),
+            color: AppColors.textColor,
+            iconSize: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Auction Details',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textColor,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: () {
+              Get.to(
+                () => AuctionBidsScreen(
+                  auctionId: widget.auctionId,
+                  auctionTitle:
+                      _auctionsController.selectedAuction.value?.asset?.title ??
+                      'Auction',
+                ),
+              );
+            },
+            icon: const Icon(Icons.list_alt_outlined),
+            color: AppColors.textColor,
+            tooltip: 'View All Bids',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageCarousel(List<String> imageUrls) {
+    if (imageUrls.isEmpty) {
+      return Container(
+        height: 280,
+        decoration: BoxDecoration(
+          color: RealTimeColors.grey200,
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.image_outlined,
+                size: 64,
+                color: RealTimeColors.grey400,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No Images Available',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: RealTimeColors.grey500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        CarouselSlider(
+          carouselController: _carouselController,
+          options: CarouselOptions(
+            height: 320,
+            autoPlay: isLive,
+            autoPlayInterval: const Duration(seconds: 4),
+            enlargeCenterPage: true,
+            enableInfiniteScroll: imageUrls.length > 1,
+            viewportFraction: 1.0,
+            onPageChanged: (index, reason) {
+              setState(() {
+                _currentImageIndex = index;
+              });
+            },
+          ),
+          items: imageUrls.map((url) {
+            return Builder(
+              builder: (BuildContext context) {
+                return Container(
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(
+                    color: RealTimeColors.grey200,
+                    image: DecorationImage(
+                      image: NetworkImage(url),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              },
+            );
+          }).toList(),
+        ),
+
+        // Gradient Overlay
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.4)],
+              ),
+            ),
+          ),
+        ),
+
+        // Status Badge
+        Positioned(
+          top: 16,
+          left: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: _getStatusColor(
+                _auctionsController.selectedAuction.value?.status,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              _getStatusText(_auctionsController.selectedAuction.value?.status),
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+
+        // Image Indicators
+        if (imageUrls.length > 1)
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                imageUrls.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  width: _currentImageIndex == index ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    color: _currentImageIndex == index
+                        ? AppColors.primaryColor
+                        : Colors.white.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAuctionHeader(Auction auction) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                auction.asset?.title ?? 'Untitled',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                auction.auctionType?.toUpperCase() ?? 'ONLINE',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.tag_outlined, size: 14, color: AppColors.subtextColor),
+            const SizedBox(width: 4),
+            Text(
+              auction.auctionNo ?? 'No Number',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppColors.subtextColor,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLiveAuctionSection(Auction auction, CurrentBid? currentBid) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            RealTimeColors.success.withOpacity(0.15),
+            RealTimeColors.success.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: RealTimeColors.success.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Time Remaining',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.subtextColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.timer_outlined,
+                      size: 20,
+                      color: RealTimeColors.success,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatTimeLeft(auction.endsAt),
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: RealTimeColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'Current Bid',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.subtextColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatCurrency(
+                    currentBid?.amount ?? auction.startingBidAmount,
+                  ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+                if (currentBid?.bidderUser != null)
+                  Text(
+                    'by ${currentBid!.bidderUser!.email?.split('@').first ?? 'Bidder'}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBidStatistics(Auction auction, CurrentBid? currentBid) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.gavel_outlined,
+                  size: 20,
+                  color: AppColors.primaryColor,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Starting Bid',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.subtextColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatCurrency(auction.startingBidAmount),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(width: 1, height: 50, color: AppColors.borderColor),
+          Expanded(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.flag_outlined,
+                  size: 20,
+                  color: AppColors.primaryColor,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Reserve Price',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.subtextColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatCurrency(auction.reservePrice),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(width: 1, height: 50, color: AppColors.borderColor),
+          Expanded(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.people_outline,
+                  size: 20,
+                  color: AppColors.primaryColor,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Total Bids',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.subtextColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${currentBid != null ? 1 : 0}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuctionDetailsGrid(
+    Auction auction,
+    DateFormat dateFormat,
+    DateFormat timeFormat,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Auction Details',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.5,
+          children: [
+            _buildInfoCard(
+              icon: Icons.calendar_today_outlined,
+              label: 'Start Date',
+              value: auction.startsAt != null
+                  ? '${dateFormat.format(auction.startsAt!)}\n${timeFormat.format(auction.startsAt!)}'
+                  : 'Not set',
+            ),
+            _buildInfoCard(
+              icon: Icons.event_busy_outlined,
+              label: 'End Date',
+              value: auction.endsAt != null
+                  ? '${dateFormat.format(auction.endsAt!)}\n${timeFormat.format(auction.endsAt!)}'
+                  : 'Not set',
+            ),
+            _buildInfoCard(
+              icon: Icons.person_outline,
+              label: 'Created By',
+              value: auction.createdBy?.email?.split('@').first ?? 'Admin',
+            ),
+            _buildInfoCard(
+              icon: Icons.access_time_outlined,
+              label: 'Created At',
+              value: auction.createdAt != null
+                  ? dateFormat.format(auction.createdAt!)
+                  : 'Unknown',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard({
     required IconData icon,
     required String label,
     required String value,
   }) {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.borderColor),
       ),
-      padding: const EdgeInsets.all(12),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Icon(icon, size: 16, color: AppColors.subtextColor),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: AppColors.primaryColor),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: AppColors.subtextColor,
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.subtextColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Flexible(
-                    child: Text(
-                      value,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textColor,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textColor,
             ),
-          ],
-        ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildAssetDetailItem({required String label, required String value}) {
+  Widget _buildAssetDetailsSection(Auction auction) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Asset Information',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderColor),
+          ),
+          child: Column(
+            children: [
+              _buildAssetDetailRow(
+                label: 'Asset Number',
+                value: auction.asset?.assetNo ?? 'N/A',
+              ),
+              const Divider(height: 24),
+              _buildAssetDetailRow(
+                label: 'Category',
+                value: _formatCategory(auction.asset?.category),
+              ),
+              const Divider(height: 24),
+              _buildAssetDetailRow(
+                label: 'Condition',
+                value: _formatCondition(auction.asset?.condition),
+              ),
+              const Divider(height: 24),
+              _buildAssetDetailRow(
+                label: 'Evaluated Value',
+                value: _formatCurrency(auction.asset?.evaluatedValue),
+              ),
+              const Divider(height: 24),
+              _buildAssetDetailRow(
+                label: 'Storage Location',
+                value: _formatStorageLocation(auction.asset?.storageLocation),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAssetDetailRow({required String label, required String value}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -937,15 +925,132 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
             color: AppColors.subtextColor,
           ),
         ),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textColor,
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textColor,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildDescription(String description) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Description',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderColor),
+          ),
+          child: Text(
+            description,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppColors.subtextColor,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomActionBar(Auction auction, CurrentBid? currentBid) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        border: Border(top: BorderSide(color: AppColors.borderColor)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: isLive
+          ? SizedBox(
+              width: double.infinity,
+              child: GeneralButton(
+                onTap: () => _showBidDialog(auction, currentBid),
+                btnColor: AppColors.primaryColor,
+                child: Text(
+                  'Place Bid - ${_formatCurrency(currentBid?.amount ?? auction.startingBidAmount)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            )
+          : isClosed
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: RealTimeColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: RealTimeColors.error),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'This auction has ended. No more bids can be placed.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: RealTimeColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : const SizedBox.shrink(),
+    );
+  }
+
+  String _formatCategory(String? category) {
+    if (category == null) return 'General';
+    return category
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+
+  String _formatCondition(String? condition) {
+    if (condition == null) return 'Not specified';
+    return condition[0].toUpperCase() + condition.substring(1);
+  }
+
+  String _formatStorageLocation(String? location) {
+    if (location == null) return 'Not specified';
+    return location
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 }

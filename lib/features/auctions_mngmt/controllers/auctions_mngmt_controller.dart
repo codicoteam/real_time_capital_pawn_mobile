@@ -2,8 +2,10 @@
 import 'package:get/get.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/services/auctions_mngmt_service.dart';
 
-import 'package:real_time_pawn/models/auction_models.dart';
+import 'package:real_time_pawn/models/auction_list_model.dart'; // Import the new model
 import '../../../core/utils/logs.dart';
+import '../../../models/auction_models.dart' as old; // Alias for old Auction model to avoid conflict
+import '../../../models/auction_detail_response.dart'; // Import the detail response model
 
 class AuctionsController extends GetxController {
   var isLoading = false.obs;
@@ -13,19 +15,21 @@ class AuctionsController extends GetxController {
   var successMessage = ''.obs;
   var errorMessage = ''.obs;
 
-  var auctionsList = <Auction>[].obs;
+  // Changed from <Auction> to <AuctionListModel>
+  var auctionsList = <AuctionListModel>[].obs;
   var pagination = Pagination(page: 1, limit: 10, total: 0, pages: 1).obs;
   var currentPage = 1.obs;
 
-  var selectedAuction = Rxn<Auction>();
-  var currentBid = Rxn<Bid>();
+  // Use the new Auction model from auction_detail_response.dart
+  var selectedAuction = Rxn<Auction>(); // This now uses Auction from auction_detail_response.dart
+  var currentBid = Rxn<CurrentBid>(); // This now uses CurrentBid from auction_detail_response.dart
 
-  var liveAuctions = <Auction>[].obs;
+  var liveAuctions = <old.Auction>[].obs; // Using old Auction model for live auctions
 
   var isLoadingSearch = false.obs;
   var isLoadingBids = false.obs;
-  var searchResults = <Auction>[].obs;
-  var auctionBids = <Bid>[].obs;
+  var searchResults = <old.Auction>[].obs; // Using old Auction model for search results
+  var auctionBids = <old.Bid>[].obs; // Using old Bid model
 
   /// GET ALL AUCTIONS
   Future<bool> getAuctionsRequest({
@@ -103,11 +107,24 @@ class AuctionsController extends GetxController {
       );
 
       if (response.success && response.data != null) {
-        selectedAuction.value = response.data!.auction;
-        currentBid.value = response.data!.currentBid;
+        // Access the nested data structure directly
+        final auctionDetailData = response.data!.data;
+        
+        // Set the auction and current bid directly using the models from auction_detail_response.dart
+        selectedAuction.value = auctionDetailData?.auction;
+        currentBid.value = auctionDetailData?.currentBid;
 
         successMessage.value = response.message ?? 'Auction details loaded';
         DevLogs.logSuccess(successMessage.value);
+        
+        // Log the retrieved data for debugging
+        DevLogs.logInfo('Auction ID: ${selectedAuction.value?.id}');
+        DevLogs.logInfo('Auction No: ${selectedAuction.value?.auctionNo}');
+        DevLogs.logInfo('Auction Status: ${selectedAuction.value?.status}');
+        DevLogs.logInfo('Current Bid Amount: ${currentBid.value?.amount}');
+        DevLogs.logInfo('Current Bidder: ${currentBid.value?.bidderUser?.email}');
+        DevLogs.logInfo('Asset Title: ${selectedAuction.value?.asset?.title}');
+        
         return true;
       } else {
         errorMessage.value =
@@ -259,7 +276,6 @@ class AuctionsController extends GetxController {
     }
   }
 
-  /// PLACE BID ON AUCTION
   /// PLACE BID ON AUCTION
   Future<bool> placeBidRequest({
     required String auctionId,
