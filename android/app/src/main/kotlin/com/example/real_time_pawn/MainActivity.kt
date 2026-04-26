@@ -1,4 +1,4 @@
-package com.example.real_time_pawn
+package com.codico.realtime
 
 import io.flutter.embedding.android.FlutterActivity
 

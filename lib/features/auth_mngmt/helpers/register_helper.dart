@@ -9,29 +9,91 @@ import '../controllers/auth_controller.dart';
 class RegisterHelper {
   static final AuthController _authController = Get.find<AuthController>();
 
-  // Validation helpers
-  static bool _hasUppercase(String value) => value.contains(RegExp(r'[A-Z]'));
-  static bool _hasLowercase(String value) => value.contains(RegExp(r'[a-z]'));
-  static bool _hasNumber(String value) => value.contains(RegExp(r'[0-9]'));
+  // Validation helpers (made public for real-time validation)
+  static bool hasUppercase(String value) => value.contains(RegExp(r'[A-Z]'));
+  static bool hasLowercase(String value) => value.contains(RegExp(r'[a-z]'));
+  static bool hasNumber(String value) => value.contains(RegExp(r'[0-9]'));
+  static bool hasSpecialChar(String value) =>
+      value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
 
-  // Zimbabwe phone validation
-  static bool _isValidZimbabwePhone(String phone) {
+  // Password strength getter
+  static int getPasswordStrength(String password) {
+    int strength = 0;
+    if (password.length >= 8) strength++;
+    if (hasUppercase(password)) strength++;
+    if (hasLowercase(password)) strength++;
+    if (hasNumber(password)) strength++;
+    if (hasSpecialChar(password)) strength++;
+    return strength;
+  }
+
+  // Zimbabwe phone validation (public for real-time validation)
+  static bool isValidZimbabwePhone(String phone) {
+    if (phone.isEmpty) return true; // Optional field
     final phoneRegExp = RegExp(r'^(\+263|0)[0-9]{9}$');
     return phoneRegExp.hasMatch(phone);
   }
 
-  // Zimbabwe National ID validation (format: 63-1234567A12 or 63-12345678A12)
-static bool _isValidNationalId(String id) {
-  final idRegExp = RegExp(r'^\d{2}-\d{6,8}[A-Z]\d{2}$');
-  return idRegExp.hasMatch(id.toUpperCase());
-}
+  // Zimbabwe National ID validation (public for real-time validation)
+  static bool isValidNationalId(String id) {
+    if (id.isEmpty) return false;
+    final idRegExp = RegExp(r'^\d{2}-\d{6,8}[A-Z]\d{2}$');
+    return idRegExp.hasMatch(id.toUpperCase());
+  }
 
-  // Email validation
-  static bool _isValidEmail(String email) {
+  // Email validation (public for real-time validation)
+  static bool isValidEmail(String email) {
+    if (email.isEmpty) return false;
     final emailRegExp = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     return emailRegExp.hasMatch(email);
+  }
+
+  // Get email validation error message
+  static String? getEmailError(String email) {
+    if (email.isEmpty) return 'Email is required';
+    if (!isValidEmail(email.trim()))
+      return 'Please enter a valid email address';
+    return null;
+  }
+
+  // Get phone validation error message
+  static String? getPhoneError(String phone) {
+    if (phone.isEmpty) return null; // Optional field
+    if (!isValidZimbabwePhone(phone.trim())) {
+      return 'Enter valid Zim number (e.g., +263771234567 or 0771234567)';
+    }
+    return null;
+  }
+
+  // Get national ID validation error message
+  static String? getNationalIdError(String nationalId) {
+    if (nationalId.isEmpty) return 'National ID is required';
+    if (!isValidNationalId(nationalId.trim())) {
+      return 'Enter valid ID (e.g., 63-1234567A12 or 63-12345678A12)';
+    }
+    return null;
+  }
+
+  // Get password validation error message
+  static String? getPasswordError(String password) {
+    if (password.isEmpty) return 'Password is required';
+    if (password.length < 8) return 'Password must be at least 8 characters';
+    if (!hasUppercase(password)) return 'Include at least one uppercase letter';
+    if (!hasLowercase(password)) return 'Include at least one lowercase letter';
+    if (!hasNumber(password)) return 'Include at least one number';
+    return null;
+  }
+
+  // Get confirm password validation error message
+  static String? getConfirmPasswordError(
+    String password,
+    String confirmPassword,
+  ) {
+    if (confirmPassword.isEmpty) return 'Please confirm your password';
+    if (password != confirmPassword) return 'Passwords do not match';
+    return null;
   }
 
   static void _clearErrors() {
@@ -71,7 +133,7 @@ static bool _isValidNationalId(String id) {
     if (email.isEmpty) {
       _showValidationError('Email is required', 'email');
       isValid = false;
-    } else if (!_isValidEmail(email.trim())) {
+    } else if (!isValidEmail(email.trim())) {
       _showValidationError('Please enter a valid email address', 'email');
       isValid = false;
     }
@@ -85,13 +147,13 @@ static bool _isValidNationalId(String id) {
         'password',
       );
       isValid = false;
-    } else if (!_hasUppercase(password)) {
+    } else if (!hasUppercase(password)) {
       _showValidationError('Include at least one uppercase letter', 'password');
       isValid = false;
-    } else if (!_hasLowercase(password)) {
+    } else if (!hasLowercase(password)) {
       _showValidationError('Include at least one lowercase letter', 'password');
       isValid = false;
-    } else if (!_hasNumber(password)) {
+    } else if (!hasNumber(password)) {
       _showValidationError('Include at least one number', 'password');
       isValid = false;
     }
@@ -217,14 +279,14 @@ static bool _isValidNationalId(String id) {
     if (email.isEmpty) {
       _showValidationError('Email is required', 'email');
       isValid = false;
-    } else if (!_isValidEmail(email.trim())) {
+    } else if (!isValidEmail(email.trim())) {
       _showValidationError('Please enter a valid email address', 'email');
       isValid = false;
     }
 
     // Phone Validation (Optional but validate if provided)
     if (phone != null && phone.isNotEmpty) {
-      if (!_isValidZimbabwePhone(phone.trim())) {
+      if (!isValidZimbabwePhone(phone.trim())) {
         _showValidationError(
           'Please enter a valid Zimbabwe phone number (e.g., +263771234567 or 0771234567)',
           'phone',
@@ -235,7 +297,7 @@ static bool _isValidNationalId(String id) {
 
     // Alternative Phone Validation (Optional but validate if provided)
     if (alternativePhone != null && alternativePhone.isNotEmpty) {
-      if (!_isValidZimbabwePhone(alternativePhone.trim())) {
+      if (!isValidZimbabwePhone(alternativePhone.trim())) {
         _showValidationError(
           'Please enter a valid alternative phone number (e.g., +263771234567 or 0771234567)',
           'alternativePhone',
@@ -259,7 +321,7 @@ static bool _isValidNationalId(String id) {
           'nationalIdNumber',
         );
         isValid = false;
-      } else if (!_isValidNationalId(nationalIdNumber.trim())) {
+      } else if (!isValidNationalId(nationalIdNumber.trim())) {
         _showValidationError(
           'Please enter a valid Zimbabwe National ID (e.g., 63-1234567A12 or 63-12345678A12)',
           'nationalIdNumber',
@@ -337,13 +399,13 @@ static bool _isValidNationalId(String id) {
         'password',
       );
       isValid = false;
-    } else if (!_hasUppercase(password)) {
+    } else if (!hasUppercase(password)) {
       _showValidationError('Include at least one uppercase letter', 'password');
       isValid = false;
-    } else if (!_hasLowercase(password)) {
+    } else if (!hasLowercase(password)) {
       _showValidationError('Include at least one lowercase letter', 'password');
       isValid = false;
-    } else if (!_hasNumber(password)) {
+    } else if (!hasNumber(password)) {
       _showValidationError('Include at least one number', 'password');
       isValid = false;
     }
@@ -454,7 +516,7 @@ static bool _isValidNationalId(String id) {
 
       // Optional employment contact validation
       if (employmentContacts != null && employmentContacts.isNotEmpty) {
-        if (!_isValidZimbabwePhone(employmentContacts)) {
+        if (!isValidZimbabwePhone(employmentContacts)) {
           _showValidationError(
             'Please enter a valid work contact number',
             'employmentContacts',
@@ -485,7 +547,7 @@ static bool _isValidNationalId(String id) {
       }
 
       if (nextOfKinPhone != null && nextOfKinPhone.isNotEmpty) {
-        if (!_isValidZimbabwePhone(nextOfKinPhone)) {
+        if (!isValidZimbabwePhone(nextOfKinPhone)) {
           _showValidationError(
             'Please enter a valid next of kin phone number',
             'nextOfKinPhone',
@@ -495,7 +557,7 @@ static bool _isValidNationalId(String id) {
       }
 
       if (nextOfKinEmail != null && nextOfKinEmail.isNotEmpty) {
-        if (!_isValidEmail(nextOfKinEmail)) {
+        if (!isValidEmail(nextOfKinEmail)) {
           _showValidationError(
             'Please enter a valid next of kin email address',
             'nextOfKinEmail',
