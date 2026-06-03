@@ -3,6 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -16,13 +17,16 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.codico.realtime"
+    namespace = "com.codico.realtime.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+
+        // ✅ FIX: REQUIRED for flutter_local_notifications
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -30,14 +34,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.codico.realtime"
+        applicationId = "com.codico.realtime.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    // ✅ ADD THIS SECTION
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
@@ -49,12 +52,16 @@ android {
 
     buildTypes {
         release {
-            // ✅ FIXED: use release signing instead of debug
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
         }
     }
+}
+
+dependencies {
+    // ✅ FIX: desugaring library
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 
 flutter {

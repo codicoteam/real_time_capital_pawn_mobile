@@ -4,29 +4,37 @@ class LoanApplicationModel {
   final String? id;
   final String? applicationNo;
   final CustomerUser? customerUser;
-  final int? requestedLoanAmount;
+  final double? requestedLoanAmount;
+  final String? loanPeriodType;
+  final double? interestRate;
+  final double? interestAmount;
+  final double? storageRate;
+  final double? storageAmount;
+  final double? totalRepayableAmount;
   final String? collateralCategory;
   final String? collateralDescription;
   final String? suretyDescription;
-  final int? declaredAssetValue;
+  final double? declaredAssetValue;
   final SmallLoanDetails? smallLoanDetails;
   final List<String>? collateralImages;
   final String? repaymentType;
   final int? repaymentDays;
-  final int? installmentCount;
-  final String? installmentFrequency;
-  final double? installmentAmount;
   final String? declarationText;
   final DateTime? declarationSignedAt;
   final String? declarationSignatureName;
   final String? status;
+  final bool? loanCreated;
+  final String? loanId;
   final DebtorCheck? debtorCheck;
   final String? customTermsAndConditions;
+  final DateTime? termsAcceptedAt;
   final EdBy? createdBy;
-  final String? applicationSource; // ✅ was: ApplicationSource?
+  final EdBy? submittedBy;
+  final String? applicationSource;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final List<AdminNote>? adminNotes;
+  final List<StatusUpdate>? statusUpdates;
   final int? v;
   final MotorVehicleDetails? motorVehicleDetails;
   final String? internalNotes;
@@ -38,6 +46,12 @@ class LoanApplicationModel {
     this.applicationNo,
     this.customerUser,
     this.requestedLoanAmount,
+    this.loanPeriodType,
+    this.interestRate,
+    this.interestAmount,
+    this.storageRate,
+    this.storageAmount,
+    this.totalRepayableAmount,
     this.collateralCategory,
     this.collateralDescription,
     this.suretyDescription,
@@ -46,20 +60,22 @@ class LoanApplicationModel {
     this.collateralImages,
     this.repaymentType,
     this.repaymentDays,
-    this.installmentCount,
-    this.installmentFrequency,
-    this.installmentAmount,
     this.declarationText,
     this.declarationSignedAt,
     this.declarationSignatureName,
     this.status,
+    this.loanCreated,
+    this.loanId,
     this.debtorCheck,
     this.customTermsAndConditions,
+    this.termsAcceptedAt,
     this.createdBy,
+    this.submittedBy,
     this.applicationSource,
     this.createdAt,
     this.updatedAt,
     this.adminNotes,
+    this.statusUpdates,
     this.v,
     this.motorVehicleDetails,
     this.internalNotes,
@@ -79,11 +95,17 @@ class LoanApplicationModel {
         customerUser: json["customer_user"] == null
             ? null
             : CustomerUser.fromMap(json["customer_user"]),
-        requestedLoanAmount: json["requested_loan_amount"],
+        requestedLoanAmount: json["requested_loan_amount"]?.toDouble(),
+        loanPeriodType: json["loan_period_type"],
+        interestRate: json["interest_rate"]?.toDouble(),
+        interestAmount: json["interest_amount"]?.toDouble(),
+        storageRate: json["storage_rate"]?.toDouble(),
+        storageAmount: json["storage_amount"]?.toDouble(),
+        totalRepayableAmount: json["total_repayable_amount"]?.toDouble(),
         collateralCategory: json["collateral_category"],
         collateralDescription: json["collateral_description"],
         suretyDescription: json["surety_description"],
-        declaredAssetValue: json["declared_asset_value"],
+        declaredAssetValue: json["declared_asset_value"]?.toDouble(),
         smallLoanDetails: json["small_loan_details"] == null
             ? null
             : SmallLoanDetails.fromMap(json["small_loan_details"]),
@@ -92,23 +114,30 @@ class LoanApplicationModel {
             : List<String>.from(json["collateral_images"]!.map((x) => x)),
         repaymentType: json["repayment_type"],
         repaymentDays: json["repayment_days"],
-        installmentCount: json["installment_count"],
-        installmentFrequency: json["installment_frequency"],
-        installmentAmount: json["installment_amount"]?.toDouble(),
         declarationText: json["declaration_text"],
         declarationSignedAt: json["declaration_signed_at"] == null
             ? null
             : DateTime.parse(json["declaration_signed_at"]),
         declarationSignatureName: json["declaration_signature_name"],
         status: json["status"],
+        loanCreated: json["loan_created"],
+        loanId: json["loan_id"] is String
+            ? json["loan_id"]
+            : json["loan_id"]?["_id"],
         debtorCheck: json["debtor_check"] == null
             ? null
             : DebtorCheck.fromMap(json["debtor_check"]),
         customTermsAndConditions: json["custom_terms_and_conditions"],
+        termsAcceptedAt: json["terms_accepted_at"] == null
+            ? null
+            : DateTime.parse(json["terms_accepted_at"]),
         createdBy: json["created_by"] == null
             ? null
             : EdBy.fromMap(json["created_by"]),
-        applicationSource: json["application_source"], // ✅ plain string
+        submittedBy: json["submitted_by"] == null
+            ? null
+            : EdBy.fromMap(json["submitted_by"]),
+        applicationSource: json["application_source"],
         createdAt: json["created_at"] == null
             ? null
             : DateTime.parse(json["created_at"]),
@@ -119,6 +148,11 @@ class LoanApplicationModel {
             ? []
             : List<AdminNote>.from(
                 json["admin_notes"]!.map((x) => AdminNote.fromMap(x)),
+              ),
+        statusUpdates: json["status_updates"] == null
+            ? []
+            : List<StatusUpdate>.from(
+                json["status_updates"]!.map((x) => StatusUpdate.fromMap(x)),
               ),
         v: json["__v"],
         motorVehicleDetails: json["motor_vehicle_details"] == null
@@ -134,42 +168,52 @@ class LoanApplicationModel {
       );
 
   Map<String, dynamic> toMap() => {
-    "_id": id,
-    "application_no": applicationNo,
-    "customer_user": customerUser?.toMap(),
-    "requested_loan_amount": requestedLoanAmount,
-    "collateral_category": collateralCategory,
-    "collateral_description": collateralDescription,
-    "surety_description": suretyDescription,
-    "declared_asset_value": declaredAssetValue,
-    "small_loan_details": smallLoanDetails?.toMap(),
-    "collateral_images": collateralImages == null
-        ? []
-        : List<dynamic>.from(collateralImages!.map((x) => x)),
-    "repayment_type": repaymentType,
-    "repayment_days": repaymentDays,
-    "installment_count": installmentCount,
-    "installment_frequency": installmentFrequency,
-    "installment_amount": installmentAmount,
-    "declaration_text": declarationText,
-    "declaration_signed_at": declarationSignedAt?.toIso8601String(),
-    "declaration_signature_name": declarationSignatureName,
-    "status": status,
-    "debtor_check": debtorCheck?.toMap(),
-    "custom_terms_and_conditions": customTermsAndConditions,
-    "created_by": createdBy?.toMap(),
-    "application_source": applicationSource, // ✅ plain string
-    "created_at": createdAt?.toIso8601String(),
-    "updated_at": updatedAt?.toIso8601String(),
-    "admin_notes": adminNotes == null
-        ? []
-        : List<dynamic>.from(adminNotes!.map((x) => x.toMap())),
-    "__v": v,
-    "motor_vehicle_details": motorVehicleDetails?.toMap(),
-    "internal_notes": internalNotes,
-    "processed_by": processedBy?.toMap(),
-    "jewellery_details": jewelleryDetails?.toMap(),
-  };
+        "_id": id,
+        "application_no": applicationNo,
+        "customer_user": customerUser?.toMap(),
+        "requested_loan_amount": requestedLoanAmount,
+        "loan_period_type": loanPeriodType,
+        "interest_rate": interestRate,
+        "interest_amount": interestAmount,
+        "storage_rate": storageRate,
+        "storage_amount": storageAmount,
+        "total_repayable_amount": totalRepayableAmount,
+        "collateral_category": collateralCategory,
+        "collateral_description": collateralDescription,
+        "surety_description": suretyDescription,
+        "declared_asset_value": declaredAssetValue,
+        "small_loan_details": smallLoanDetails?.toMap(),
+        "collateral_images": collateralImages == null
+            ? []
+            : List<dynamic>.from(collateralImages!.map((x) => x)),
+        "repayment_type": repaymentType,
+        "repayment_days": repaymentDays,
+        "declaration_text": declarationText,
+        "declaration_signed_at": declarationSignedAt?.toIso8601String(),
+        "declaration_signature_name": declarationSignatureName,
+        "status": status,
+        "loan_created": loanCreated,
+        "loan_id": loanId,
+        "debtor_check": debtorCheck?.toMap(),
+        "custom_terms_and_conditions": customTermsAndConditions,
+        "terms_accepted_at": termsAcceptedAt?.toIso8601String(),
+        "created_by": createdBy?.toMap(),
+        "submitted_by": submittedBy?.toMap(),
+        "application_source": applicationSource,
+        "created_at": createdAt?.toIso8601String(),
+        "updated_at": updatedAt?.toIso8601String(),
+        "admin_notes": adminNotes == null
+            ? []
+            : List<dynamic>.from(adminNotes!.map((x) => x.toMap())),
+        "status_updates": statusUpdates == null
+            ? []
+            : List<dynamic>.from(statusUpdates!.map((x) => x.toMap())),
+        "__v": v,
+        "motor_vehicle_details": motorVehicleDetails?.toMap(),
+        "internal_notes": internalNotes,
+        "processed_by": processedBy?.toMap(),
+        "jewellery_details": jewelleryDetails?.toMap(),
+      };
 }
 
 // ✅ All enum fields replaced with plain String?
@@ -300,8 +344,18 @@ class DebtorCheck {
   final bool? checked;
   final bool? matched;
   final List<dynamic>? matchedDebtorRecords;
+  final String? notes;
+  final DateTime? checkedAt;
+  final EdBy? checkedBy;
 
-  DebtorCheck({this.checked, this.matched, this.matchedDebtorRecords});
+  DebtorCheck({
+    this.checked,
+    this.matched,
+    this.matchedDebtorRecords,
+    this.notes,
+    this.checkedAt,
+    this.checkedBy,
+  });
 
   factory DebtorCheck.fromJson(String str) =>
       DebtorCheck.fromMap(json.decode(str));
@@ -309,20 +363,65 @@ class DebtorCheck {
   String toJson() => json.encode(toMap());
 
   factory DebtorCheck.fromMap(Map<String, dynamic> json) => DebtorCheck(
-    checked: json["checked"],
-    matched: json["matched"],
-    matchedDebtorRecords: json["matched_debtor_records"] == null
-        ? []
-        : List<dynamic>.from(json["matched_debtor_records"]!.map((x) => x)),
-  );
+        checked: json["checked"],
+        matched: json["matched"],
+        matchedDebtorRecords: json["matched_debtor_records"] == null
+            ? []
+            : List<dynamic>.from(json["matched_debtor_records"]!.map((x) => x)),
+        notes: json["notes"],
+        checkedAt: json["checked_at"] == null
+            ? null
+            : DateTime.parse(json["checked_at"]),
+        checkedBy: json["checked_by"] == null
+            ? null
+            : EdBy.fromMap(json["checked_by"]),
+      );
 
   Map<String, dynamic> toMap() => {
-    "checked": checked,
-    "matched": matched,
-    "matched_debtor_records": matchedDebtorRecords == null
-        ? []
-        : List<dynamic>.from(matchedDebtorRecords!.map((x) => x)),
-  };
+        "checked": checked,
+        "matched": matched,
+        "matched_debtor_records": matchedDebtorRecords == null
+            ? []
+            : List<dynamic>.from(matchedDebtorRecords!.map((x) => x)),
+        "notes": notes,
+        "checked_at": checkedAt?.toIso8601String(),
+        "checked_by": checkedBy?.toMap(),
+      };
+}
+
+class StatusUpdate {
+  final String? status;
+  final String? note;
+  final EdBy? createdBy;
+  final DateTime? createdAt;
+  final String? id;
+
+  StatusUpdate({this.status, this.note, this.createdBy, this.createdAt, this.id});
+
+  factory StatusUpdate.fromJson(String str) =>
+      StatusUpdate.fromMap(json.decode(str));
+
+  String toJson() => json.encode(toMap());
+
+  factory StatusUpdate.fromMap(Map<String, dynamic> json) => StatusUpdate(
+        status: json["status"],
+        note: json["note"],
+        createdBy: json["created_by"] == null
+            ? null
+            : EdBy.fromMap(json["created_by"]),
+        createdAt: json["created_at"] == null
+            ? null
+            : DateTime.parse(json["created_at"]),
+        id: json["_id"],
+      );
+
+  Map<String, dynamic> toMap() => {
+        "status": status,
+        "note": note,
+        "created_by": createdBy?.toMap(),
+        "created_at": createdAt?.toIso8601String(),
+        "_id": id,
+      };
 }
 
 class JewelleryDetails {
@@ -435,5 +534,3 @@ class SmallLoanDetails {
   };
 }
 
-// ✅ EnumValues and all stale enums (Email, FirstName, LastName, Id,
-//    ApplicationSource) removed — no longer needed anywhere in this file.

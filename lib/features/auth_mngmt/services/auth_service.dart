@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:real_time_pawn/core/utils/logs.dart';
 import '../../../config/api_config/api_keys.dart';
 import '../../../core/utils/api_response.dart';
@@ -37,6 +38,17 @@ class AuthServices {
         final token = data['token'];
         final user = data['user'];
 
+        // Customers only — block staff / admin accounts
+        final roles = List<String>.from(user['roles'] ?? []);
+        if (!roles.contains('customer')) {
+          DevLogs.logWarning('Login blocked: non-customer roles $roles');
+          return APIResponse(
+            success: false,
+            message: 'Access denied. This app is for customers only. Please use the web portal.',
+            data: null,
+          );
+        }
+
         // Cache token
         await CacheUtils.storeToken(token: token);
 
@@ -60,6 +72,9 @@ class AuthServices {
         } catch (e) {
           DevLogs.logError('Error extracting user ID from token: $e');
         }
+
+        // ✅ Send FCM token to backend after successful login
+        await sendFcmTokenToBackend(token);
 
         DevLogs.logSuccess(
           'Login successful. Token saved. User: ${user['email']}',
@@ -154,7 +169,6 @@ class AuthServices {
   }
 
   /// VERIFY EMAIL
-  /// VERIFY EMAIL
   static Future<APIResponse<Map<String, dynamic>>> verifyEmail({
     required String email,
     required String otp,
@@ -214,6 +228,9 @@ class AuthServices {
             } catch (e) {
               DevLogs.logError('Error extracting user ID from token: $e');
             }
+
+            // ✅ Send FCM token to backend after successful email verification
+            await sendFcmTokenToBackend(token);
           }
 
           DevLogs.logSuccess('Email verification successful: $message');
@@ -506,5 +523,90 @@ class AuthServices {
       }
     }
     return null; // No token found
+  }
+
+  /// ✅ NEW: Send FCM token to backend for push notifications
+  /// Call this after successful login or email verification
+  static Future<void> sendFcmTokenToBackend(String authToken) async {
+    try {
+      // 1. Get the token from Firebase
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      DevLogs.logInfo("FCM Token: $fcmToken");
+
+      if (fcmToken == null || fcmToken.isEmpty) {
+        DevLogs.logWarning('No FCM token available');
+        return;
+      }
+
+      // 2. Send it to your Node.js backend
+      final response = await http.post(
+        Uri.parse('${ApiKeys.baseUrl}/users/fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({'fcm_token': fcmToken}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        DevLogs.logSuccess('FCM token sent to backend successfully');
+      } else {
+        DevLogs.logError('Failed to send FCM token: ${response.statusCode}');
+      }
+    } catch (e) {
+      DevLogs.logError('Failed to send FCM token: $e');
+    }
+  }
+
+  /// ✅ NEW: Remove FCM token from backend (call on logout)
+  static Future<void> removeFcmTokenFromBackend(String authToken) async {
+    try {
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+
+      if (fcmToken == null || fcmToken.isEmpty) {
+        DevLogs.logWarning('No FCM token to remove');
+        return;
+      }
+
+      final response = await http.delete(
+        Uri.parse('${ApiKeys.baseUrl}/users/fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({'fcm_token': fcmToken}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        DevLogs.logSuccess('FCM token removed from backend successfully');
+      } else {
+        DevLogs.logError('Failed to remove FCM token: ${response.statusCode}');
+      }
+    } catch (e) {
+      DevLogs.logError('Failed to remove FCM token: $e');
+    }
+  }
+
+  /// ✅ NEW: Remove all FCM tokens (logout from all devices)
+  static Future<void> removeAllFcmTokensFromBackend(String authToken) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiKeys.baseUrl}/users/fcm-tokens/all'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        DevLogs.logSuccess('All FCM tokens removed from backend successfully');
+      } else {
+        DevLogs.logError(
+          'Failed to remove all FCM tokens: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      DevLogs.logError('Failed to remove all FCM tokens: $e');
+    }
   }
 }

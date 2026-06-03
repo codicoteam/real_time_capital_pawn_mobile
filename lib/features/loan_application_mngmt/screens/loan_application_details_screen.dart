@@ -100,18 +100,6 @@ class _LoanApplicationDetailsScreenState
     }
   }
 
-  String _formatRepaymentType(String? type) {
-    if (type == null) return 'N/A';
-    switch (type.toLowerCase()) {
-      case 'once_off':
-        return 'Once Off Payment';
-      case 'installment':
-        return 'Installment Plan';
-      default:
-        return type;
-    }
-  }
-
   String _formatStatus(String? status) {
     if (status == null || status.isEmpty) return 'Submitted';
     return status
@@ -828,12 +816,33 @@ class _LoanApplicationDetailsScreenState
   }
 
   Widget _buildRepaymentCard() {
-    final repaymentType = widget.application.repaymentType ?? 'once_off';
-    final repaymentTypeDisplay = _formatRepaymentType(repaymentType);
+    final loanPeriodType = widget.application.loanPeriodType;
     final repaymentDays = widget.application.repaymentDays;
-    final installmentCount = widget.application.installmentCount;
-    final installmentFrequency = widget.application.installmentFrequency;
-    final installmentAmount = widget.application.installmentAmount;
+    final interestRate = widget.application.interestRate;
+    final interestAmount = widget.application.interestAmount;
+    final totalRepayable = widget.application.totalRepayableAmount;
+
+    // Use backend values if present, otherwise derive from loan period
+    double? storageRate = widget.application.storageRate;
+    double? storageAmount = widget.application.storageAmount;
+    if (storageRate == null && loanPeriodType != null) {
+      storageRate = loanPeriodType == 'two_weeks' ? 18.0 : 21.0;
+    }
+    if (storageAmount == null &&
+        storageRate != null &&
+        widget.application.requestedLoanAmount != null) {
+      storageAmount =
+          widget.application.requestedLoanAmount! * storageRate / 100;
+    }
+
+    String periodLabel = 'N/A';
+    if (loanPeriodType == 'two_weeks') {
+      periodLabel = '2 Weeks';
+    } else if (loanPeriodType == 'one_month') {
+      periodLabel = '1 Month';
+    } else if (loanPeriodType != null) {
+      periodLabel = loanPeriodType;
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -880,57 +889,62 @@ class _LoanApplicationDetailsScreenState
           const SizedBox(height: 20),
           _buildDetailRow(
             'Repayment Type',
-            repaymentTypeDisplay,
+            'Once Off Payment',
             Icons.schedule_rounded,
           ),
-          if (repaymentType == 'once_off' && repaymentDays != null) ...[
+          const SizedBox(height: 16),
+          _buildDetailRow(
+            'Loan Period',
+            periodLabel,
+            Icons.calendar_view_week_outlined,
+          ),
+          if (repaymentDays != null) ...[
             const SizedBox(height: 16),
             _buildDetailRow(
-              'Repayment Period',
+              'Repayment Days',
               '$repaymentDays days',
               Icons.timer_rounded,
             ),
+          ],
+          if (interestRate != null) ...[
             const SizedBox(height: 16),
             _buildDetailRow(
-              'Due Date',
-              _formatDate(DateTime.now().add(Duration(days: repaymentDays))),
-              Icons.calendar_today_rounded,
+              'Interest Rate',
+              '${interestRate.toStringAsFixed(1)}%',
+              Icons.percent_rounded,
             ),
           ],
-          if (repaymentType == 'installment') ...[
-            if (installmentCount != null) ...[
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Number of Installments',
-                '$installmentCount',
-                Icons.format_list_numbered_rounded,
-              ),
-            ],
-            if (installmentFrequency != null) ...[
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Payment Frequency',
-                installmentFrequency[0].toUpperCase() +
-                    installmentFrequency.substring(1),
-                Icons.repeat_rounded,
-              ),
-            ],
-            if (installmentAmount != null) ...[
-              const SizedBox(height: 16),
-              // ✅ Fixed: installmentAmount is double?, _formatCurrency now accepts double?
-              _buildDetailRow(
-                'Installment Amount',
-                _formatCurrency(installmentAmount),
-                Icons.install_mobile_rounded,
-              ),
-              const SizedBox(height: 16),
-              // ✅ Fixed: arithmetic stays as double, no int cast needed
-              _buildDetailRow(
-                'Total Repayment',
-                _formatCurrency(installmentAmount * (installmentCount ?? 0)),
-                Icons.summarize_rounded,
-              ),
-            ],
+          if (interestAmount != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Interest Amount',
+              _formatCurrency(interestAmount),
+              Icons.attach_money_rounded,
+            ),
+          ],
+          if (storageRate != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Storage Rate',
+              '${storageRate.toStringAsFixed(1)}%',
+              Icons.warehouse_outlined,
+            ),
+          ],
+          if (storageAmount != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Storage Fee',
+              _formatCurrency(storageAmount),
+              Icons.store_mall_directory_outlined,
+            ),
+          ],
+          if (totalRepayable != null) ...[
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Total Repayable',
+              _formatCurrency(totalRepayable),
+              Icons.summarize_rounded,
+            ),
           ],
         ],
       ),

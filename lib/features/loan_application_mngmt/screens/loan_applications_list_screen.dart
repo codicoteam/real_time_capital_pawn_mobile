@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/controllers/loan_application_mngmt_controller.dart';
 import 'package:real_time_pawn/features/loan_application_mngmt/screens/loan_application_details_screen.dart';
@@ -318,7 +319,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
                               size: 20,
                               color: Colors.white,
                             ),
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => Get.offAllNamed(RoutesHelper.main_home_page),
                           )
                           .animate()
                           .fadeIn(delay: 200.ms, duration: 400.ms)

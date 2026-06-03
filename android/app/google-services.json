@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "925291187664",
+    "project_id": "real-time-capital",
+    "storage_bucket": "real-time-capital.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925291187664:android:d1f8dfcd593a0629847dd5",
+        "android_client_info": {
+          "package_name": "com.codico.realtime"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCb94v_H1EG9Ej1ghK3J01EnESveTNu8Lw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925291187664:android:6c61ca4638bdeb15847dd5",
+        "android_client_info": {
+          "package_name": "com.codico.realtime.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCb94v_H1EG9Ej1ghK3J01EnESveTNu8Lw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,9 +3,10 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="real_time_pawn"
+        android:label="Real Time Capital"
         android:name="${applicationName}"
         android:usesCleartextTraffic="true"
         android:networkSecurityConfig="@xml/network_security_config"

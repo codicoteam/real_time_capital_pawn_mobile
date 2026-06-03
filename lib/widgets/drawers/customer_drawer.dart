@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:real_time_pawn/config/routers/router.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
+import 'package:real_time_pawn/features/chat_mngmt/controllers/chat_controller.dart';
 import 'package:real_time_pawn/widgets/custom_typography/typography.dart';
 
 class CustomDrawer extends StatelessWidget {
@@ -118,14 +119,17 @@ class CustomDrawer extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
-
-                  // About
+                  // Loan Application
                   _buildDrawerItem(
-                    icon: Icons.info_outline,
-                    title: 'About',
-                    color: RealTimeColors.primaryGreen,
-                    onTap: () => _navigateAndClose(context, '/about'),
-                  ).animate().fadeIn(delay: 300.ms),
+                    icon: Icons.article_outlined,
+                    title: 'Loans Applications',
+                    color: RealTimeColors.darkGreen,
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.loanApplicationsScreen,
+                      arguments: userId, // Pass userId as argument
+                    ),
+                  ).animate().fadeIn(delay: 520.ms),
                   // Loans
                   _buildDrawerItem(
                     icon: Icons.account_balance_wallet_outlined,
@@ -134,67 +138,6 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () =>
                         _navigateAndClose(context, RoutesHelper.LoansScreen),
                   ).animate().fadeIn(delay: 400.ms),
-
-                  // Bid Payment
-                  _buildDrawerItem(
-                    icon: Icons.payment,
-                    title: 'Bid Payments',
-                    color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(
-                      context,
-                      RoutesHelper.myBidPaymentsScreen,
-                    ),
-                  ).animate().fadeIn(delay: 360.ms),
-
-                  // Notifications
-                  _buildDrawerItem(
-                    icon: Icons.notifications_outlined,
-                    title: 'Notifications',
-                    color: RealTimeColors.error,
-                    onTap: () => _navigateAndClose(context, '/notifications'),
-                  ).animate().fadeIn(delay: 420.ms),
-
-                  // Auctions - FIXED
-                  _buildDrawerItem(
-                    icon: Icons.gavel,
-                    title: 'Auctions',
-                    color: RealTimeColors.grey800,
-                    onTap: () => _navigateAndClose(
-                      context,
-                      RoutesHelper.auctionsListScreen, // Use the route name
-                    ),
-                  ).animate().fadeIn(delay: 460.ms),
-
-                  // Bids
-                  _buildDrawerItem(
-                    icon: Icons.local_offer_outlined,
-                    title: 'Bids',
-                    color: RealTimeColors.success,
-                    onTap: () => _navigateAndClose(
-                      context,
-                      RoutesHelper
-                          .myBidsScreen, // Changed from '/my-bids' to RoutesHelper.myBidsScreen
-                    ),
-                  ).animate().fadeIn(delay: 480.ms),
-                  // FAQ
-                  _buildDrawerItem(
-                    icon: Icons.question_answer_outlined,
-                    title: 'FAQ',
-                    color: RealTimeColors.primaryGreen,
-                    onTap: () => _navigateAndClose(context, '/faq'),
-                  ).animate().fadeIn(delay: 500.ms),
-
-                  // Loan Application
-                  _buildDrawerItem(
-                    icon: Icons.article_outlined,
-                    title: 'Loans Status',
-                    color: RealTimeColors.darkGreen,
-                    onTap: () => _navigateAndClose(
-                      context,
-                      RoutesHelper.loanApplicationsScreen,
-                      arguments: userId, // Pass userId as argument
-                    ),
-                  ).animate().fadeIn(delay: 520.ms),
 
                   // Payments
                   _buildDrawerItem(
@@ -206,6 +149,64 @@ class CustomDrawer extends StatelessWidget {
                       RoutesHelper.CustomerPaymentsScreen,
                     ),
                   ).animate().fadeIn(delay: 560.ms),
+                  // Auctions - FIXED
+                  _buildDrawerItem(
+                    icon: Icons.gavel,
+                    title: 'Auctions',
+                    color: RealTimeColors.grey800,
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.auctionsListScreen, // Use the route name
+                    ),
+                  ).animate().fadeIn(delay: 460.ms),
+                  // Bids
+                  _buildDrawerItem(
+                    icon: Icons.local_offer_outlined,
+                    title: 'Bids',
+                    color: RealTimeColors.success,
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper
+                          .myBidsScreen, // Changed from '/my-bids' to RoutesHelper.myBidsScreen
+                    ),
+                  ).animate().fadeIn(delay: 480.ms),
+
+                  // Bid Payment
+                  _buildDrawerItem(
+                    icon: Icons.payment,
+                    title: 'Bid Payments',
+                    color: RealTimeColors.success,
+                    onTap: () => _navigateAndClose(
+                      context,
+                      RoutesHelper.myBidPaymentsScreen,
+                    ),
+                  ).animate().fadeIn(delay: 360.ms),
+                  // Messages
+                  _buildMessagesItem(context).animate().fadeIn(delay: 415.ms),
+
+                  // Notifications
+                  _buildDrawerItem(
+                    icon: Icons.notifications_outlined,
+                    title: 'Notifications',
+                    color: RealTimeColors.error,
+                    onTap: () => _navigateAndClose(context, RoutesHelper.notificationsScreen),
+                  ).animate().fadeIn(delay: 420.ms),
+
+                  // About
+                  _buildDrawerItem(
+                    icon: Icons.info_outline,
+                    title: 'About',
+                    color: RealTimeColors.primaryGreen,
+                    onTap: () => _navigateAndClose(context, '/about'),
+                  ).animate().fadeIn(delay: 300.ms),
+
+                  // FAQ
+                  _buildDrawerItem(
+                    icon: Icons.question_answer_outlined,
+                    title: 'FAQ',
+                    color: RealTimeColors.primaryGreen,
+                    onTap: () => _navigateAndClose(context, '/faq'),
+                  ).animate().fadeIn(delay: 500.ms),
 
                   // Support
                   _buildDrawerItem(
@@ -236,6 +237,78 @@ class CustomDrawer extends StatelessWidget {
 
   Widget _buildProfileFallback() {
     return const Icon(Icons.person, color: Colors.white, size: 40);
+  }
+
+  Widget _buildMessagesItem(BuildContext context) {
+    final chatCtrl = Get.find<ChatController>();
+    return Obx(() {
+      final unread = chatCtrl.unreadTotal.value;
+      return ListTile(
+        leading: Container(
+          width: 36,
+          height: 36,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: RealTimeColors.primaryGreen.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Stack(
+            children: [
+              const Icon(Icons.chat_bubble_outline,
+                  color: RealTimeColors.primaryGreen, size: 20),
+              if (unread > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: RealTimeColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Messages',
+                style: CustomTypography.nunitoTextTheme.bodyMedium?.copyWith(
+                  color: AppColors.textColor,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (unread > 0)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: RealTimeColors.primaryGreen,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  unread > 99 ? '99+' : '$unread',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+          ],
+        ),
+        onTap: () =>
+            _navigateAndClose(context, RoutesHelper.chatConversationsScreen),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      );
+    });
   }
 
   Widget _buildDrawerItem({
@@ -351,7 +424,8 @@ class CustomDrawer extends StatelessWidget {
                       icon: const Icon(Icons.logout, size: 18),
                       label: const Text('Logout'),
                       onPressed: () async {
-                        await CacheUtils.clearCachedToken();
+                        await CacheUtils.clearAllUserData();
+                        Get.deleteAll(force: true);
                         Get.offAllNamed(RoutesHelper.loginScreen);
                       },
                       style: ElevatedButton.styleFrom(

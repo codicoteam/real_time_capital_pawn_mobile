@@ -338,7 +338,7 @@ class _LoansScreenState extends State<LoansScreen>
                               size: 20,
                               color: Colors.white,
                             ),
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => Get.offAllNamed(RoutesHelper.main_home_page),
                           )
                           .animate()
                           .fadeIn(delay: 200.ms, duration: 400.ms)

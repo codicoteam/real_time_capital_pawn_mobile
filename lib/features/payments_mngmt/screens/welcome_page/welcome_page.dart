@@ -4,6 +4,7 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:real_time_pawn/core/utils/pallete.dart';
 import 'package:real_time_pawn/core/utils/shared_pref_methods.dart';
 import 'package:real_time_pawn/features/auth_mngmt/screens/login_screen.dart';
+import 'package:real_time_pawn/features/auth_mngmt/screens/register_screen.dart';
 
 /// Welcome screen with introduction_screen package using AppColors class
 class WelcomeScreen extends StatelessWidget {
@@ -186,7 +187,7 @@ class WelcomeScreen extends StatelessWidget {
 
   void _onIntroEnd(BuildContext context) async {
     await CacheUtils.updateOnboardingStatus(true).then((_) {
-      Get.off(const Login());
+      Get.off(const SignUp());
     });
   }
 }

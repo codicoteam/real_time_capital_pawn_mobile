@@ -135,12 +135,12 @@ class _TicketCardState extends State<TicketCard>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF22C55E).withOpacity(0.45),
+                  color: statusColor.withOpacity(0.35),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF22C55E).withOpacity(0.08),
+                    color: statusColor.withOpacity(0.07),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                     spreadRadius: 0,
@@ -168,8 +168,8 @@ class _TicketCardState extends State<TicketCard>
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              const Color(0xFF22C55E),
-                              const Color(0xFF16A34A).withOpacity(0.6),
+                              statusColor,
+                              statusColor.withOpacity(0.5),
                             ],
                           ),
                         ),
@@ -191,21 +191,17 @@ class _TicketCardState extends State<TicketCard>
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF22C55E,
-                                  ).withOpacity(0.1),
+                                  color: AppColors.primaryColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(13),
                                   border: Border.all(
-                                    color: const Color(
-                                      0xFF22C55E,
-                                    ).withOpacity(0.2),
+                                    color: AppColors.primaryColor.withOpacity(0.2),
                                     width: 1,
                                   ),
                                 ),
                                 child: Icon(
                                   _getCategoryIcon(widget.ticket.category),
                                   size: 22,
-                                  color: const Color(0xFF16A34A),
+                                  color: AppColors.primaryColor,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -269,7 +265,7 @@ class _TicketCardState extends State<TicketCard>
                           // Divider
                           Container(
                             height: 1,
-                            color: const Color(0xFF22C55E).withOpacity(0.1),
+                            color: statusColor.withOpacity(0.1),
                           ),
 
                           const SizedBox(height: 12),
@@ -322,7 +318,7 @@ class _TicketCardState extends State<TicketCard>
                                 timeAgo,
                                 style: GoogleFonts.poppins(
                                   fontSize: 11.5,
-                                  color: const Color(0xFF22C55E),
+                                  color: statusColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -331,15 +327,13 @@ class _TicketCardState extends State<TicketCard>
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF22C55E,
-                                  ).withOpacity(0.1),
+                                  color: statusColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.arrow_forward_ios_rounded,
                                   size: 13,
-                                  color: Color(0xFF16A34A),
+                                  color: statusColor,
                                 ),
                               ),
                             ],
@@ -364,7 +358,7 @@ class _TicketCardState extends State<TicketCard>
         .then(delay: 100.ms)
         .shimmer(
           duration: 900.ms,
-          color: const Color(0xFF22C55E).withOpacity(0.06),
+          color: statusColor.withOpacity(0.06),
         );
   }
 }

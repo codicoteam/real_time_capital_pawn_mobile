@@ -25,10 +25,13 @@ import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_charges_sc
 import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_details_screen.dart';
 import 'package:real_time_pawn/features/loan_mngmt/screens/loan_mngmt_screen.dart';
 import 'package:real_time_pawn/features/loan_terms_mngmt/screens/loan_terms_display_screen.dart';
+import 'package:real_time_pawn/features/notifications_mngmt/screens/notifications_mngmt_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/create_payment_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/customer_payments_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/loan_payment_details_screen.dart';
 import 'package:real_time_pawn/features/payments_mngmt/screens/payment_list_screen.dart';
+import 'package:real_time_pawn/features/chat_mngmt/screens/chat_conversations_screen.dart';
+import 'package:real_time_pawn/features/chat_mngmt/screens/chat_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/create_ticket_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/ticket_detail_screen.dart';
 import 'package:real_time_pawn/features/support_mngmt/screens/ticket_list_screen.dart';
@@ -47,6 +50,8 @@ import 'features/loan_application_mngmt/screens/loan_application_step1.dart'
     show LoanApplicationScreen;
 import 'features/loan_application_mngmt/screens/update_loan_application_screen.dart'
     show UpdateLoanApplicationScreen;
+import 'features/notifications_mngmt/screens/notifications_detail_screen.dart';
+import 'features/profile_mngmt/screens/profile_mngmt_screen.dart';
 import 'models/loan_application_model.dart';
 // import 'package:mrpace/features/about_management/screens/about_screen.dart';
 // import 'package:mrpace/features/auth_management/Screens/account_verfication.dart';
@@ -411,6 +416,23 @@ class AppPages {
       customTransition: CustomPageTransition(),
     ),
 
+    GetPage(
+      name: RoutesHelper.notificationsScreen,
+      page: () => const NotificationsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+    // Add this route
+    GetPage(
+      name: RoutesHelper.notificationDetailsScreen,
+      page: () =>
+          NotificationDetailScreen(notificationId: Get.arguments as String),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
     // Bid Details Screen - With parameter extraction
     GetPage(
       name: RoutesHelper.bidDetailsScreen,
@@ -530,6 +552,32 @@ class AppPages {
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
       customTransition: CustomPageTransition(),
+    ),
+    GetPage(
+      name: RoutesHelper.profileScreen,
+      page: () => const ProfileScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    // =============================================
+    // CHAT ROUTES
+    // =============================================
+
+    GetPage(
+      name: RoutesHelper.chatConversationsScreen,
+      page: () => const ChatConversationsScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+      customTransition: CustomPageTransition(),
+    ),
+
+    GetPage(
+      name: RoutesHelper.chatScreen,
+      page: () => const ChatScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
   ];
 }

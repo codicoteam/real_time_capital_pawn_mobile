@@ -17,7 +17,7 @@ class LoanApplicationCard extends StatelessWidget {
     this.onTap,
   });
 
-  String _formatCurrency(int? amount) {
+  String _formatCurrency(num? amount) {
     if (amount == null) return '\$0.00';
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     return formatter.format(amount);

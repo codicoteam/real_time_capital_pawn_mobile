@@ -198,6 +198,28 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
                         keyboardType: TextInputType.number,
                         onChanged: (_) {},
                       ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+                      Obx(() {
+                        final loan = double.tryParse(controller.loanAmountText.value) ?? 0;
+                        final asset = double.tryParse(controller.assetValueText.value) ?? 0;
+                        if (loan > 0 && asset > 0 && loan > asset) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.red),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Requested amount (\$${loan.toStringAsFixed(2)}) exceeds asset value (\$${asset.toStringAsFixed(2)})',
+                                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.red.shade700),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
                       const SizedBox(height: 16),
                       CustomTextField(
                         controller: controller.suretyDescController,
@@ -242,27 +264,20 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
 
                   const SizedBox(height: 24),
 
-                  // Repayment Options Card
+                  // Loan Period Card
                   _buildSectionCard(
-                    title: 'Repayment Options',
-                    icon: Icons.payment_outlined,
+                    title: 'Loan Period',
+                    icon: Icons.calendar_today_outlined,
                     children: [
                       Text(
-                        'Choose how you want to repay your loan',
+                        'Select how long you need the loan for. All loans are once-off repayment.',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           color: AppColors.subtextColor,
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Obx(() => _buildRepaymentTypeSelector()),
-                      const SizedBox(height: 16),
-                      Obx(() {
-                        if (controller.selectedRepaymentType.value == 'installment') {
-                          return _buildInstallmentOptions().animate().fadeIn().slideY(begin: 0.1);
-                        }
-                        return const SizedBox.shrink();
-                      }),
+                      Obx(() => _buildLoanPeriodSelector()),
                     ],
                   ).animate().fadeIn(duration: 500.ms, delay: 600.ms).scale(begin: const Offset(0.95, 0.95)),
 
@@ -628,12 +643,16 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
     } else if (controller.selectedLoanCategoryType.value == 'small_loans') {
       return Column(
         children: [
-          CustomTextField(
-            controller: controller.electronicTypeController,
-            labelText: 'Device Type',
-            prefixIcon: const Icon(Icons.devices, size: 20),
-            onChanged: (_) {},
-          ),
+          Obx(() => _buildDropdown<String>(
+            value: controller.selectedElectronicType.value,
+            hint: 'Device Type *',
+            icon: Icons.devices,
+            items: LoanApplicationControllerTwo.electronicTypeOptions,
+            onChanged: (v) {
+              controller.selectedElectronicType.value = v;
+              controller.electronicTypeController.text = v ?? '';
+            },
+          )),
           const SizedBox(height: 12),
           CustomTextField(
             controller: controller.electronicModelController,
@@ -694,6 +713,39 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
       );
     }
     return const SizedBox.shrink();
+  }
+
+  Widget _buildDropdown<T>({
+    required T? value,
+    required String hint,
+    required IconData icon,
+    required List<T> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.borderColor),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButtonFormField<T>(
+        value: value,
+        hint: Text(hint, style: GoogleFonts.poppins(color: AppColors.subtextColor, fontSize: 14)),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          prefixIcon: Icon(icon, color: AppColors.subtextColor, size: 20),
+          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+        ),
+        items: items.map((item) => DropdownMenuItem<T>(
+          value: item,
+          child: Text(item.toString(), style: GoogleFonts.poppins(fontSize: 14)),
+        )).toList(),
+        onChanged: onChanged,
+        dropdownColor: AppColors.surfaceColor,
+        style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textColor),
+        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+      ),
+    );
   }
 
   Widget _buildImageUploadGrid() {
@@ -765,153 +817,65 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
     );
   }
 
-  Widget _buildRepaymentTypeSelector() {
-    return Row(
-      children: controller.repaymentTypeOptions.map((option) {
-        final isSelected = controller.selectedRepaymentType.value == option['value'];
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => controller.selectedRepaymentType.value = option['value'] as String,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryColor : AppColors.surfaceColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected ? AppColors.primaryColor : AppColors.borderColor,
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    option['icon'] as IconData,
-                    color: isSelected ? Colors.white : AppColors.textColor,
-                    size: 24,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    option['title'] as String,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: isSelected ? Colors.white : AppColors.textColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildInstallmentOptions() {
+  Widget _buildLoanPeriodSelector() {
     return Column(
       children: [
         Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Number of Installments',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textColor,
+          children: controller.loanPeriodOptions.map((option) {
+            final isSelected =
+                controller.selectedLoanPeriodType.value == option['value'];
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => controller.selectedLoanPeriodType.value =
+                    option['value'] as String,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primaryColor
+                        : AppColors.surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.borderColor,
+                      width: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.borderColor),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            if (controller.installmentCount.value > 1) {
-                              controller.installmentCount.value--;
-                            }
-                          },
-                          icon: const Icon(Icons.remove, size: 20),
-                        ),
-                        Expanded(
-                          child: Obx(
-                            () => Text(
-                              '${controller.installmentCount.value}',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            if (controller.installmentCount.value < 48) {
-                              controller.installmentCount.value++;
-                            }
-                          },
-                          icon: const Icon(Icons.add, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Payment Frequency',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Obx(
-                    () => DropdownButtonFormField<String>(
-                      value: controller.selectedInstallmentFrequency.value,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppColors.borderColor),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Column(
+                    children: [
+                      Icon(
+                        option['icon'] as IconData,
+                        color: isSelected ? Colors.white : AppColors.textColor,
+                        size: 24,
                       ),
-                      items: controller.installmentFrequencyOptions.map((option) {
-                        return DropdownMenuItem(
-                          value: option['value'] as String,
-                          child: Text(
-                            option['title'] as String,
-                            style: GoogleFonts.poppins(fontSize: 13),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          controller.selectedInstallmentFrequency.value = value;
-                        }
-                      },
-                    ),
+                      const SizedBox(height: 6),
+                      Text(
+                        option['title'] as String,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : AppColors.textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        option['subtitle'] as String,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.85)
+                              : AppColors.subtextColor,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            );
+          }).toList(),
         ),
         const SizedBox(height: 12),
         Container(
@@ -925,13 +889,11 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
               Icon(Icons.info_outline, size: 18, color: AppColors.primaryColor),
               const SizedBox(width: 8),
               Expanded(
-                child: Obx(
-                  () => Text(
-                    'You will make ${controller.installmentCount.value} ${controller.selectedInstallmentFrequency.value} payments',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.primaryColor,
-                    ),
+                child: Text(
+                  'All loans are once-off repayment. Interest and storage fees are calculated at approval.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.primaryColor,
                   ),
                 ),
               ),

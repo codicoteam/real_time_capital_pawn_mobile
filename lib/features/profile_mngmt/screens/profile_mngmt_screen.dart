@@ -302,6 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => isLoading = true);
       try {
         await CacheUtils.clearAllUserData();
+        Get.deleteAll(force: true);
         Get.offAllNamed('/login');
       } catch (e) {
         ProfileMngmtHelper.showError('Logout failed: $e');

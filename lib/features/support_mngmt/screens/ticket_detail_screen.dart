@@ -166,6 +166,19 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
     }
   }
 
+  IconData _getPriorityIcon(TicketPriority priority) {
+    switch (priority) {
+      case TicketPriority.low:
+        return Icons.south_rounded;
+      case TicketPriority.medium:
+        return Icons.drag_handle_rounded;
+      case TicketPriority.high:
+        return Icons.north_rounded;
+      case TicketPriority.urgent:
+        return Icons.priority_high_rounded;
+    }
+  }
+
   String _getTimeAgo(DateTime date) {
     final diff = DateTime.now().difference(date);
     if (diff.inDays > 365) {
@@ -356,15 +369,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                       color: priorityColor.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        _getPriorityName(_ticket.priority)[0],
-                                        style: GoogleFonts.poppins(
-                                          color: priorityColor,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
+                                    child: Icon(
+                                      _getPriorityIcon(_ticket.priority),
+                                      color: priorityColor,
+                                      size: 22,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -401,7 +409,20 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                         curve: Curves.easeOutQuad,
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
+
+                      // Status Progress Timeline
+                      _buildStatusTimeline()
+                          .animate(controller: _contentAnimationController)
+                          .fadeIn()
+                          .slideY(
+                            begin: 0.2,
+                            delay: 75.ms,
+                            duration: 400.ms,
+                            curve: Curves.easeOutQuad,
+                          ),
+
+                      const SizedBox(height: 16),
 
                       // Details Card
                       _buildSectionCard(
@@ -561,7 +582,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Get.back(),
                       ),
                     ),
                     const Spacer(),
@@ -601,6 +622,129 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusTimeline() {
+    const stages = [
+      TicketStatus.open,
+      TicketStatus.in_progress,
+      TicketStatus.resolved,
+      TicketStatus.closed,
+    ];
+    const stageLabels = ['Open', 'In Progress', 'Resolved', 'Closed'];
+    final currentIndex = stages.indexOf(_ticket.status);
+    final statusColor = _getStatusColor(_ticket.status);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.primaryColor.withOpacity(0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryColor.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.timeline_rounded, size: 18, color: AppColors.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'Ticket Progress',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(stages.length * 2 - 1, (i) {
+              if (i.isOdd) {
+                final stageIndex = i ~/ 2;
+                final isPast = stageIndex < currentIndex;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 13),
+                    child: Container(
+                      height: 2.5,
+                      decoration: BoxDecoration(
+                        color: isPast
+                            ? statusColor.withOpacity(0.5)
+                            : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              final stageIndex = i ~/ 2;
+              final isPast = stageIndex < currentIndex;
+              final isCurrent = stageIndex == currentIndex;
+              final nodeColor = isCurrent
+                  ? statusColor
+                  : (isPast ? statusColor.withOpacity(0.55) : Colors.grey.shade300);
+              return Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    width: isCurrent ? 30 : 24,
+                    height: isCurrent ? 30 : 24,
+                    decoration: BoxDecoration(
+                      color: isCurrent
+                          ? statusColor
+                          : (isPast ? statusColor.withOpacity(0.12) : Colors.white),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: nodeColor, width: isCurrent ? 2.5 : 1.5),
+                    ),
+                    child: Center(
+                      child: isCurrent
+                          ? Icon(_getStatusIcon(_ticket.status), size: 13, color: Colors.white)
+                          : (isPast
+                              ? Icon(Icons.check_rounded, size: 12, color: statusColor.withOpacity(0.8))
+                              : null),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: 56,
+                    child: Text(
+                      stageLabels[stageIndex],
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
+                        color: isCurrent
+                            ? statusColor
+                            : (isPast ? AppColors.subtextColor : Colors.grey.shade400),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
         ],
       ),

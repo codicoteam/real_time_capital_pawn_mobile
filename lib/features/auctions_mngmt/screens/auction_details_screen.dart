@@ -607,16 +607,20 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                   children: [
                     Icon(
                       Icons.timer_outlined,
-                      size: 20,
+                      size: 16,
                       color: RealTimeColors.success,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      _formatTimeLeft(auction.endsAt),
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: RealTimeColors.success,
+                    Flexible(
+                      // ← ADD THIS
+                      child: Text(
+                        _formatTimeLeft(auction.endsAt),
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: RealTimeColors.success,
+                        ),
+                        overflow: TextOverflow.ellipsis, // ← ADD THIS
                       ),
                     ),
                   ],
@@ -641,7 +645,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                     currentBid?.amount ?? auction.startingBidAmount,
                   ),
                   style: GoogleFonts.poppins(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primaryColor,
                   ),
@@ -916,16 +920,23 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
 
   Widget _buildAssetDetailRow({required String label, required String value}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: AppColors.subtextColor,
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppColors.subtextColor,
+            ),
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
+        const SizedBox(width: 12),
         Expanded(
+          flex: 3,
           child: Text(
             value,
             textAlign: TextAlign.right,
@@ -934,7 +945,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
               fontWeight: FontWeight.w600,
               color: AppColors.textColor,
             ),
-            maxLines: 2,
+            softWrap: true,
             overflow: TextOverflow.ellipsis,
           ),
         ),

@@ -87,6 +87,8 @@ class RoutesHelper {
 
   // Loan Terms Management routes
   static const String loanTermsDisplayScreen = "/loan-terms-display";
+  static const String notificationsScreen = "/notifications";
+  static const String notificationDetailsScreen = "/notification-details/:id";
 
   // Payment Management Routes
   static const String PaymentListScreen = "/payment-list";
@@ -105,6 +107,10 @@ class RoutesHelper {
 
   // Ticket Details (with parameter)
   static String ticketDetailsScreen = "/ticket-details/:id";
+
+  // Chat Routes
+  static const String chatConversationsScreen = '/chat-conversations';
+  static const String chatScreen = '/chat-screen';
 
   static String aboutScreen = "/about";
 

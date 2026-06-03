@@ -172,10 +172,10 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     return '${_formatDateFull(date)} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  String _formatCurrency(int? amount) {
+  String _formatCurrency(num? amount) {
     if (amount == null) return 'N/A';
     final currency = _loan.currency ?? 'USD';
-    final formatted = amount.abs().toString().replaceAllMapped(
+    final formatted = amount.abs().toStringAsFixed(2).replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]},',
     );

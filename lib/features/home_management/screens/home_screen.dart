@@ -13,6 +13,8 @@ import 'package:real_time_pawn/models/loan_application_model.dart';
 import 'package:real_time_pawn/models/loan_mngmt_model.dart';
 import 'package:real_time_pawn/widgets/loading_widgets/home_page_shimmer_loader.dart';
 
+import '../../notifications_mngmt/controllers/notifications_mngmt_controller.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -20,9 +22,12 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late final HomeController _homeController;
+  late final NotificationController _notificationController;
   int _carouselIndex = 0;
+  late AnimationController _notificationAnimationController;
+  late Animation<double> _notificationScaleAnimation;
 
   final List<CarouselItem> _carouselItems = [
     CarouselItem(
@@ -30,7 +35,7 @@ class _HomePageState extends State<HomePage> {
       subtitle: 'Apply for quick loans against your assets',
       icon: Icons.assignment,
       buttonText: 'Apply Loan',
-      route: '/apply-loan', // Change this to a string route
+      route: '/apply-loan',
     ),
     CarouselItem(
       title: 'Live Auctions',
@@ -52,10 +57,38 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _homeController = Get.put(HomeController());
+    _notificationController = Get.put(NotificationController());
+    
+    // Initialize animation controller for notification badge
+    _notificationAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    
+    _notificationScaleAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(
+        parent: _notificationAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    
+    // Listen to unread count changes to trigger animation
+    ever(_notificationController.unreadCount, (count) {
+      if (count > 0) {
+        _triggerNotificationAnimation();
+      }
+    });
+  }
+
+  void _triggerNotificationAnimation() {
+    _notificationAnimationController.forward().then((_) {
+      _notificationAnimationController.reverse();
+    });
   }
 
   @override
   void dispose() {
+    _notificationAnimationController.dispose();
     super.dispose();
   }
 
@@ -176,7 +209,6 @@ class _HomePageState extends State<HomePage> {
               if (bidController.text.isNotEmpty) {
                 final bidAmount = double.tryParse(bidController.text) ?? 0;
                 if (bidAmount > currentBid) {
-                  // Call place bid method from controller
                   _homeController.placeBid(auction['_id'], bidAmount);
                   Get.back();
                 } else {
@@ -223,9 +255,56 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {},
+          // Notification Icon with Badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                onPressed: () {
+                  Get.toNamed(RoutesHelper.notificationsScreen);
+                },
+              ),
+              // Unread count badge
+              Obx(() {
+                final count = _notificationController.unreadCount.value;
+                if (count == 0) return const SizedBox.shrink();
+                
+                return Positioned(
+                  right: 8,
+                  top: 8,
+                  child: AnimatedBuilder(
+                    animation: _notificationScaleAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _notificationScaleAnimation.value,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            count > 99 ? '99+' : count.toString(),
+                            style: GoogleFonts.nunito(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }),
+            ],
           ),
           const SizedBox(width: 8),
         ],
@@ -289,71 +368,71 @@ class _HomePageState extends State<HomePage> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => _homeController.refreshData(),
+            onRefresh: () async {
+              await _homeController.refreshData();
+              await _notificationController.fetchNotifications(refresh: true);
+            },
             color: AppColors.primaryColor,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // Welcome Section
+                // Welcome Section with KYC Status
                 SliverToBoxAdapter(
-                  child:
-                      Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryColor,
-                              borderRadius: const BorderRadius.only(
-                                bottomLeft: Radius.circular(24),
-                                bottomRight: Radius.circular(24),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome back,',
+                          style: GoogleFonts.nunito(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _homeController.getUserName,
+                          style: GoogleFonts.nunito(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (_homeController.getUserPhone().isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.phone_outlined,
+                                size: 14,
+                                color: Colors.white.withOpacity(0.8),
                               ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome back,',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 14,
-                                    color: Colors.white.withOpacity(0.9),
-                                  ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _homeController.getUserPhone(),
+                                style: GoogleFonts.nunito(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.8),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _homeController.getUserName,
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                if (_homeController
-                                    .getUserPhone()
-                                    .isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.phone_outlined,
-                                        size: 14,
-                                        color: Colors.white.withOpacity(0.8),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        _homeController.getUserPhone(),
-                                        style: GoogleFonts.nunito(
-                                          fontSize: 12,
-                                          color: Colors.white.withOpacity(0.8),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          )
-                          .animate()
-                          .fadeIn(duration: 500.ms)
-                          .slideY(begin: -0.2, duration: 600.ms),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        // KYC Status Card
+                        _buildKycStatusCard(),
+                      ],
+                    ),
+                  ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.2, duration: 600.ms),
                 ),
 
                 // Main Content
@@ -371,39 +450,28 @@ class _HomePageState extends State<HomePage> {
                       // Quick Stats Section
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child:
-                            Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        title: 'Recent Loans',
-                                        value: _homeController
-                                            .activeLoansCount
-                                            .value
-                                            .toString(),
-                                        icon: Icons.credit_card,
-                                        color: AppColors.primaryColor,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        title: 'Total Balance',
-                                        value: _formatCurrency(
-                                          _homeController.totalDueAmount.value,
-                                        ),
-                                        icon: Icons.account_balance_wallet,
-                                        color: AppColors.warningColor,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                                .animate()
-                                .fadeIn(duration: 600.ms, delay: 200.ms)
-                                .slideY(begin: 0.2, duration: 600.ms),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                title: 'Recent Loans',
+                                value: _homeController.activeLoansCount.value.toString(),
+                                icon: Icons.credit_card,
+                                color: AppColors.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                title: 'Total Balance',
+                                value: _formatCurrency(_homeController.totalDueAmount.value),
+                                icon: Icons.account_balance_wallet,
+                                color: AppColors.warningColor,
+                              ),
+                            ),
+                          ],
+                        ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.2, duration: 600.ms),
                       ),
-
-                      const SizedBox(height: 15),
 
                       const SizedBox(height: 15),
 
@@ -443,27 +511,16 @@ class _HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: SizedBox(
                             height: 200,
-                            child:
-                                ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount:
-                                          _homeController
-                                                  .activeAuctions
-                                                  .length >
-                                              3
-                                          ? 3
-                                          : _homeController
-                                                .activeAuctions
-                                                .length,
-                                      itemBuilder: (context, index) {
-                                        final auction = _homeController
-                                            .activeAuctions[index];
-                                        return _buildAuctionItem(auction);
-                                      },
-                                    )
-                                    .animate()
-                                    .fadeIn(duration: 600.ms, delay: 900.ms)
-                                    .slideX(begin: 0.3, duration: 600.ms),
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _homeController.activeAuctions.length > 3
+                                  ? 3
+                                  : _homeController.activeAuctions.length,
+                              itemBuilder: (context, index) {
+                                final auction = _homeController.activeAuctions[index];
+                                return _buildAuctionItem(auction);
+                              },
+                            ).animate().fadeIn(duration: 600.ms, delay: 900.ms).slideX(begin: 0.3, duration: 600.ms),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -485,9 +542,7 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 8),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildLatestBidCard(
-                            _homeController.latestBid.value,
-                          ),
+                          child: _buildLatestBidCard(_homeController.latestBid.value),
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -500,7 +555,7 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                ' Latest Loans',
+                                'Latest Loans',
                                 style: GoogleFonts.nunito(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -526,36 +581,25 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 8),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child:
-                              ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount:
-                                        _homeController.latestLoans.length > 3
-                                        ? 3
-                                        : _homeController.latestLoans.length,
-                                    itemBuilder: (context, index) {
-                                      final loan =
-                                          _homeController.latestLoans[index];
-                                      return Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
-                                        ),
-                                        child: _buildLoanItemFromApi(loan),
-                                      );
-                                    },
-                                  )
-                                  .animate()
-                                  .fadeIn(duration: 600.ms, delay: 1000.ms)
-                                  .slideY(begin: 0.3, duration: 600.ms),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _homeController.latestLoans.length > 3
+                                ? 3
+                                : _homeController.latestLoans.length,
+                            itemBuilder: (context, index) {
+                              final loan = _homeController.latestLoans[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildLoanItemFromApi(loan),
+                              );
+                            },
+                          ).animate().fadeIn(duration: 600.ms, delay: 1000.ms).slideY(begin: 0.3, duration: 600.ms),
                         ),
                       ],
 
                       // Recent Loan Applications Section
-                      if (_homeController
-                          .latestLoanApplications
-                          .isNotEmpty) ...[
+                      if (_homeController.latestLoanApplications.isNotEmpty) ...[
                         const SizedBox(height: 15),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -592,36 +636,20 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 8),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child:
-                              ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount:
-                                        _homeController
-                                                .latestLoanApplications
-                                                .length >
-                                            2
-                                        ? 2
-                                        : _homeController
-                                              .latestLoanApplications
-                                              .length,
-                                    itemBuilder: (context, index) {
-                                      final application = _homeController
-                                          .latestLoanApplications[index];
-                                      return Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
-                                        ),
-                                        child: _buildApplicationItem(
-                                          application,
-                                        ),
-                                      );
-                                    },
-                                  )
-                                  .animate()
-                                  .fadeIn(duration: 600.ms, delay: 1100.ms)
-                                  .slideY(begin: 0.3, duration: 600.ms),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _homeController.latestLoanApplications.length > 2
+                                ? 2
+                                : _homeController.latestLoanApplications.length,
+                            itemBuilder: (context, index) {
+                              final application = _homeController.latestLoanApplications[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildApplicationItem(application),
+                              );
+                            },
+                          ).animate().fadeIn(duration: 600.ms, delay: 1100.ms).slideY(begin: 0.3, duration: 600.ms),
                         ),
                       ],
 
@@ -637,27 +665,107 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildKycStatusCard() {
+    return Obx(() {
+      final status = _homeController.kycVerificationStatus.value;
+      final isVerified = _homeController.isKycVerified;
+      
+      if (isVerified) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.verified, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'KYC Verified',
+                  style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+      
+      return GestureDetector(
+        onTap: () => _homeController.showKycRequiredDialog(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: _homeController.kycStatusColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _homeController.kycStatusColor.withOpacity(0.5),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                status == 'pending' ? Icons.pending : Icons.warning_amber_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _homeController.kycStatusMessage,
+                  style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
   Widget _buildCarousel() {
-    return Column(
+    return Obx(() => Column(
           children: [
             CarouselSlider(
-              items: _carouselItems.map((item) {
+              items: _carouselItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                // Check if this is the loan application item and user is not KYC verified
+                final isLoanApplication = item.title == 'Loan Application';
+                final canApply = _homeController.canApplyForLoan();
+                
                 return Container(
                   width: double.infinity,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     gradient: LinearGradient(
-                      colors: [
-                        AppColors.primaryColor,
-                        AppColors.primaryColor.withOpacity(0.7),
-                      ],
+                      colors: isLoanApplication && !canApply
+                          ? [Colors.grey, Colors.grey.shade600]
+                          : [
+                              AppColors.primaryColor,
+                              AppColors.primaryColor.withOpacity(0.7),
+                            ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.3),
+                        color: (isLoanApplication && !canApply
+                                ? Colors.grey
+                                : AppColors.primaryColor)
+                            .withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -696,7 +804,9 @@ class _HomePageState extends State<HomePage> {
                             Padding(
                               padding: const EdgeInsets.only(left: 42),
                               child: Text(
-                                item.subtitle,
+                                isLoanApplication && !canApply
+                                    ? 'Complete KYC verification to apply for loans'
+                                    : item.subtitle,
                                 style: GoogleFonts.nunito(
                                   fontSize: 14,
                                   color: Colors.white.withOpacity(0.9),
@@ -708,8 +818,9 @@ class _HomePageState extends State<HomePage> {
                               alignment: Alignment.bottomRight,
                               child: GestureDetector(
                                 onTap: () {
-                                  if (item.title == 'Loan Application') {
-                                    // Use Navigator.push like the bottom nav button
+                                  if (isLoanApplication && !canApply) {
+                                    _homeController.showKycRequiredDialog();
+                                  } else if (item.title == 'Loan Application') {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -718,7 +829,6 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     );
                                   } else {
-                                    // Use Get.toNamed for other routes
                                     Get.toNamed(item.route);
                                   }
                                 },
@@ -739,11 +849,15 @@ class _HomePageState extends State<HomePage> {
                                     ],
                                   ),
                                   child: Text(
-                                    item.buttonText,
+                                    isLoanApplication && !canApply
+                                        ? 'Verify KYC'
+                                        : item.buttonText,
                                     style: GoogleFonts.nunito(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primaryColor,
+                                      color: isLoanApplication && !canApply
+                                          ? Colors.grey.shade700
+                                          : AppColors.primaryColor,
                                     ),
                                   ),
                                 ),
@@ -792,11 +906,10 @@ class _HomePageState extends State<HomePage> {
               }).toList(),
             ),
           ],
-        )
-        .animate()
-        .fadeIn(duration: 600.ms, delay: 200.ms)
-        .slideY(begin: -0.2, duration: 600.ms);
+        ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: -0.2, duration: 600.ms),
+    ); 
   }
+
 
   Widget _buildStatCard({
     required String title,
@@ -1245,12 +1358,11 @@ class _HomePageState extends State<HomePage> {
 
     return GestureDetector(
       onTap: () {
-        // Convert the map to a LoanModel with proper type casting
         final loanModel = LoanModel(
           id: loan['_id'],
           loanNo: loan['loan_no'],
-          principalAmount: (loan['principal_amount'] as num?)?.toInt() ?? 0,
-          currentBalance: (loan['current_balance'] as num?)?.toInt() ?? 0,
+          principalAmount: (loan['principal_amount'] as num?)?.toDouble() ?? 0,
+          currentBalance: (loan['current_balance'] as num?)?.toDouble() ?? 0,
           status: loan['status'],
           dueDate: loan['due_date'] != null
               ? DateTime.parse(loan['due_date'])
@@ -1260,14 +1372,10 @@ class _HomePageState extends State<HomePage> {
               : null,
           collateralCategory: loan['collateral_category'],
           customerUser: null,
-          // Add any other fields your LoanModel needs
           currency: loan['currency'],
-          interestRatePercent: (loan['interest_rate_percent'] as num?)
-              ?.toDouble(),
-
-          storageChargePercent: (loan['storage_charge_percent'] as num?)
-              ?.toDouble(),
-          penaltyPercent: (loan['penalty_percent'] as num?)?.toInt(),
+          interestRatePercent: (loan['interest_rate_percent'] as num?)?.toDouble(),
+          storageChargePercent: (loan['storage_charge_percent'] as num?)?.toDouble(),
+          penaltyPercent: (loan['penalty_percent'] as num?)?.toDouble(),
           graceDays: (loan['grace_days'] as num?)?.toInt(),
           startDate: loan['start_date'] != null
               ? DateTime.parse(loan['start_date'])
@@ -1443,8 +1551,7 @@ class _HomePageState extends State<HomePage> {
                           RoutesHelper.CreatePaymentScreen,
                           arguments: {
                             'loanId': loan['_id'],
-                            'loanNo':
-                                loan['loan_no'], // Pass the loan number too
+                            'loanNo': loan['loan_no'],
                           },
                         );
                       },
@@ -1478,12 +1585,10 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildApplicationItem(Map<String, dynamic> application) {
     final appNo = application['application_no'] ?? 'Application';
-    final amount =
-        (application['requested_loan_amount'] as num?)?.toDouble() ?? 0;
+    final amount = (application['requested_loan_amount'] as num?)?.toDouble() ?? 0;
     final status = application['status'] ?? 'draft';
     final date = application['created_at'] ?? '';
-    final smallLoanDetails =
-        application['small_loan_details'] as Map<String, dynamic>?;
+    final smallLoanDetails = application['small_loan_details'] as Map<String, dynamic>?;
 
     String collateralInfo = '';
     if (smallLoanDetails != null) {
@@ -1619,11 +1724,13 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 if (status == 'draft')
-                  GestureDetector(
+                  Obx(() => GestureDetector(
                     onTap: () {
-                      Get.toNamed(
-                        '/continue-application/${application['_id']}',
-                      );
+                      if (_homeController.canApplyForLoan()) {
+                        Get.toNamed('/continue-application/${application['_id']}');
+                      } else {
+                        _homeController.showKycRequiredDialog();
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -1631,11 +1738,13 @@ class _HomePageState extends State<HomePage> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
+                        color: _homeController.canApplyForLoan()
+                            ? AppColors.primaryColor
+                            : Colors.grey,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Continue',
+                        _homeController.canApplyForLoan() ? 'Continue' : 'Verify KYC',
                         style: GoogleFonts.nunito(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1643,7 +1752,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                  )
+                  ))
                 else
                   Container(
                     padding: const EdgeInsets.symmetric(

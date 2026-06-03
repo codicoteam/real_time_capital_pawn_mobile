@@ -222,60 +222,23 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
         children: [
           Icon(
             Icons.payments_outlined,
-            size: 64,
+            size: 40,
             color: RealTimeColors.grey400,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             'No Payments Yet',
             style: GoogleFonts.poppins(
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.subtextColor,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 5),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               children: [
-                Text(
-                  'You haven\'t made any bid payments yet.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: RealTimeColors.grey500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Payments will appear here after you:',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: RealTimeColors.grey500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 12,
-                      color: RealTimeColors.success,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Win an auction',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: RealTimeColors.grey500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -297,7 +260,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => Get.offAllNamed('/auctions'),
             style: ElevatedButton.styleFrom(
@@ -316,7 +279,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           OutlinedButton(
             onPressed: () => Get.toNamed('/my-bids'),
             style: OutlinedButton.styleFrom(

@@ -10,7 +10,7 @@ import 'package:real_time_pawn/models/register_body_model.dart';
 
 class ProfileMngmtServices {
   // Helper method to get auth headers
-  static Future<Map<String, String>> _getAuthHeaders() async {
+  static Future<Map<String, String>>  _getAuthHeaders() async {
     final token = await CacheUtils.checkToken();
     return {
       'Content-Type': 'application/json',

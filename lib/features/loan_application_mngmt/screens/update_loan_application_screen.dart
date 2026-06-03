@@ -10,22 +10,17 @@ import 'package:real_time_pawn/models/loan_application_model.dart';
 import 'package:real_time_pawn/widgets/custom_button.dart';
 import 'package:real_time_pawn/widgets/text_fields/custom_text_field.dart';
 import '../controllers/update_loan_application_controller.dart';
-
 class UpdateLoanApplicationScreen extends StatelessWidget {
   final LoanApplicationModel application;
-
   const UpdateLoanApplicationScreen({super.key, required this.application});
-
   @override
   Widget build(BuildContext context) {
     // Initialize controller and load data
     final controller = Get.put(UpdateLoanApplicationController());
     controller.initWithModel(application);
-
     // Check if application is editable
     final bool isEditable = _isApplicationEditable(application.status);
     final String? statusMessage = _getStatusMessage(application.status);
-
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
@@ -119,26 +114,27 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Application Info Card (Read-only)
-                  _buildInfoCard(application).animate().fadeIn(
-                        delay: 100.ms,
-                        duration: 500.ms,
-                      ),
+                  _buildInfoCard(
+                    application,
+                  ).animate().fadeIn(delay: 100.ms, duration: 500.ms),
 
                   const SizedBox(height: 24),
 
                   // Loan Details Card (Editable)
-                  _buildLoanDetailsCard(controller, isEditable)
-                      .animate()
-                      .fadeIn(delay: 200.ms, duration: 500.ms),
+                  _buildLoanDetailsCard(
+                    controller,
+                    isEditable,
+                  ).animate().fadeIn(delay: 200.ms, duration: 500.ms),
 
                   const SizedBox(height: 24),
 
                   // Collateral Details Card (Editable)
                   Obx(() {
                     if (controller.selectedLoanCategoryType.value != null) {
-                      return _buildCollateralDetailsCard(controller, isEditable)
-                          .animate()
-                          .fadeIn(delay: 300.ms, duration: 500.ms);
+                      return _buildCollateralDetailsCard(
+                        controller,
+                        isEditable,
+                      ).animate().fadeIn(delay: 300.ms, duration: 500.ms);
                     }
                     return const SizedBox.shrink();
                   }),
@@ -146,25 +142,26 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Repayment Options Card (Editable)
-                  _buildRepaymentCard(controller, isEditable)
-                      .animate()
-                      .fadeIn(delay: 400.ms, duration: 500.ms),
+                  _buildRepaymentCard(
+                    controller,
+                    isEditable,
+                  ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
 
                   const SizedBox(height: 24),
 
                   // Collateral Images Card (Editable)
-                  _buildCollateralImagesCard(controller, isEditable)
-                      .animate()
-                      .fadeIn(delay: 500.ms, duration: 500.ms),
+                  _buildCollateralImagesCard(
+                    controller,
+                    isEditable,
+                  ).animate().fadeIn(delay: 500.ms, duration: 500.ms),
 
                   const SizedBox(height: 24),
 
                   // Declaration Card (Editable)
                   if (isEditable)
-                    _buildDeclarationCard(controller).animate().fadeIn(
-                          delay: 600.ms,
-                          duration: 500.ms,
-                        ),
+                    _buildDeclarationCard(
+                      controller,
+                    ).animate().fadeIn(delay: 600.ms, duration: 500.ms),
 
                   const SizedBox(height: 100),
                 ],
@@ -193,16 +190,29 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                 children: [
                   Obx(
                     () => CustomButton(
-                      btnColor: controller.isFormValid.value &&
-                              !controller.isSubmitting.value
+                      btnColor:
+                          controller.isFormValid.value &&
+                              !controller.isSubmitting.value &&
+                              !controller.isUploadingCollateralImages.value
                           ? AppColors.primaryColor
                           : RealTimeColors.grey300,
                       width: double.infinity,
                       borderRadius: 12,
                       onTap: () {
                         if (controller.isFormValid.value &&
-                            !controller.isSubmitting.value) {
+                            !controller.isSubmitting.value &&
+                            !controller.isUploadingCollateralImages.value) {
                           controller.submitUpdate();
+                        } else if (controller
+                            .isUploadingCollateralImages
+                            .value) {
+                          Get.snackbar(
+                            'Please Wait',
+                            'Uploading images, please wait...',
+                            backgroundColor: AppColors.warningColor,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.TOP,
+                          );
                         } else {
                           final missing = controller.getMissingFields();
                           if (missing.isNotEmpty) {
@@ -216,20 +226,24 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                           }
                         }
                       },
-                      child: controller.isSubmitting.value
+                      child:
+                          controller.isSubmitting.value ||
+                              controller.isUploadingCollateralImages.value
                           ? const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : Text(
                               'Update Application',
                               style: GoogleFonts.poppins(
-                                color: controller.isFormValid.value &&
+                                color:
+                                    controller.isFormValid.value &&
                                         !controller.isSubmitting.value
                                     ? Colors.white
                                     : RealTimeColors.grey600,
@@ -257,7 +271,6 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
   bool _isApplicationEditable(String? status) {
     if (status == null) return true;
     final lowerStatus = status.toLowerCase();
-    // Cannot edit approved, rejected, or cancelled applications
     return lowerStatus != 'approved' &&
         lowerStatus != 'rejected' &&
         lowerStatus != 'cancelled';
@@ -367,7 +380,10 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLoanDetailsCard(UpdateLoanApplicationController controller, bool isEditable) {
+  Widget _buildLoanDetailsCard(
+    UpdateLoanApplicationController controller,
+    bool isEditable,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -447,9 +463,11 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCollateralDetailsCard(UpdateLoanApplicationController controller, bool isEditable) {
+  Widget _buildCollateralDetailsCard(
+    UpdateLoanApplicationController controller,
+    bool isEditable,
+  ) {
     final categoryType = controller.selectedLoanCategoryType.value;
-    final categoryTitle = controller.selectedLoanCategory.value;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -522,12 +540,16 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                   title: category['title'] as String,
                   icon: category['icon'] as IconData,
                   color: category['color'] as Color,
-                  isSelected: controller.selectedLoanCategory.value == category['title'],
+                  isSelected:
+                      controller.selectedLoanCategory.value ==
+                      category['title'],
                   isEnabled: isEditable,
                   onTap: isEditable
                       ? () {
-                          controller.selectedLoanCategory.value = category['title'] as String?;
-                          controller.selectedLoanCategoryType.value = category['type'] as String?;
+                          controller.selectedLoanCategory.value =
+                              category['title'] as String?;
+                          controller.selectedLoanCategoryType.value =
+                              category['type'] as String?;
                         }
                       : null,
                 ),
@@ -682,7 +704,10 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRepaymentCard(UpdateLoanApplicationController controller, bool isEditable) {
+  Widget _buildRepaymentCard(
+    UpdateLoanApplicationController controller,
+    bool isEditable,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -727,32 +752,47 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Repayment Type Selector
+          // Loan Period Selector
           Text(
-            'Repayment Type',
+            'Loan Period',
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppColors.textColor,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            'All loans are once-off repayment. Period drives interest rates.',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: AppColors.subtextColor,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
-            children: controller.repaymentTypeOptions.map((option) {
-              final isSelected = controller.selectedRepaymentType.value == option['value'];
+            children: controller.loanPeriodOptions.map((option) {
+              final isSelected =
+                  controller.selectedLoanPeriodType.value == option['value'];
               return Expanded(
                 child: GestureDetector(
                   onTap: isEditable
-                      ? () => controller.selectedRepaymentType.value = option['value'] as String
+                      ? () => controller.selectedLoanPeriodType.value =
+                            option['value'] as String
                       : null,
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primaryColor : AppColors.surfaceColor,
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.surfaceColor,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppColors.primaryColor : AppColors.borderColor,
+                        color: isSelected
+                            ? AppColors.primaryColor
+                            : AppColors.borderColor,
                         width: 1.5,
                       ),
                     ),
@@ -763,13 +803,24 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                           color: isSelected ? Colors.white : AppColors.textColor,
                           size: 24,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(
                           option['title'] as String,
                           style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             color: isSelected ? Colors.white : AppColors.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          option['subtitle'] as String,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: isSelected
+                                ? Colors.white.withOpacity(0.85)
+                                : AppColors.subtextColor,
                           ),
                         ),
                       ],
@@ -780,124 +831,15 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
             }).toList(),
           ),
           const SizedBox(height: 16),
-
-          // Installment Options
-          Obx(() {
-            if (controller.selectedRepaymentType.value == 'installment') {
-              return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Number of Installments',
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.borderColor),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: isEditable && controller.installmentCount.value > 1
-                                        ? () => controller.installmentCount.value--
-                                        : null,
-                                    icon: const Icon(Icons.remove, size: 20),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      '${controller.installmentCount.value}',
-                                      textAlign: TextAlign.center,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: isEditable && controller.installmentCount.value < 48
-                                        ? () => controller.installmentCount.value++
-                                        : null,
-                                    icon: const Icon(Icons.add, size: 20),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Payment Frequency',
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Obx(
-                              () => DropdownButtonFormField<String>(
-                                value: controller.selectedInstallmentFrequency.value,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: AppColors.borderColor),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                items: controller.installmentFrequencyOptions.map((option) {
-                                  return DropdownMenuItem(
-                                    value: option['value'] as String,
-                                    child: Text(
-                                      option['title'] as String,
-                                      style: GoogleFonts.poppins(fontSize: 13),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: isEditable
-                                    ? (value) {
-                                        if (value != null) {
-                                          controller.selectedInstallmentFrequency.value = value;
-                                        }
-                                      }
-                                    : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            }
-            return const SizedBox.shrink();
-          }),
         ],
       ),
     );
   }
 
-  Widget _buildCollateralImagesCard(UpdateLoanApplicationController controller, bool isEditable) {
+  Widget _buildCollateralImagesCard(
+    UpdateLoanApplicationController controller,
+    bool isEditable,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -941,27 +883,52 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                 ),
               ),
               if (isEditable)
-                GestureDetector(
-                  onTap: controller.pickCollateralImages,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.add, size: 16, color: AppColors.primaryColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Add Photos',
-                          style: GoogleFonts.poppins(
-                            color: AppColors.primaryColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                Obx(
+                  () => GestureDetector(
+                    onTap: controller.isUploadingCollateralImages.value
+                        ? null
+                        : controller.pickCollateralImages,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          if (controller.isUploadingCollateralImages.value)
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primaryColor,
+                                ),
+                              ),
+                            )
+                          else
+                            const Icon(
+                              Icons.add,
+                              size: 16,
+                              color: AppColors.primaryColor,
+                            ),
+                          const SizedBox(width: 4),
+                          Text(
+                            controller.isUploadingCollateralImages.value
+                                ? 'Uploading...'
+                                : 'Add Photos',
+                            style: GoogleFonts.poppins(
+                              color: AppColors.primaryColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -970,145 +937,301 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Existing Images
-          if (controller.existingCollateralImageUrls.isNotEmpty) ...[
-            Text(
-              'Current Photos',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.subtextColor,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: controller.existingCollateralImageUrls.length,
-                itemBuilder: (context, index) {
-                  return Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            controller.existingCollateralImageUrls[index],
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: RealTimeColors.grey200,
-                              child: const Icon(Icons.broken_image),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (isEditable)
-                        Positioned(
-                          top: 4,
-                          right: 16,
-                          child: GestureDetector(
-                            onTap: () => controller.removeExistingCollateralImage(index),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                shape: BoxShape.circle,
+          Obx(() {
+            if (controller.existingCollateralImageUrls.isNotEmpty) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Current Photos (${controller.existingCollateralImageUrls.length})',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.subtextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 120,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: controller.existingCollateralImageUrls.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          width: 120,
+                          height: 120,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
-                              child: const Icon(Icons.close, size: 14, color: Colors.white),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.network(
+                                  controller.existingCollateralImageUrls[index],
+                                  fit: BoxFit.cover,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return Container(
+                                          color: RealTimeColors.grey200,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        color: RealTimeColors.grey200,
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          size: 40,
+                                        ),
+                                      ),
+                                ),
+                                if (isEditable &&
+                                    !controller
+                                        .isUploadingCollateralImages
+                                        .value)
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        if (index <
+                                            controller
+                                                .existingCollateralImageUrls
+                                                .length) {
+                                          controller
+                                              .removeExistingCollateralImage(
+                                                index,
+                                              );
+                                          Get.snackbar(
+                                            'Photo Removed',
+                                            'Photo has been removed',
+                                            backgroundColor:
+                                                AppColors.successColor,
+                                            colorText: Colors.white,
+                                            duration: 1000.ms,
+                                            snackPosition: SnackPosition.TOP,
+                                          );
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          }),
 
           // New Images
-          if (controller.collateralImages.isNotEmpty) ...[
-            Text(
-              'New Photos',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.subtextColor,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: controller.collateralImages.length,
-                itemBuilder: (context, index) {
-                  final image = controller.collateralImages[index];
-                  return Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderColor),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(image.path),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 16,
-                        child: GestureDetector(
-                          onTap: () => controller.removeNewCollateralImage(index),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.close, size: 14, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-
-          if (controller.existingCollateralImageUrls.isEmpty && controller.collateralImages.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
-                  children: [
-                    Icon(Icons.photo_library, size: 48, color: AppColors.subtextColor),
-                    const SizedBox(height: 8),
-                    Text(
-                      isEditable ? 'No photos yet. Tap "Add Photos" to upload.' : 'No photos available',
-                      style: GoogleFonts.poppins(
-                        color: AppColors.subtextColor,
-                        fontSize: 14,
-                      ),
+          Obx(() {
+            if (controller.collateralImages.isNotEmpty) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'New Photos (${controller.collateralImages.length})',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.subtextColor,
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 120,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: controller.collateralImages.length,
+                      itemBuilder: (context, index) {
+                        final image = controller.collateralImages[index];
+                        return Container(
+                          width: 120,
+                          height: 120,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.file(File(image.path), fit: BoxFit.cover),
+                                if (isEditable &&
+                                    !controller
+                                        .isUploadingCollateralImages
+                                        .value)
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        if (index <
+                                            controller
+                                                .collateralImages
+                                                .length) {
+                                          controller.removeNewCollateralImage(
+                                            index,
+                                          );
+                                          Get.snackbar(
+                                            'Photo Removed',
+                                            'Photo has been removed',
+                                            backgroundColor:
+                                                AppColors.successColor,
+                                            colorText: Colors.white,
+                                            duration: 1000.ms,
+                                            snackPosition: SnackPosition.TOP,
+                                          );
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+
+          // Empty State
+          Obx(() {
+            if (controller.existingCollateralImageUrls.isEmpty &&
+                controller.collateralImages.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.photo_library,
+                        size: 64,
+                        color: AppColors.subtextColor.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        isEditable
+                            ? 'No photos yet. Tap "Add Photos" to upload.'
+                            : 'No photos available',
+                        style: GoogleFonts.poppins(
+                          color: AppColors.subtextColor,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (isEditable &&
+                          !controller.isUploadingCollateralImages.value) ...[
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: controller.pickCollateralImages,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: AppColors.primaryColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Add Photos',
+                                  style: GoogleFonts.poppins(
+                                    color: AppColors.primaryColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
     );
@@ -1219,7 +1342,12 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReadOnlyRow(String label, String value, IconData icon, {Color? statusColor}) {
+  Widget _buildReadOnlyRow(
+    String label,
+    String value,
+    IconData icon, {
+    Color? statusColor,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1293,7 +1421,11 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: isEnabled ? color : AppColors.subtextColor),
+            Icon(
+              icon,
+              size: 24,
+              color: isEnabled ? color : AppColors.subtextColor,
+            ),
             const SizedBox(height: 5),
             Text(
               title,
@@ -1314,9 +1446,11 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
     if (status == null || status.isEmpty) return 'Submitted';
     return status
         .split('_')
-        .map((word) => word.isEmpty
-            ? ''
-            : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
         .join(' ');
   }
 

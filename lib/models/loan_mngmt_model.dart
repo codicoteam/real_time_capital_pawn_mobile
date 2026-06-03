@@ -7,22 +7,35 @@ class LoanModel {
   final Application? application;
   final Asset? asset;
   final String? collateralCategory;
-  final int? principalAmount;
-  final int? currentBalance;
+  final double? principalAmount;
+  final double? currentBalance;
   final String? currency;
+  final String? loanPeriodType;
   final double? interestRatePercent;
   final int? interestPeriodDays;
   final double? storageChargePercent;
-  final int? penaltyPercent;
+  final double? penaltyPercent;
   final int? graceDays;
+  final double? interestAmount;
+  final double? storageChargeAmount;
+  final double? expectedTotalRepayable;
+  final Map<String, dynamic>? repaymentBreakdown;
   final String? repaymentType;
+  // Disbursement details
+  final DateTime? disbursementDate;
+  final String? paymentMethod;
+  final String? disbursementReference;
+  final String? disbursedBy;
+  final String? disbursementNotes;
   final DateTime? startDate;
   final DateTime? dueDate;
-  final int? totalPaid;
+  final double? totalPaid;
   final String? status;
   final bool? requiresSuperAdminApproval;
   final String? approvalStatus;
   final String? createdBy;
+  final String? approvedBy;
+  final String? processedBy;
   final List<Payment>? payments;
   final List<RequestedSuperAdmin>? requestedSuperAdmins;
   final List<SuperAdminApproval>? superAdminApprovals;
@@ -40,12 +53,22 @@ class LoanModel {
     this.principalAmount,
     this.currentBalance,
     this.currency,
+    this.loanPeriodType,
     this.interestRatePercent,
     this.interestPeriodDays,
     this.storageChargePercent,
     this.penaltyPercent,
     this.graceDays,
+    this.interestAmount,
+    this.storageChargeAmount,
+    this.expectedTotalRepayable,
+    this.repaymentBreakdown,
     this.repaymentType,
+    this.disbursementDate,
+    this.paymentMethod,
+    this.disbursementReference,
+    this.disbursedBy,
+    this.disbursementNotes,
     this.startDate,
     this.dueDate,
     this.totalPaid,
@@ -53,6 +76,8 @@ class LoanModel {
     this.requiresSuperAdminApproval,
     this.approvalStatus,
     this.createdBy,
+    this.approvedBy,
+    this.processedBy,
     this.payments,
     this.requestedSuperAdmins,
     this.superAdminApprovals,
@@ -66,96 +91,134 @@ class LoanModel {
   String toJson() => json.encode(toMap());
 
   factory LoanModel.fromMap(Map<String, dynamic> json) => LoanModel(
-    id: json["_id"],
-    loanNo: json["loan_no"],
-    customerUser: json["customer_user"] == null
-        ? null
-        : CustomerUser.fromMap(json["customer_user"]),
-    application: json["application"] == null
-        ? null
-        : Application.fromMap(json["application"]),
-    asset: json["asset"] == null ? null : Asset.fromMap(json["asset"]),
-    collateralCategory: json["collateral_category"],
-    principalAmount: json["principal_amount"],
-    currentBalance: json["current_balance"],
-    currency: json["currency"],
-    interestRatePercent: json["interest_rate_percent"]?.toDouble(),
-    interestPeriodDays: json["interest_period_days"],
-    storageChargePercent: json["storage_charge_percent"]?.toDouble(),
-    penaltyPercent: json["penalty_percent"],
-    graceDays: json["grace_days"],
-    repaymentType: json["repayment_type"],
-    startDate: json["start_date"] == null
-        ? null
-        : DateTime.parse(json["start_date"]),
-    dueDate: json["due_date"] == null ? null : DateTime.parse(json["due_date"]),
-    totalPaid: json["total_paid"],
-    status: json["status"],
-    requiresSuperAdminApproval: json["requires_super_admin_approval"],
-    approvalStatus: json["approval_status"],
-    createdBy: json["created_by"],
-    payments: json["payments"] == null
-        ? []
-        : List<Payment>.from(json["payments"]!.map((x) => Payment.fromMap(x))),
-    requestedSuperAdmins: json["requested_super_admins"] == null
-        ? []
-        : List<RequestedSuperAdmin>.from(
-            json["requested_super_admins"]!.map(
-              (x) => RequestedSuperAdmin.fromMap(x),
-            ),
-          ),
-    superAdminApprovals: json["super_admin_approvals"] == null
-        ? []
-        : List<SuperAdminApproval>.from(
-            json["super_admin_approvals"]!.map(
-              (x) => SuperAdminApproval.fromMap(x),
-            ),
-          ),
-    createdAt: json["created_at"] == null
-        ? null
-        : DateTime.parse(json["created_at"]),
-    updatedAt: json["updated_at"] == null
-        ? null
-        : DateTime.parse(json["updated_at"]),
-    v: json["__v"],
-  );
+        id: json["_id"],
+        loanNo: json["loan_no"],
+        customerUser: json["customer_user"] == null
+            ? null
+            : CustomerUser.fromMap(json["customer_user"]),
+        application: json["application"] == null
+            ? null
+            : Application.fromMap(json["application"]),
+        asset: json["asset"] == null ? null : Asset.fromMap(json["asset"]),
+        collateralCategory: json["collateral_category"],
+        principalAmount: json["principal_amount"]?.toDouble(),
+        currentBalance: json["current_balance"]?.toDouble(),
+        currency: json["currency"],
+        loanPeriodType: json["loan_period_type"],
+        interestRatePercent: json["interest_rate_percent"]?.toDouble(),
+        interestPeriodDays: json["interest_period_days"],
+        storageChargePercent: json["storage_charge_percent"]?.toDouble(),
+        penaltyPercent: json["penalty_percent"]?.toDouble(),
+        graceDays: json["grace_days"],
+        interestAmount: json["interest_amount"]?.toDouble(),
+        storageChargeAmount: json["storage_charge_amount"]?.toDouble(),
+        expectedTotalRepayable: json["expected_total_repayable"]?.toDouble(),
+        repaymentBreakdown: json["repayment_breakdown"] is Map
+            ? Map<String, dynamic>.from(json["repayment_breakdown"])
+            : null,
+        repaymentType: json["repayment_type"],
+        disbursementDate: json["disbursement_date"] == null
+            ? null
+            : DateTime.parse(json["disbursement_date"]),
+        paymentMethod: json["payment_method"],
+        disbursementReference: json["disbursement_reference"],
+        disbursedBy: json["disbursed_by"] is String
+            ? json["disbursed_by"]
+            : json["disbursed_by"]?["_id"],
+        disbursementNotes: json["disbursement_notes"],
+        startDate: json["start_date"] == null
+            ? null
+            : DateTime.parse(json["start_date"]),
+        dueDate:
+            json["due_date"] == null ? null : DateTime.parse(json["due_date"]),
+        totalPaid: json["total_paid"]?.toDouble(),
+        status: json["status"],
+        requiresSuperAdminApproval: json["requires_super_admin_approval"],
+        approvalStatus: json["approval_status"],
+        createdBy: json["created_by"] is String
+            ? json["created_by"]
+            : json["created_by"]?["_id"],
+        approvedBy: json["approved_by"] is String
+            ? json["approved_by"]
+            : json["approved_by"]?["_id"],
+        processedBy: json["processed_by"] is String
+            ? json["processed_by"]
+            : json["processed_by"]?["_id"],
+        payments: json["payments"] == null
+            ? []
+            : List<Payment>.from(
+                json["payments"]!.map((x) => Payment.fromMap(x))),
+        requestedSuperAdmins: json["requested_super_admins"] == null
+            ? []
+            : List<RequestedSuperAdmin>.from(
+                json["requested_super_admins"]!.map(
+                  (x) => RequestedSuperAdmin.fromMap(x),
+                ),
+              ),
+        superAdminApprovals: json["super_admin_approvals"] == null
+            ? []
+            : List<SuperAdminApproval>.from(
+                json["super_admin_approvals"]!.map(
+                  (x) => SuperAdminApproval.fromMap(x),
+                ),
+              ),
+        createdAt: json["created_at"] == null
+            ? null
+            : DateTime.parse(json["created_at"]),
+        updatedAt: json["updated_at"] == null
+            ? null
+            : DateTime.parse(json["updated_at"]),
+        v: json["__v"],
+      );
 
   Map<String, dynamic> toMap() => {
-    "_id": id,
-    "loan_no": loanNo,
-    "customer_user": customerUser?.toMap(),
-    "application": application?.toMap(),
-    "asset": asset?.toMap(),
-    "collateral_category": collateralCategory,
-    "principal_amount": principalAmount,
-    "current_balance": currentBalance,
-    "currency": currency,
-    "interest_rate_percent": interestRatePercent,
-    "interest_period_days": interestPeriodDays,
-    "storage_charge_percent": storageChargePercent,
-    "penalty_percent": penaltyPercent,
-    "grace_days": graceDays,
-    "repayment_type": repaymentType,
-    "start_date": startDate?.toIso8601String(),
-    "due_date": dueDate?.toIso8601String(),
-    "total_paid": totalPaid,
-    "status": status,
-    "requires_super_admin_approval": requiresSuperAdminApproval,
-    "approval_status": approvalStatus,
-    "created_by": createdBy,
-    "payments": payments == null
-        ? []
-        : List<dynamic>.from(payments!.map((x) => x.toMap())),
-    "requested_super_admins": requestedSuperAdmins == null
-        ? []
-        : List<dynamic>.from(requestedSuperAdmins!.map((x) => x.toMap())),
-    "super_admin_approvals": superAdminApprovals == null
-        ? []
-        : List<dynamic>.from(superAdminApprovals!.map((x) => x.toMap())),
-    "created_at": createdAt?.toIso8601String(),
-    "updated_at": updatedAt?.toIso8601String(),
-    "__v": v,
-  };
+        "_id": id,
+        "loan_no": loanNo,
+        "customer_user": customerUser?.toMap(),
+        "application": application?.toMap(),
+        "asset": asset?.toMap(),
+        "collateral_category": collateralCategory,
+        "principal_amount": principalAmount,
+        "current_balance": currentBalance,
+        "currency": currency,
+        "loan_period_type": loanPeriodType,
+        "interest_rate_percent": interestRatePercent,
+        "interest_period_days": interestPeriodDays,
+        "storage_charge_percent": storageChargePercent,
+        "penalty_percent": penaltyPercent,
+        "grace_days": graceDays,
+        "interest_amount": interestAmount,
+        "storage_charge_amount": storageChargeAmount,
+        "expected_total_repayable": expectedTotalRepayable,
+        "repayment_breakdown": repaymentBreakdown,
+        "repayment_type": repaymentType,
+        "disbursement_date": disbursementDate?.toIso8601String(),
+        "payment_method": paymentMethod,
+        "disbursement_reference": disbursementReference,
+        "disbursed_by": disbursedBy,
+        "disbursement_notes": disbursementNotes,
+        "start_date": startDate?.toIso8601String(),
+        "due_date": dueDate?.toIso8601String(),
+        "total_paid": totalPaid,
+        "status": status,
+        "requires_super_admin_approval": requiresSuperAdminApproval,
+        "approval_status": approvalStatus,
+        "created_by": createdBy,
+        "approved_by": approvedBy,
+        "processed_by": processedBy,
+        "payments": payments == null
+            ? []
+            : List<dynamic>.from(payments!.map((x) => x.toMap())),
+        "requested_super_admins": requestedSuperAdmins == null
+            ? []
+            : List<dynamic>.from(requestedSuperAdmins!.map((x) => x.toMap())),
+        "super_admin_approvals": superAdminApprovals == null
+            ? []
+            : List<dynamic>.from(superAdminApprovals!.map((x) => x.toMap())),
+        "created_at": createdAt?.toIso8601String(),
+        "updated_at": updatedAt?.toIso8601String(),
+        "__v": v,
+      };
 }
 
 class Application {
@@ -297,9 +360,10 @@ class CustomerUser {
 }
 
 class Payment {
-  final int? amount;
+  final double? amount;
   final DateTime? paymentDate;
   final String? paymentMethod;
+  final String? status;
   final String? referenceNo;
   final String? receivedBy;
   final String? notes;
@@ -309,6 +373,7 @@ class Payment {
     this.amount,
     this.paymentDate,
     this.paymentMethod,
+    this.status,
     this.referenceNo,
     this.receivedBy,
     this.notes,
@@ -320,26 +385,30 @@ class Payment {
   String toJson() => json.encode(toMap());
 
   factory Payment.fromMap(Map<String, dynamic> json) => Payment(
-    amount: json["amount"],
-    paymentDate: json["payment_date"] == null
-        ? null
-        : DateTime.parse(json["payment_date"]),
-    paymentMethod: json["payment_method"],
-    referenceNo: json["reference_no"],
-    receivedBy: json["received_by"],
-    notes: json["notes"],
-    id: json["_id"],
-  );
+        amount: json["amount"]?.toDouble(),
+        paymentDate: json["payment_date"] == null
+            ? null
+            : DateTime.parse(json["payment_date"]),
+        paymentMethod: json["payment_method"],
+        status: json["status"],
+        referenceNo: json["reference_no"],
+        receivedBy: json["received_by"] is String
+            ? json["received_by"]
+            : json["received_by"]?["_id"],
+        notes: json["notes"],
+        id: json["_id"],
+      );
 
   Map<String, dynamic> toMap() => {
-    "amount": amount,
-    "payment_date": paymentDate?.toIso8601String(),
-    "payment_method": paymentMethod,
-    "reference_no": referenceNo,
-    "received_by": receivedBy,
-    "notes": notes,
-    "_id": id,
-  };
+        "amount": amount,
+        "payment_date": paymentDate?.toIso8601String(),
+        "payment_method": paymentMethod,
+        "status": status,
+        "reference_no": referenceNo,
+        "received_by": receivedBy,
+        "notes": notes,
+        "_id": id,
+      };
 }
 
 class RequestedSuperAdmin {

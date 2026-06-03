@@ -21,10 +21,34 @@ class LoanApplicationControllerTwo extends GetxController {
   final suretyDescController = TextEditingController();
   final assetValueController = TextEditingController();
 
+  // Reactive mirrors for text fields used in Obx widgets
+  final loanAmountText = ''.obs;
+  final assetValueText = ''.obs;
+
   // Electronics (Small Loans) Details Controllers
   final electronicTypeController = TextEditingController();
+  final selectedElectronicType = RxnString();
   final electronicModelController = TextEditingController();
   final electronicSerialController = TextEditingController();
+
+  static const List<String> electronicTypeOptions = [
+    'Smartphone',
+    'Laptop',
+    'Tablet',
+    'Desktop Computer',
+    'Smart TV',
+    'Refrigerator',
+    'Microwave',
+    'Electric Stove',
+    'Washing Machine',
+    'Air Conditioner',
+    'Camera',
+    'Gaming Console',
+    'Sound System',
+    'Decoder / Set-top Box',
+    'Vacuum Cleaner',
+    'Other',
+  ];
 
   // Motor Vehicle Details Controllers
   final vehicleMakeController = TextEditingController();
@@ -50,13 +74,9 @@ class LoanApplicationControllerTwo extends GetxController {
   // Reactive selected values
   final selectedLoanCategory = RxnString();
   final selectedLoanCategoryType = RxnString(); // for API
-  final selectedRepaymentType = RxString(
-    'once_off',
-  ); // 'once_off' or 'installment'
-  final selectedInstallmentFrequency = RxString(
-    'monthly',
-  ); // weekly, biweekly, monthly, quarterly
-  final installmentCount = 1.obs;
+  // Loan period drives repayment days and interest rates on the backend
+  // Must be "two_weeks" or "one_month"
+  final selectedLoanPeriodType = RxString('one_month');
   final isDeclarationChecked = false.obs;
 
   // UI state
@@ -67,25 +87,20 @@ class LoanApplicationControllerTwo extends GetxController {
   // Form validity (updated via listeners)
   final isFormValid = false.obs;
 
-  // Repayment options
-  final repaymentTypeOptions = [
+  // Loan period options — backend only supports once_off, period drives rates
+  final loanPeriodOptions = [
     {
-      'title': 'Once Off',
-      'value': 'once_off',
-      'icon': Icons.check_circle_outline,
+      'title': '2 Weeks',
+      'subtitle': '2% interest • 18% storage',
+      'value': 'two_weeks',
+      'icon': Icons.calendar_view_week_outlined,
     },
     {
-      'title': 'Installment',
-      'value': 'installment',
+      'title': '1 Month',
+      'subtitle': '4% interest • 21% storage',
+      'value': 'one_month',
       'icon': Icons.calendar_month_outlined,
     },
-  ];
-
-  final installmentFrequencyOptions = [
-    {'title': 'Weekly', 'value': 'weekly'},
-    {'title': 'Bi-Weekly', 'value': 'biweekly'},
-    {'title': 'Monthly', 'value': 'monthly'},
-    {'title': 'Quarterly', 'value': 'quarterly'},
   ];
 
   final loanCategories = [
@@ -127,6 +142,13 @@ class LoanApplicationControllerTwo extends GetxController {
     for (var controller in baseControllers) {
       controller.addListener(_checkFormValidity);
     }
+
+    loanAmountController.addListener(() {
+      loanAmountText.value = loanAmountController.text;
+    });
+    assetValueController.addListener(() {
+      assetValueText.value = assetValueController.text;
+    });
 
     // Motor Vehicle controllers
     final vehicleControllers = [
@@ -172,9 +194,8 @@ class LoanApplicationControllerTwo extends GetxController {
       _clearCategoryFields();
       _checkFormValidity();
     });
-    ever(selectedRepaymentType, (_) => _checkFormValidity());
-    ever(selectedInstallmentFrequency, (_) => _checkFormValidity());
-    ever(installmentCount, (_) => _checkFormValidity());
+    ever(selectedElectronicType, (_) => _checkFormValidity());
+    ever(selectedLoanPeriodType, (_) => _checkFormValidity());
     ever(isDeclarationChecked, (_) => _checkFormValidity());
     ever(collateralImages, (_) => _checkFormValidity());
   }
@@ -195,20 +216,16 @@ class LoanApplicationControllerTwo extends GetxController {
       return;
     }
 
-    // Validate loan amount is positive
+    // Validate loan amount is positive and does not exceed asset value
     double loanAmount = double.tryParse(loanAmountController.text) ?? 0;
     double assetValue = double.tryParse(assetValueController.text) ?? 0;
     if (loanAmount <= 0 || assetValue <= 0) {
       isFormValid.value = false;
       return;
     }
-
-    // Repayment type specific validation
-    if (selectedRepaymentType.value == 'installment') {
-      if (installmentCount.value < 1 || installmentCount.value > 48) {
-        isFormValid.value = false;
-        return;
-      }
+    if (loanAmount > assetValue) {
+      isFormValid.value = false;
+      return;
     }
 
     // Category-specific required fields
@@ -233,10 +250,10 @@ class LoanApplicationControllerTwo extends GetxController {
       isFormValid.value = isValid;
     } else if (categoryType == 'small_loans') {
       final isValid =
-          electronicTypeController.text.isNotEmpty &&
+          selectedElectronicType.value != null &&
           electronicModelController.text.isNotEmpty &&
           electronicSerialController.text.isNotEmpty;
-      
+
       isFormValid.value = isValid;
     } else if (categoryType == 'jewellery') {
       final isValid = 
@@ -266,6 +283,7 @@ class LoanApplicationControllerTwo extends GetxController {
     vehicleChassisController.clear();
     vehicleYearController.clear();
 
+    selectedElectronicType.value = null;
     electronicTypeController.clear();
     electronicModelController.clear();
     electronicSerialController.clear();
@@ -375,17 +393,20 @@ class LoanApplicationControllerTwo extends GetxController {
     double? assetValue = double.tryParse(assetValueController.text);
     if (loanAmount == null) missingFields.add('Valid Loan Amount');
     if (assetValue == null) missingFields.add('Valid Asset Value');
-    if (loanAmount != null && loanAmount <= 0)
-      missingFields.add('Loan Amount > 0');
-    if (assetValue != null && assetValue <= 0)
-      missingFields.add('Asset Value > 0');
-
-    // Repayment validation
-    if (selectedRepaymentType.value == 'installment') {
-      if (installmentCount.value < 1)
-        missingFields.add('Installment Count (min 1)');
-      if (installmentCount.value > 48)
-        missingFields.add('Installment Count (max 48)');
+    if (loanAmount != null && loanAmount <= 0) missingFields.add('Loan Amount > 0');
+    if (assetValue != null && assetValue <= 0) missingFields.add('Asset Value > 0');
+    if (loanAmount != null && assetValue != null && loanAmount > assetValue) {
+      if (showSnackbar) {
+        Get.snackbar(
+          'Invalid Amount',
+          'Requested loan amount cannot exceed the declared asset value',
+          backgroundColor: AppColors.errorColor,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: 4000.ms,
+        );
+      }
+      return false;
     }
 
     // Category-specific fields
@@ -405,12 +426,9 @@ class LoanApplicationControllerTwo extends GetxController {
       if (int.tryParse(vehicleYearController.text) == null)
         missingFields.add('Valid Vehicle Year');
     } else if (selectedLoanCategoryType.value == 'small_loans') {
-      if (electronicTypeController.text.isEmpty)
-        missingFields.add('Electronic Type');
-      if (electronicModelController.text.isEmpty)
-        missingFields.add('Electronic Model');
-      if (electronicSerialController.text.isEmpty)
-        missingFields.add('Serial Number');
+      if (selectedElectronicType.value == null) missingFields.add('Device Type');
+      if (electronicModelController.text.isEmpty) missingFields.add('Electronic Model');
+      if (electronicSerialController.text.isEmpty) missingFields.add('Serial Number');
     } else if (selectedLoanCategoryType.value == 'jewellery') {
       if (jewelTypeController.text.isEmpty) missingFields.add('Jewellery Type');
       if (jewelDescController.text.isEmpty)
@@ -456,6 +474,7 @@ class LoanApplicationControllerTwo extends GetxController {
 
     Map<String, dynamic> payload = {
       "requested_loan_amount": loanAmount,
+      "loan_period_type": selectedLoanPeriodType.value,
       "collateral_category": selectedLoanCategoryType.value,
       "collateral_description": collateralDescController.text,
       "surety_description": suretyDescController.text.isNotEmpty
@@ -463,8 +482,6 @@ class LoanApplicationControllerTwo extends GetxController {
           : null,
       "declared_asset_value": assetValue,
       "collateral_images": imageUrls,
-      "repayment_type": selectedRepaymentType.value,
-      "repayment_days": _calculateRepaymentDays(),
       "declaration_text": _getDeclarationText(),
       "declaration_signed_at": DateTime.now().toIso8601String(),
       "declaration_signature_name": userData.value?['fullName'] ?? 'Customer',
@@ -484,7 +501,7 @@ class LoanApplicationControllerTwo extends GetxController {
       };
     } else if (selectedLoanCategoryType.value == 'small_loans') {
       payload["small_loan_details"] = {
-        "type": electronicTypeController.text,
+        "type": selectedElectronicType.value ?? electronicTypeController.text,
         "model": electronicModelController.text,
         "serial_no": electronicSerialController.text,
       };
@@ -496,16 +513,6 @@ class LoanApplicationControllerTwo extends GetxController {
         "purity": jewelPurityController.text,
         "estimated_value": double.tryParse(jewelEstimatedValueController.text),
       };
-    }
-
-    // Add installment-specific fields if applicable
-    if (selectedRepaymentType.value == 'installment') {
-      payload["installment_count"] = installmentCount.value;
-      payload["installment_frequency"] = selectedInstallmentFrequency.value;
-
-      // Calculate approximate installment amount (simplified - actual calculation may vary)
-      double estimatedInstallmentAmount = loanAmount / installmentCount.value;
-      payload["installment_amount"] = estimatedInstallmentAmount;
     }
 
     DevLogs.logInfo("Submitting loan application payload: $payload");
@@ -556,50 +563,24 @@ class LoanApplicationControllerTwo extends GetxController {
     }
   }
 
-  int _calculateRepaymentDays() {
-    // Default to 30 days for once-off
-    if (selectedRepaymentType.value == 'once_off') return 30;
-
-    // For installment, calculate based on frequency and count
-    int daysPerFrequency = 30; // default monthly
-    switch (selectedInstallmentFrequency.value) {
-      case 'weekly':
-        daysPerFrequency = 7;
-        break;
-      case 'biweekly':
-        daysPerFrequency = 14;
-        break;
-      case 'monthly':
-        daysPerFrequency = 30;
-        break;
-      case 'quarterly':
-        daysPerFrequency = 90;
-        break;
-    }
-    return installmentCount.value * daysPerFrequency;
-  }
-
   String _getDeclarationText() {
     String itemDescription = '';
     if (selectedLoanCategoryType.value == 'small_loans') {
       itemDescription =
-          '${electronicTypeController.text} ${electronicModelController.text}';
+          '${selectedElectronicType.value ?? electronicTypeController.text} ${electronicModelController.text}';
     } else if (selectedLoanCategoryType.value == 'motor_vehicle') {
       itemDescription =
           '${vehicleMakeController.text} ${vehicleModelController.text}';
     } else if (selectedLoanCategoryType.value == 'jewellery') {
       itemDescription = jewelTypeController.text;
     }
-
     return 'I confirm that the $itemDescription offered as collateral is fully owned by me with no outstanding loans or disputes.';
   }
 
   String _getCustomTerms() {
-    if (selectedRepaymentType.value == 'once_off') {
-      return 'Standard loan terms apply. Late payment penalty of 10% of outstanding amount. Full repayment due within ${_calculateRepaymentDays()} days.';
-    } else {
-      return 'Standard loan terms apply. Late payment penalty of 10% of outstanding amount. ${installmentCount.value} installments on a ${selectedInstallmentFrequency.value} basis.';
-    }
+    final periodLabel =
+        selectedLoanPeriodType.value == 'two_weeks' ? '2 weeks' : '1 month';
+    return 'Standard loan terms apply. Late payment penalty of 10% of outstanding amount. Full repayment due within $periodLabel.';
   }
 
   @override

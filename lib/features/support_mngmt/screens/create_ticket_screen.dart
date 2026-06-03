@@ -694,6 +694,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
               color: AppColors.textColor,
               fontSize: 14,
             ),
+            maxLength: 100,
             decoration: _inputDecoration('Brief description of your issue'),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Please enter a subject';
@@ -713,6 +714,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
               height: 1.6,
             ),
             maxLines: 7,
+            maxLength: 500,
             decoration: _inputDecoration(
               'Describe the issue in full detail.\nInclude dates, amounts, error messages…',
             ),

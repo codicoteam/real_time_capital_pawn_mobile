@@ -316,7 +316,7 @@ class _TicketListScreenState extends State<TicketListScreen>
                   _headerIconButton(
                         icon: Icons.arrow_back_ios_new_rounded,
                         size: 18,
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => Get.offAllNamed(RoutesHelper.main_home_page),
                       )
                       .animate()
                       .fadeIn(delay: 100.ms, duration: 300.ms)
@@ -349,6 +349,9 @@ class _TicketListScreenState extends State<TicketListScreen>
                 final total = _controller.tickets.length;
                 final filtered = _filteredTickets.length;
                 final openCount = _openTicketsCount;
+                final inProgressCount = _controller.tickets
+                    .where((t) => t.status == TicketStatus.in_progress)
+                    .length;
 
                 return Row(
                       children: [
@@ -358,13 +361,22 @@ class _TicketListScreenState extends State<TicketListScreen>
                               ? '$total Tickets'
                               : '$filtered / $total',
                         ),
-                        const SizedBox(width: 10),
-                        if (openCount > 0)
+                        if (openCount > 0) ...[
+                          const SizedBox(width: 10),
                           _statPill(
                             icon: Icons.radio_button_checked_rounded,
                             label: '$openCount Open',
                             highlight: true,
                           ),
+                        ],
+                        if (inProgressCount > 0) ...[
+                          const SizedBox(width: 10),
+                          _statPill(
+                            icon: Icons.timelapse_rounded,
+                            label: '$inProgressCount Active',
+                            highlight: true,
+                          ),
+                        ],
                       ],
                     )
                     .animate()

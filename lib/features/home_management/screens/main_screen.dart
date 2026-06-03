@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:real_time_pawn/features/auctions_mngmt/screens/auctions_list_screen.dart'
@@ -8,10 +9,8 @@ import '../../../config/routers/router.dart';
 import '../../../core/utils/pallete.dart';
 import '../../../global/user_controller.dart';
 import '../../../widgets/drawers/customer_drawer.dart';
-import '../../loan_application_mngmt/screens/loan_application_step1.dart';
-
 import '../../loan_mngmt/screens/loan_mngmt_screen.dart';
-import '../../profile_mngmt/screens/profile_mngmt_screen.dart' as MyProfile;
+import '../../profile_mngmt/screens/profile_mngmt_screen.dart' as profile;
 import 'home_screen.dart';
 
 class MainHomePage extends StatefulWidget {
@@ -37,55 +36,63 @@ class _MainHomePageState extends State<MainHomePage> {
       color: AppColors.backgroundColor,
     ), // Apply placeholder (navigation only)
     const AuctionsListScreen(), // Auction tab shows real AuctionsListScreen
-    const MyProfile.ProfileScreen(),
+    const profile.ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: CustomDrawer(
-        userName: userController.user?.fullName ?? 'Guest',
-        userEmail: userController.user?.email ?? 'guest@example.com',
-        userId: userController.user?.userId ?? '',
-      ),
-      body: PersistentTabView(
-        context,
-        controller: _tabController,
-        screens: _pages,
-        items: _navBarItems(),
-        backgroundColor: AppColors.surfaceColor,
-        navBarStyle: NavBarStyle.style15,
-        navBarHeight: 65,
-        decoration: NavBarDecoration(
-          borderRadius: BorderRadius.circular(12),
-          colorBehindNavBar: Colors.transparent,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.borderColor.withOpacity(0.5),
-              offset: const Offset(5, 5),
-              blurRadius: 5,
-            ),
-            BoxShadow(
-              color: AppColors.backgroundColor,
-              offset: const Offset(3, 3),
-              blurRadius: 6,
-            ),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_tabController.index != 0) {
+          _tabController.jumpToTab(0);
+        } else {
+          // Already on home tab — exit the app
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: CustomDrawer(
+          userName: userController.user?.fullName ?? 'Guest',
+          userEmail: userController.user?.email ?? 'guest@example.com',
+          userId: userController.user?.userId ?? '',
         ),
-        handleAndroidBackButtonPress: true,
-        resizeToAvoidBottomInset: true,
-        stateManagement: true,
-        onItemSelected: (index) {
-          // Only the Apply tab (index 2) triggers navigation + reset
-          if (index == 2) {
-            // Immediately jump back to Home to avoid visual flicker
-            _tabController.jumpToTab(0);
-            // Navigate to the loan application screen
-            Get.toNamed(RoutesHelper.createLoanApplication);
-          }
-          // All other tabs (0,1,3,4) simply stay on their screen – no extra navigation
-        },
+        body: PersistentTabView(
+          context,
+          controller: _tabController,
+          screens: _pages,
+          items: _navBarItems(),
+          backgroundColor: AppColors.surfaceColor,
+          navBarStyle: NavBarStyle.style15,
+          navBarHeight: 65,
+          decoration: NavBarDecoration(
+            borderRadius: BorderRadius.circular(12),
+            colorBehindNavBar: Colors.transparent,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.borderColor.withValues(alpha: 0.5),
+                offset: const Offset(5, 5),
+                blurRadius: 5,
+              ),
+              BoxShadow(
+                color: AppColors.backgroundColor,
+                offset: const Offset(3, 3),
+                blurRadius: 6,
+              ),
+            ],
+          ),
+          handleAndroidBackButtonPress: false,
+          resizeToAvoidBottomInset: true,
+          stateManagement: true,
+          onItemSelected: (index) {
+            if (index == 2) {
+              _tabController.jumpToTab(0);
+              Get.toNamed(RoutesHelper.createLoanApplication);
+            }
+          },
+        ),
       ),
     );
   }

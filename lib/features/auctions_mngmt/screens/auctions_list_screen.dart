@@ -147,9 +147,7 @@ class _AuctionsListScreenState extends State<AuctionsListScreen>
   }
 
   void _goBack() {
-    if (mounted) {
-      Navigator.pop(context);
-    }
+    Get.offAllNamed(RoutesHelper.main_home_page);
   }
 
   @override

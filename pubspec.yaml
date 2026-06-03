@@ -1,7 +1,7 @@
 name: real_time_pawn
 description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.3+1
+version: 2.3.13+11
 environment:
   sdk: ^3.10.4
 dependencies:
@@ -52,6 +52,11 @@ dependencies:
   flutter_custom_clippers: ^2.1.0
   cross_file: ^0.3.4+1 
   flutter_secure_storage: 
+  firebase_core: ^4.7.0
+  firebase_messaging: ^16.2.0
+  flutter_local_notifications: ^21.0.0
+  socket_io_client: ^2.0.3+1
+  http: ^1.4.0
   # carousel_slider: ^4.2.1
 dev_dependencies:
   flutter_test:
@@ -72,11 +77,7 @@ flutter_native_splash:
   image: assets/images/logo.png
   android: true
   ios: true
-
-
-
 flutter:
-
   uses-material-design: true
   assets:
     - assets/images/
