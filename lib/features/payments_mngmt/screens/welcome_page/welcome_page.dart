@@ -56,13 +56,13 @@ class WelcomeScreen extends StatelessWidget {
         ), // Reduced minimum width
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         overlayColor: WidgetStateProperty.all(
-          AppColors.primaryColor.withOpacity(0.1),
+          AppColors.primaryColor.withValues(alpha: 0.1),
         ),
       ),
       doneStyle: ButtonStyle(
         foregroundColor: WidgetStateProperty.all(AppColors.primaryColor),
         backgroundColor: WidgetStateProperty.all(
-          AppColors.primaryColor.withOpacity(0.1),
+          AppColors.primaryColor.withValues(alpha: 0.1),
         ),
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
@@ -80,7 +80,7 @@ class WelcomeScreen extends StatelessWidget {
       nextStyle: ButtonStyle(
         foregroundColor: WidgetStateProperty.all(AppColors.primaryColor),
         backgroundColor: WidgetStateProperty.all(
-          AppColors.primaryColor.withOpacity(0.1),
+          AppColors.primaryColor.withValues(alpha: 0.1),
         ),
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
@@ -145,7 +145,7 @@ class WelcomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.1),
+            color: AppColors.primaryColor.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

@@ -23,7 +23,7 @@
 //             gradient: LinearGradient(
 //               begin: Alignment.topLeft,
 //               end: Alignment.bottomRight,
-//               colors: [Colors.blueGrey, Colors.blueGrey.withOpacity(0.2)],
+//               colors: [Colors.blueGrey, Colors.blueGrey.withValues(alpha: 0.2)],
 //             ),
 //           ),
 //         ),

@@ -129,7 +129,7 @@ class _SearchAuctionsScreenState extends State<SearchAuctionsScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           spreadRadius: 0,
                           blurRadius: 10,
                           offset: const Offset(0, 3),
@@ -201,7 +201,7 @@ class _SearchAuctionsScreenState extends State<SearchAuctionsScreen> {
                               }
                             },
                             backgroundColor: AppColors.surfaceColor,
-                            selectedColor: AppColors.primaryColor.withOpacity(
+                            selectedColor: AppColors.primaryColor.withValues(alpha: 
                               0.1,
                             ),
                             labelStyle: GoogleFonts.poppins(
@@ -366,7 +366,7 @@ class _SearchAuctionsScreenState extends State<SearchAuctionsScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               spreadRadius: 0,
               blurRadius: 8,
               offset: const Offset(0, 4),
@@ -449,7 +449,7 @@ class _SearchAuctionsScreenState extends State<SearchAuctionsScreen> {
                           decoration: BoxDecoration(
                             color: AuctionsHelper.getStatusColor(
                               auction.status,
-                            ).withOpacity(0.1),
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(

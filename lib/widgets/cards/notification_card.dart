@@ -255,7 +255,7 @@ class NotificationCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -291,7 +291,7 @@ class NotificationCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: notificationColor.withOpacity(0.1),
+                      color: notificationColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
@@ -338,7 +338,7 @@ class NotificationCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: notificationColor.withOpacity(0.1),
+                            color: notificationColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -371,13 +371,13 @@ class NotificationCard extends StatelessWidget {
                             Icon(
                               Icons.access_time_rounded,
                               size: 12,
-                              color: AppColors.subtextColor.withOpacity(0.7),
+                              color: AppColors.subtextColor.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _formatDate(notification.createdAt),
                               style: GoogleFonts.poppins(
-                                color: AppColors.subtextColor.withOpacity(0.7),
+                                color: AppColors.subtextColor.withValues(alpha: 0.7),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -386,7 +386,7 @@ class NotificationCard extends StatelessWidget {
                             Text(
                               '•',
                               style: GoogleFonts.poppins(
-                                color: AppColors.subtextColor.withOpacity(0.7),
+                                color: AppColors.subtextColor.withValues(alpha: 0.7),
                                 fontSize: 11,
                               ),
                             ),
@@ -394,7 +394,7 @@ class NotificationCard extends StatelessWidget {
                             Text(
                               _formatTime(notification.createdAt),
                               style: GoogleFonts.poppins(
-                                color: AppColors.subtextColor.withOpacity(0.7),
+                                color: AppColors.subtextColor.withValues(alpha: 0.7),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -414,7 +414,7 @@ class NotificationCard extends StatelessWidget {
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: notificationColor.withOpacity(0.1),
+                                  color: notificationColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
@@ -452,7 +452,7 @@ class NotificationCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.1),
+                            color: AppColors.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(

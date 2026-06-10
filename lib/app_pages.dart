@@ -306,10 +306,16 @@ class AppPages {
       name: RoutesHelper.CreatePaymentScreen,
       page: () {
         final arguments = Get.arguments as Map<String, dynamic>;
+        // Support both 'amount'/'totalDue' and 'charges'/'chargesData' key names
+        final amount = (arguments['amount'] as num?)?.toDouble() ??
+            (arguments['totalDue'] as num?)?.toDouble();
+        final chargesData =
+            arguments['charges'] as Map<String, dynamic>? ??
+            arguments['chargesData'] as Map<String, dynamic>?;
         return CreatePaymentScreen(
           loanId: arguments['loanId'] ?? '',
-          initialAmount: (arguments['amount'] as num?)?.toDouble(),
-          chargesData: arguments['charges'],
+          initialAmount: amount,
+          chargesData: chargesData,
         );
       },
       transition: Transition.fadeIn,

@@ -24,7 +24,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   String? _statusMessage;
   Timer? _pollingTimer;
   int _pollingAttempts = 0;
-  final int _maxPollingAttempts = 30;
+  final int _maxPollingAttempts = 12; // 12 × 5 s = 60 s
   // In PaymentProcessingScreen initState
 
   // In payment_processing_screen.dart - Add validation in initState
@@ -61,8 +61,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   }
 
   void _startAutoPolling() {
-    // Start checking payment status every 3 seconds
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    // Check payment status every 5 seconds for up to 60 seconds
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_pollingAttempts >= _maxPollingAttempts) {
         timer.cancel();
         setState(() {
@@ -144,7 +144,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     try {
       final Uri uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
       } else {
         BidPaymentHelper.showError('Could not open payment page');
       }
@@ -259,7 +259,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: RealTimeColors.primaryGreen.withOpacity(0.1),
+                          color: RealTimeColors.primaryGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: RealTimeColors.primaryGreen,
@@ -359,7 +359,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: RealTimeColors.warning.withOpacity(0.1),
+                          color: RealTimeColors.warning.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: RealTimeColors.warning),
                         ),
@@ -399,7 +399,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
+                                  color: AppColors.primaryColor.withValues(alpha: 
                                     0.1,
                                   ),
                                   borderRadius: BorderRadius.circular(8),

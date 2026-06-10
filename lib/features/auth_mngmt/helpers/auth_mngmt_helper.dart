@@ -106,7 +106,13 @@ class AuthHelper {
         Get.offNamed(RoutesHelper.main_home_page);
         return true;
       } else {
-        _showErrorDialog(_authController.errorMessage.value);
+        final errMsg = _authController.errorMessage.value;
+        if (errMsg == 'EMAIL_NOT_VERIFIED') {
+          // Redirect to email verification without showing an error
+          Get.offNamed(RoutesHelper.EmailVerificationScreen, arguments: email);
+        } else {
+          _showErrorDialog(errMsg);
+        }
         return false;
       }
     } catch (e) {

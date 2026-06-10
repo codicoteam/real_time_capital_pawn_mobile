@@ -21,17 +21,27 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollCtrl = ScrollController();
   String _myUserId = '';
   bool _typingDebounce = false;
+  Worker? _messagesWorker;
 
   @override
   void initState() {
     super.initState();
     _ctrl = Get.find<ChatController>();
     _loadUserId();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+
+    // Two nested callbacks: first frame builds the list, second frame
+    // has the correct maxScrollExtent after layout is complete.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom(instant: true);
+      });
+    });
 
     // Scroll to bottom when new messages arrive
-    ever(_ctrl.messages, (_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    _messagesWorker = ever(_ctrl.messages, (_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom();
+      });
     });
   }
 
@@ -40,10 +50,14 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) setState(() => _myUserId = id ?? '');
   }
 
-  void _scrollToBottom() {
-    if (_scrollCtrl.hasClients) {
+  void _scrollToBottom({bool instant = false}) {
+    if (!_scrollCtrl.hasClients) return;
+    final max = _scrollCtrl.position.maxScrollExtent;
+    if (instant) {
+      _scrollCtrl.jumpTo(max);
+    } else {
       _scrollCtrl.animateTo(
-        _scrollCtrl.position.maxScrollExtent,
+        max,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
@@ -72,6 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _messagesWorker?.dispose();
     _input.dispose();
     _scrollCtrl.dispose();
     _ctrl.leaveCurrentConversation();
@@ -344,7 +359,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -389,7 +404,7 @@ class _MessageBubble extends StatelessWidget {
           fontSize: 13,
           fontStyle: FontStyle.italic,
           color: (isMine ? Colors.white : AppColors.textColor)
-              .withOpacity(0.6),
+              .withValues(alpha: 0.6),
         ),
       );
     }
@@ -409,7 +424,7 @@ class _MessageBubble extends StatelessWidget {
                         width: 180,
                         height: 180,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, __, e) => Container(
                           width: 180,
                           height: 80,
                           color: AppColors.cardColor,
@@ -489,7 +504,7 @@ class _SmallAvatar extends StatelessWidget {
     final initials = participant?.initials ?? '?';
     return CircleAvatar(
       radius: 20,
-      backgroundColor: AppColors.primaryColor.withOpacity(0.12),
+      backgroundColor: AppColors.primaryColor.withValues(alpha: 0.12),
       backgroundImage: url != null ? NetworkImage(url) : null,
       child: url == null
           ? Text(

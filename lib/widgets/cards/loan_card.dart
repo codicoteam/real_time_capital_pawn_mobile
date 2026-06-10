@@ -88,17 +88,17 @@ class LoanCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.primaryColor.withOpacity(0.3),
+            color: AppColors.primaryColor.withValues(alpha: 0.3),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryColor.withOpacity(0.08),
+              color: AppColors.primaryColor.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -118,8 +118,8 @@ class LoanCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.primaryColor.withOpacity(0.05),
-                        AppColors.primaryColor.withOpacity(0.0),
+                        AppColors.primaryColor.withValues(alpha: 0.05),
+                        AppColors.primaryColor.withValues(alpha: 0.0),
                       ],
                     ),
                   ),
@@ -142,7 +142,7 @@ class LoanCard extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(0.1),
+                                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -179,9 +179,9 @@ class LoanCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.borderColor.withOpacity(0.1),
+                            AppColors.borderColor.withValues(alpha: 0.1),
                             AppColors.borderColor,
-                            AppColors.borderColor.withOpacity(0.1),
+                            AppColors.borderColor.withValues(alpha: 0.1),
                           ],
                         ),
                       ),
@@ -194,7 +194,7 @@ class LoanCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.08),
+                            color: AppColors.primaryColor.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -248,11 +248,11 @@ class LoanCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: _getCategoryColor(loan.collateralCategory)
-                                  .withOpacity(0.08),
+                                  .withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: _getCategoryColor(loan.collateralCategory)
-                                    .withOpacity(0.2),
+                                    .withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
@@ -326,13 +326,13 @@ class LoanCard extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            AppColors.primaryColor.withOpacity(0.12),
-                            AppColors.primaryColor.withOpacity(0.05),
+                            AppColors.primaryColor.withValues(alpha: 0.12),
+                            AppColors.primaryColor.withValues(alpha: 0.05),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.25),
+                          color: AppColors.primaryColor.withValues(alpha: 0.25),
                           width: 1.5,
                         ),
                       ),
@@ -430,7 +430,7 @@ class LoanCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryColor.withOpacity(0.15),
+                              color: AppColors.primaryColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -462,7 +462,7 @@ class LoanCard extends StatelessWidget {
         .shimmer(
           delay: (index * 100 + 1000).ms,
           duration: 1800.ms,
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha: 0.3),
         );
   }
 
@@ -524,7 +524,7 @@ class LoanCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: textColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: textColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

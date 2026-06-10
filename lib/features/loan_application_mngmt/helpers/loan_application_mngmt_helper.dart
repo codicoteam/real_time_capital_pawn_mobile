@@ -141,7 +141,7 @@ class LoanApplicationHelper {
     Get.snackbar(
       'Success',
       message,
-      backgroundColor: AppColors.successColor.withOpacity(0.1),
+      backgroundColor: AppColors.successColor.withValues(alpha: 0.1),
       colorText: AppColors.successColor,
       icon: Icon(Icons.check_circle, color: AppColors.successColor),
       snackPosition: SnackPosition.TOP,

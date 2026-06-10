@@ -317,12 +317,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.85),
+                    AppColors.primaryColor.withValues(alpha: 0.85),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryColor.withOpacity(0.3),
+                    color: AppColors.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -358,10 +358,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                         6.28318,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.3),
+                                          color: Colors.white.withValues(alpha: 0.3),
                                           width: 1.5,
                                         ),
                                       ),
@@ -380,10 +380,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                               const SizedBox(width: 12),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
+                                    color: Colors.white.withValues(alpha: 0.3),
                                     width: 1.5,
                                   ),
                                 ),
@@ -426,7 +426,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                         Text(
                               'You have ${_controller.unreadCount.value} unread notifications',
                               style: GoogleFonts.poppins(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -455,7 +455,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           border: Border.all(color: AppColors.borderColor, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryColor.withOpacity(0.08),
+              color: AppColors.primaryColor.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -555,7 +555,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.3),
+                        color: AppColors.primaryColor.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -604,7 +604,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: AppColors.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -678,7 +678,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.errorColor.withOpacity(0.1),
+                  color: AppColors.errorColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -744,7 +744,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

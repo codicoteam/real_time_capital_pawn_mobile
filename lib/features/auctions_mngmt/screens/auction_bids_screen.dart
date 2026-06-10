@@ -106,10 +106,10 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: RealTimeColors.success.withOpacity(0.1),
+                    color: RealTimeColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: RealTimeColors.success.withOpacity(0.3),
+                      color: RealTimeColors.success.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -216,7 +216,7 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.1),
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -309,7 +309,7 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: isWinning
                               ? Border.all(
-                                  color: RealTimeColors.success.withOpacity(
+                                  color: RealTimeColors.success.withValues(alpha: 
                                     0.3,
                                   ),
                                   width: 2,
@@ -317,7 +317,7 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                               : null,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               spreadRadius: 0,
                               blurRadius: 8,
                               offset: const Offset(0, 4),
@@ -369,11 +369,11 @@ class _AuctionBidsScreenState extends State<AuctionBidsScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: RealTimeColors.success
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
                                           color: RealTimeColors.success
-                                              .withOpacity(0.3),
+                                              .withValues(alpha: 0.3),
                                         ),
                                       ),
                                       child: Row(

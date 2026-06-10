@@ -378,7 +378,7 @@ class _KYCModalState extends State<KYCModal> {
         colorText: Colors.white,
       );
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

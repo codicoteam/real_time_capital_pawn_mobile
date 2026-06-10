@@ -459,7 +459,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.4)],
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.4)],
               ),
             ),
           ),
@@ -478,7 +478,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -513,7 +513,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
                     borderRadius: BorderRadius.circular(4),
                     color: _currentImageIndex == index
                         ? AppColors.primaryColor
-                        : Colors.white.withOpacity(0.5),
+                        : Colors.white.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -543,7 +543,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -581,12 +581,12 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            RealTimeColors.success.withOpacity(0.15),
-            RealTimeColors.success.withOpacity(0.05),
+            RealTimeColors.success.withValues(alpha: 0.15),
+            RealTimeColors.success.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: RealTimeColors.success.withOpacity(0.3)),
+        border: Border.all(color: RealTimeColors.success.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -994,7 +994,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
         border: Border(top: BorderSide(color: AppColors.borderColor)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, -5),
@@ -1021,7 +1021,7 @@ class _AuctionDetailsScreenState extends State<AuctionDetailsScreen> {
           ? Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: RealTimeColors.error.withOpacity(0.1),
+                color: RealTimeColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(

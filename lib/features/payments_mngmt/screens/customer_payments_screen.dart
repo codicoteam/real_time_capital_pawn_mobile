@@ -367,7 +367,7 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen>
                     decoration: BoxDecoration(
                       color: _getStatusColor(
                         payment.paymentStatus,
-                      ).withOpacity(0.1),
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -508,12 +508,12 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen>
                                   end: Alignment.bottomRight,
                                   colors: [
                                     AppColors.primaryColor,
-                                    AppColors.primaryColor.withOpacity(0.7),
+                                    AppColors.primaryColor.withValues(alpha: 0.7),
                                   ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primaryColor.withOpacity(
+                                    color: AppColors.primaryColor.withValues(alpha: 
                                       0.3,
                                     ),
                                     blurRadius: 20,
@@ -530,7 +530,7 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen>
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.white.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -647,10 +647,10 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen>
                     // Back button
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
@@ -668,10 +668,10 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen>
                     if (!_isRefreshing)
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                         ),
@@ -689,7 +689,7 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen>
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: const Center(

@@ -321,7 +321,7 @@ class ProfileMngmtHelper {
   static void showLoading(String message) {
     _loadingOverlay = OverlayEntry(
       builder: (context) => Material(
-        color: Colors.black.withOpacity(0.5),
+        color: Colors.black.withValues(alpha: 0.5),
         child: Center(
           child: Container(
             padding: const EdgeInsets.all(24),

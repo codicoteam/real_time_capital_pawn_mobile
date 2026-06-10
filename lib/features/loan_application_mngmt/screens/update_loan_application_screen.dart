@@ -179,7 +179,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                 color: AppColors.backgroundColor,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, -5),
                   ),
@@ -316,7 +316,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -330,7 +330,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -392,7 +392,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -406,7 +406,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -477,7 +477,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -491,7 +491,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -716,7 +716,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -730,7 +730,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -819,7 +819,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             color: isSelected
-                                ? Colors.white.withOpacity(0.85)
+                                ? Colors.white.withValues(alpha: 0.85)
                                 : AppColors.subtextColor,
                           ),
                         ),
@@ -848,7 +848,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -862,7 +862,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -894,7 +894,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.1),
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -966,7 +966,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                             border: Border.all(color: AppColors.borderColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -1033,7 +1033,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                                       child: Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
+                                          color: Colors.black.withValues(alpha: 0.7),
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: Colors.white,
@@ -1093,7 +1093,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                             border: Border.all(color: AppColors.borderColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -1135,7 +1135,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                                       child: Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
+                                          color: Colors.black.withValues(alpha: 0.7),
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: Colors.white,
@@ -1176,7 +1176,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                       Icon(
                         Icons.photo_library,
                         size: 64,
-                        color: AppColors.subtextColor.withOpacity(0.5),
+                        color: AppColors.subtextColor.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -1200,7 +1200,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryColor.withOpacity(0.1),
+                              color: AppColors.primaryColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -1246,7 +1246,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -1260,7 +1260,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1402,7 +1402,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
         duration: 200.ms,
         padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : AppColors.surfaceColor,
+          color: isSelected ? color.withValues(alpha: 0.1) : AppColors.surfaceColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : AppColors.borderColor,
@@ -1411,7 +1411,7 @@ class UpdateLoanApplicationScreen extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

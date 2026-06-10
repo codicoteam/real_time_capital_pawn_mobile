@@ -50,6 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _checkAuthAndLoadProfile() async {
+    if (!mounted) return;
     setState(() {
       isLoading = true;
       hasError = false;
@@ -59,20 +60,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final token = await CacheUtils.checkToken();
       if (token == null || token.isEmpty) {
-        Get.offAllNamed('/login');
+        if (mounted) Get.offAllNamed('/login');
         return;
       }
 
       await _loadProfile();
     } catch (e) {
-      setState(() {
-        hasError = true;
-        errorMessage = 'Authentication error: $e';
-      });
+      if (mounted) {
+        setState(() {
+          hasError = true;
+          errorMessage = 'Authentication error: $e';
+        });
+      }
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -80,24 +85,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final success = await ProfileMngmtHelper.fetchUserProfile();
 
+      if (!mounted) return;
       if (success && _profileController.userProfile.value != null) {
         if (Get.isRegistered<LoanController>()) {
           final loanController = Get.find<LoanController>();
           await loanController.fetchCustomerLoans();
         }
       } else {
-        setState(() {
-          hasError = true;
-          errorMessage = _profileController.errorMessage.value.isNotEmpty
-              ? _profileController.errorMessage.value
-              : 'Failed to load profile';
-        });
+        if (mounted) {
+          setState(() {
+            hasError = true;
+            errorMessage = _profileController.errorMessage.value.isNotEmpty
+                ? _profileController.errorMessage.value
+                : 'Failed to load profile';
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        hasError = true;
-        errorMessage = 'An error occurred: $e';
-      });
+      if (mounted) {
+        setState(() {
+          hasError = true;
+          errorMessage = 'An error occurred: $e';
+        });
+      }
     }
   }
 
@@ -597,7 +607,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: statusColor.withOpacity(0.3)),
+          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -606,7 +616,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(statusIcon, color: statusColor, size: 24),
@@ -754,7 +764,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.1),
+                            color: AppColors.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -841,7 +851,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -862,7 +872,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
@@ -879,7 +889,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.2),
+                                  color: Colors.green.withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -916,7 +926,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 10,
                                       ),
                                     ],
@@ -924,7 +934,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: CircleAvatar(
                                     radius: 50,
                                     backgroundColor: AppColors.primaryColor
-                                        .withOpacity(0.1),
+                                        .withValues(alpha: 0.1),
                                     backgroundImage:
                                         user.profilePicUrl != null &&
                                             user.profilePicUrl!.isNotEmpty

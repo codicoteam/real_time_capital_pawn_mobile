@@ -17,7 +17,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController emailController = TextEditingController();
-  final bool _isLoading = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -93,7 +93,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             spreadRadius: 0,
                             blurRadius: 20,
                             offset: const Offset(0, 10),
@@ -131,7 +131,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
+                                      color: Colors.black.withValues(alpha: 0.03),
                                       spreadRadius: 0,
                                       blurRadius: 10,
                                       offset: const Offset(0, 5),
@@ -142,11 +142,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   color: Colors.transparent,
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(12),
-                                    onTap: () async {
-                                      await AuthHelper.validateAndSubmitForgotPassword(
-                                        email: emailController.text,
-                                      );
-                                    },
+                                    onTap: _isLoading
+                                        ? null
+                                        : () async {
+                                            if (mounted) setState(() => _isLoading = true);
+                                            await AuthHelper.validateAndSubmitForgotPassword(
+                                              email: emailController.text,
+                                            );
+                                            if (mounted) setState(() => _isLoading = false);
+                                          },
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 16,
@@ -221,10 +225,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.1),
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.2),
+                          color: AppColors.primaryColor.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),

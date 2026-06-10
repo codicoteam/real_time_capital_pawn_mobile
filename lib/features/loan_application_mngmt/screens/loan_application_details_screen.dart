@@ -260,7 +260,7 @@ class _LoanApplicationDetailsScreenState
                       .shimmer(
                         delay: 2000.ms,
                         duration: 1500.ms,
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
             )
           : null,
@@ -316,7 +316,7 @@ class _LoanApplicationDetailsScreenState
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.7),
+                    AppColors.primaryColor.withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -328,7 +328,7 @@ class _LoanApplicationDetailsScreenState
                 width: 150,
                 height: 150,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -340,7 +340,7 @@ class _LoanApplicationDetailsScreenState
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -365,19 +365,19 @@ class _LoanApplicationDetailsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withOpacity(0.15),
+            color: statusColor.withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(color: statusColor.withOpacity(0.2), width: 1),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(statusIcon, color: statusColor, size: 28),
@@ -430,13 +430,13 @@ class _LoanApplicationDetailsScreenState
           end: Alignment.bottomRight,
           colors: [
             AppColors.primaryColor,
-            AppColors.primaryColor.withOpacity(0.85),
+            AppColors.primaryColor.withValues(alpha: 0.85),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.3),
+            color: AppColors.primaryColor.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -450,7 +450,7 @@ class _LoanApplicationDetailsScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -463,7 +463,7 @@ class _LoanApplicationDetailsScreenState
               Text(
                 'Requested Amount',
                 style: GoogleFonts.poppins(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -498,7 +498,7 @@ class _LoanApplicationDetailsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -512,7 +512,7 @@ class _LoanApplicationDetailsScreenState
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -605,7 +605,7 @@ class _LoanApplicationDetailsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -619,7 +619,7 @@ class _LoanApplicationDetailsScreenState
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -852,7 +852,7 @@ class _LoanApplicationDetailsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -866,7 +866,7 @@ class _LoanApplicationDetailsScreenState
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -962,13 +962,13 @@ class _LoanApplicationDetailsScreenState
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: debtorCheck.matched == true
-            ? AppColors.errorColor.withOpacity(0.05)
-            : AppColors.successColor.withOpacity(0.05),
+            ? AppColors.errorColor.withValues(alpha: 0.05)
+            : AppColors.successColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: debtorCheck.matched == true
-              ? AppColors.errorColor.withOpacity(0.3)
-              : AppColors.successColor.withOpacity(0.3),
+              ? AppColors.errorColor.withValues(alpha: 0.3)
+              : AppColors.successColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -978,8 +978,8 @@ class _LoanApplicationDetailsScreenState
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: debtorCheck.matched == true
-                  ? AppColors.errorColor.withOpacity(0.1)
-                  : AppColors.successColor.withOpacity(0.1),
+                  ? AppColors.errorColor.withValues(alpha: 0.1)
+                  : AppColors.successColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1052,7 +1052,7 @@ class _LoanApplicationDetailsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -1066,7 +1066,7 @@ class _LoanApplicationDetailsScreenState
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1146,7 +1146,7 @@ class _LoanApplicationDetailsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -1160,7 +1160,7 @@ class _LoanApplicationDetailsScreenState
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1279,7 +1279,7 @@ class _LoanApplicationDetailsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -1293,7 +1293,7 @@ class _LoanApplicationDetailsScreenState
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(

@@ -295,12 +295,12 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor.withValues(alpha: 0.8),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryColor.withOpacity(0.3),
+                    color: AppColors.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -326,10 +326,10 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
                           .slideX(begin: -0.3, end: 0),
                       Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                                 width: 1.5,
                               ),
                             ),
@@ -370,7 +370,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
                         Text(
                               '${_getFilteredApplications().length} Applications',
                               style: GoogleFonts.poppins(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -402,14 +402,14 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
                             .shimmer(
                               delay: 800.ms,
                               duration: 1500.ms,
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                             ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                         'Total Requested Amount',
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
@@ -437,7 +437,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
           border: Border.all(color: AppColors.borderColor, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryColor.withOpacity(0.08),
+              color: AppColors.primaryColor.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -638,7 +638,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.3),
+                        color: AppColors.primaryColor.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -702,7 +702,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.3),
+                        color: AppColors.primaryColor.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -783,7 +783,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
           Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.errorColor.withOpacity(0.1),
+                  color: AppColors.errorColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -846,7 +846,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
           Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -919,7 +919,7 @@ class _LoanApplicationsListScreenState extends State<LoanApplicationsListScreen>
                     .shimmer(
                       delay: 2000.ms,
                       duration: 1500.ms,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
           );
         },

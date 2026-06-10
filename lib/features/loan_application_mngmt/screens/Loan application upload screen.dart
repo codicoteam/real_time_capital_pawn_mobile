@@ -73,7 +73,7 @@ class _LoanApplicationUploadScreenState
                       padding: const EdgeInsets.all(30),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.successColor.withOpacity(0.1),
+                        color: AppColors.successColor.withValues(alpha: 0.1),
                       ),
                       child: Icon(
                         Icons.check_circle,
@@ -121,7 +121,7 @@ class _LoanApplicationUploadScreenState
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 20,
                             offset: const Offset(0, 4),
                           ),
@@ -134,7 +134,7 @@ class _LoanApplicationUploadScreenState
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
+                                  color: AppColors.primaryColor.withValues(alpha: 
                                     0.1,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -177,7 +177,7 @@ class _LoanApplicationUploadScreenState
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
+                                  color: AppColors.primaryColor.withValues(alpha: 
                                     0.1,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -220,7 +220,7 @@ class _LoanApplicationUploadScreenState
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.successColor.withOpacity(
+                                  color: AppColors.successColor.withValues(alpha: 
                                     0.1,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -251,7 +251,7 @@ class _LoanApplicationUploadScreenState
                                       ),
                                       decoration: BoxDecoration(
                                         color: AppColors.successColor
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
@@ -278,10 +278,10 @@ class _LoanApplicationUploadScreenState
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.05),
+                        color: AppColors.primaryColor.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.2),
+                          color: AppColors.primaryColor.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -344,7 +344,7 @@ class _LoanApplicationUploadScreenState
                 color: AppColors.backgroundColor,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, -5),
                   ),
@@ -438,7 +438,7 @@ class _LoanApplicationUploadScreenState
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: AppColors.primaryColor.withOpacity(0.1),
+            color: AppColors.primaryColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Center(

@@ -314,7 +314,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -421,9 +421,9 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Center(
             child: Text(
@@ -455,18 +455,18 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primaryColor.withOpacity(0.15),
+          color: AppColors.primaryColor.withValues(alpha: 0.15),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.08),
+            color: AppColors.primaryColor.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 6),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -519,12 +519,12 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                                   end: Alignment.bottomRight,
                                   colors: [
                                     AppColors.primaryColor,
-                                    AppColors.primaryColor.withOpacity(0.7),
+                                    AppColors.primaryColor.withValues(alpha: 0.7),
                                   ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primaryColor.withOpacity(
+                                    color: AppColors.primaryColor.withValues(alpha: 
                                       0.3,
                                     ),
                                     blurRadius: 20,
@@ -541,7 +541,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.white.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -681,7 +681,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                                     },
                                     backgroundColor: AppColors.surfaceColor,
                                     selectedColor: AppColors.primaryColor
-                                        .withOpacity(0.1),
+                                        .withValues(alpha: 0.1),
                                     labelStyle: GoogleFonts.poppins(
                                       color: _activeStatusFilter == status
                                           ? AppColors.primaryColor
@@ -801,10 +801,10 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
@@ -821,10 +821,10 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                     Container(
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
@@ -843,10 +843,10 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                     if (!_isRefreshing)
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                         ),
@@ -864,7 +864,7 @@ class _MyBidPaymentsScreenState extends State<MyBidPaymentsScreen>
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: const Center(

@@ -34,16 +34,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // Statuses where Make Payment is disabled
-  static const Set<String> _disabledPaymentStatuses = {
-    'draft',
-    'pending_approval',
-    'approved',
-    'redeemed',
-    'defaulted',
-    'written_off',
-    'cancelled',
-  };
 
   @override
   void initState() {
@@ -92,20 +82,51 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Future<void> _refreshLoan() async {
+    if (!mounted) return;
     setState(() => _isRefreshing = true);
     try {
       final updated = await _loanController.getLoanDetails(_loan.id!);
-      if (updated != null) {
+      if (updated != null && mounted) {
         setState(() => _loan = updated);
       }
     } finally {
-      setState(() => _isRefreshing = false);
+      if (mounted) setState(() => _isRefreshing = false);
     }
   }
 
   bool get _isPaymentEnabled {
     final status = (_loan.status ?? '').toLowerCase();
-    return !_disabledPaymentStatuses.contains(status);
+    return status == 'active' || status == 'in_grace';
+  }
+
+  Future<void> _loadChargesAndNavigate() async {
+    if (_loan.id == null) return;
+    Get.dialog(
+      const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      ),
+      barrierDismissible: false,
+    );
+    try {
+      final charges = await _loanController.calculateLoanCharges(_loan.id!);
+      if (Get.isDialogOpen == true) Get.back();
+      final totalDue = (charges?['total_due'] as num?)?.toDouble() ??
+          (charges?['principal'] as num?)?.toDouble() ??
+          0.0;
+      Get.toNamed(
+        RoutesHelper.CreatePaymentScreen,
+        arguments: {
+          'loanId': _loan.id,
+          'loanNo': _loan.loanNo,
+          'amount': totalDue,    // use 'amount' key the router reads
+          'charges': charges,    // use 'charges' key the router reads
+        },
+      );
+    } catch (e) {
+      if (Get.isDialogOpen == true) Get.back();
+      Get.snackbar('Error', 'Failed to load loan charges',
+          backgroundColor: RealTimeColors.error, colorText: Colors.white);
+    }
   }
 
   Color _getStatusColor(String status) {
@@ -233,6 +254,8 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                               children: [
                                 const SizedBox(height: 16),
                                 _buildQuickStats(),
+                                const SizedBox(height: 12),
+                                _buildPenaltyBanner(),
                                 const SizedBox(height: 20),
                                 _buildQuickActions(),
                                 const SizedBox(height: 20),
@@ -316,9 +339,9 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
           margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.12),
+            color: statusColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: statusColor.withOpacity(0.4)),
+            border: Border.all(color: statusColor.withValues(alpha: 0.4)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -341,6 +364,206 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     );
   }
 
+  Widget _buildPenaltyBanner() {
+    final status         = (_loan.status ?? '').toLowerCase();
+    final bd             = _loan.repaymentBreakdown;
+    final penaltyApplied = bd != null && bd['penalty_applied'] == true;
+    final graceDays      = _loan.graceDays ?? 7;
+    final penaltyPct     = (bd?['penalty_percent'] as num?)?.toDouble()
+        ?? _loan.penaltyPercent?.toDouble()
+        ?? 10.0;
+
+    // Resolve state → accent colour, icon, title, notice text
+    final Color accent;
+    final IconData headerIcon;
+    final String headerTitle;
+    final String noticeText;
+
+    if (status == 'auction') {
+      accent      = RealTimeColors.error;
+      headerIcon  = Icons.gavel_rounded;
+      headerTitle = 'Asset Listed for Auction';
+      noticeText  = 'Your collateral has been listed for public auction because the '
+          '$graceDays-day grace period expired without full repayment. '
+          'Contact us immediately to discuss redemption options.';
+    } else if (status == 'in_grace' || penaltyApplied) {
+      accent      = RealTimeColors.error;
+      headerIcon  = Icons.warning_amber_rounded;
+      headerTitle = 'Grace Period Active — Act Now';
+      final penaltyAmount = (bd?['penalty_amount'] as num?)?.toDouble() ?? 0.0;
+      int daysRemaining = graceDays;
+      final due = _loan.dueDate;
+      if (due != null) {
+        daysRemaining = due
+            .add(Duration(days: graceDays))
+            .difference(DateTime.now())
+            .inDays
+            .clamp(0, graceDays);
+      }
+      noticeText = 'A ${penaltyPct.toStringAsFixed(0)}% late penalty of '
+          '${_formatCurrency(penaltyAmount)} has been added to your balance. '
+          'You have $daysRemaining day${daysRemaining == 1 ? '' : 's'} remaining '
+          'in the $graceDays-day grace period. After that, your asset is automatically auctioned.';
+    } else if (status == 'active' || status == 'overdue') {
+      accent      = RealTimeColors.warning;
+      headerIcon  = Icons.info_outline_rounded;
+      headerTitle = 'Grace Period & Penalty Policy';
+      noticeText  = 'If not repaid by the due date, a $graceDays-day grace period begins and '
+          'a ${penaltyPct.toStringAsFixed(0)}% penalty is immediately added to your outstanding balance. '
+          'If not cleared within those $graceDays days, your collateral is automatically listed for auction.';
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    // Extra rows for in-grace state
+    final bool showGraceRows = (status == 'in_grace' || penaltyApplied);
+    final penaltyAmount  = (bd?['penalty_amount'] as num?)?.toDouble() ?? 0.0;
+    final balanceBefore  = (bd?['balance_before_penalty'] as num?)?.toDouble()
+        ?? (_loan.currentBalance ?? 0.0) - penaltyAmount;
+    final totalNow       = _loan.currentBalance ?? 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(headerIcon, size: 19, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  headerTitle,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Notice box
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: accent.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_rounded, size: 15, color: accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    noticeText,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.textColor,
+                      height: 1.55,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Stat rows — always shown
+          _penaltyStat(Icons.hourglass_bottom_rounded, 'Grace Period',
+              '$graceDays days after due date', accent),
+          _penaltyStat(Icons.percent_rounded, 'Penalty Rate',
+              '${penaltyPct.toStringAsFixed(0)}% of outstanding balance', accent),
+
+          if (showGraceRows) ...[
+            _penaltyStat(Icons.monetization_on_rounded, 'Balance Before Penalty',
+                _formatCurrency(balanceBefore), AppColors.subtextColor),
+            _penaltyStat(Icons.add_circle_outline_rounded, 'Penalty Added',
+                '+ ${_formatCurrency(penaltyAmount)}', RealTimeColors.error, bold: true),
+            _penaltyStat(Icons.account_balance_wallet_rounded, 'Total to Pay Now',
+                _formatCurrency(totalNow), accent, bold: true),
+          ],
+
+          _penaltyStat(
+            Icons.check_circle_outline_rounded,
+            'Penalty Status',
+            penaltyApplied
+                ? 'Applied to balance'
+                : (status == 'overdue')
+                    ? 'Due — not yet processed'
+                    : 'Not yet applied',
+            penaltyApplied
+                ? RealTimeColors.error
+                : (status == 'overdue')
+                    ? RealTimeColors.warning
+                    : RealTimeColors.success,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _penaltyStat(IconData icon, String label, String value, Color color,
+      {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 17, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(label,
+                style: GoogleFonts.poppins(
+                    fontSize: 13, color: AppColors.subtextColor)),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+              color: bold ? color : AppColors.textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuickStats() {
     final paidAmount =
         (_loan.principalAmount ?? 0) - (_loan.currentBalance ?? 0);
@@ -357,14 +580,14 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
           end: Alignment.bottomRight,
           colors: [
             AppColors.surfaceColor,
-            AppColors.surfaceColor.withOpacity(0.95),
+            AppColors.surfaceColor.withValues(alpha: 0.95),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -452,16 +675,16 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 18, color: color),
@@ -521,12 +744,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
               child: _buildActionButton(
                 icon: Icons.payments_outlined,
                 label: 'Make Payment',
-                onTap: paymentEnabled
-                    ? () => Get.toNamed(
-                          RoutesHelper.CreatePaymentScreen,
-                          arguments: {'loanId': _loan.id},
-                        )
-                    : null,
+                onTap: paymentEnabled ? _loadChargesAndNavigate : null,
                 color: const Color(0xFF22C55E),
                 isDisabled: !paymentEnabled,
                 disabledReason: disabledReason,
@@ -570,13 +788,13 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDisabled
-                ? AppColors.surfaceColor.withOpacity(0.5)
-                : effectiveColor.withOpacity(0.07),
+                ? AppColors.surfaceColor.withValues(alpha: 0.5)
+                : effectiveColor.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDisabled
                   ? AppColors.borderColor
-                  : effectiveColor.withOpacity(0.3),
+                  : effectiveColor.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -585,8 +803,8 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: isDisabled
-                      ? AppColors.borderColor.withOpacity(0.5)
-                      : effectiveColor.withOpacity(0.12),
+                      ? AppColors.borderColor.withValues(alpha: 0.5)
+                      : effectiveColor.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -636,7 +854,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
           '${_loan.interestRatePercent ?? 0}% / month',
         ),
         _buildInfoRow('Interest Period', '${_loan.interestPeriodDays ?? 0} days'),
-        _buildInfoRow('Grace Period', '${_loan.graceDays ?? 0} days'),
+        _buildInfoRow('Grace Period', '${_loan.graceDays ?? 7} days'),
         _buildInfoRow('Repayment Type', _loan.repaymentType ?? 'N/A'),
         _buildInfoRow('Currency', _loan.currency ?? 'USD'),
         _buildInfoRow('Approval Status', _loan.approvalStatus ?? 'N/A'),
@@ -647,21 +865,58 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   Widget _buildRepaymentInfo() {
-    if (_loan.payments == null || _loan.payments!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     final totalPaid = _loan.totalPaid ?? 0;
-    final expectedTotal = _loan.principalAmount ?? 0;
+    final bd = _loan.repaymentBreakdown;
+    final penaltyApplied = bd != null && bd['penalty_applied'] == true;
+    final penaltyAmount =
+        (bd?['penalty_amount'] as num?)?.toDouble() ?? 0.0;
+    final penaltyPercent = (bd?['penalty_percent'] as num?)?.toDouble()
+        ?? _loan.penaltyPercent
+        ?? 10.0;
+    final balanceBefore =
+        (bd?['balance_before_penalty'] as num?)?.toDouble()
+        ?? (_loan.currentBalance ?? 0) - penaltyAmount;
+    final expectedTotal = penaltyApplied
+        ? _loan.currentBalance ?? 0
+        : _loan.expectedTotalRepayable ?? _loan.principalAmount ?? 0;
 
     return _buildSectionCard(
       title: 'Repayment Summary',
       icon: Icons.account_balance_outlined,
       children: [
-        _buildInfoRow('Total Paid', _formatCurrency(totalPaid)),
-        _buildInfoRow('Expected Total', _formatCurrency(expectedTotal)),
-        _buildInfoRow('Payments Count', '${_loan.payments!.length}'),
-        if (_loan.payments!.isNotEmpty) ...[
+        _buildInfoRow('Principal', _formatCurrency(_loan.principalAmount)),
+        if (_loan.interestAmount != null)
+          _buildInfoRow('Interest (${_loan.interestRatePercent?.toStringAsFixed(0) ?? 0}%)',
+              _formatCurrency(_loan.interestAmount)),
+        if (_loan.storageChargeAmount != null)
+          _buildInfoRow('Storage (${_loan.storageChargePercent?.toStringAsFixed(0) ?? 0}%)',
+              _formatCurrency(_loan.storageChargeAmount)),
+        if (penaltyApplied) ...[
+          _buildInfoRow('Balance Before Penalty', _formatCurrency(balanceBefore)),
+          _buildInfoRow(
+            'Penalty (${penaltyPercent.toStringAsFixed(0)}%)',
+            '+ ${_formatCurrency(penaltyAmount)}',
+            valueColor: const Color(0xFFEF4444),
+          ),
+        ],
+        _buildInfoRow(
+          penaltyApplied ? 'Total (incl. penalty)' : 'Total to Repay',
+          _formatCurrency(expectedTotal),
+          valueColor: penaltyApplied
+              ? const Color(0xFFF87171)
+              : const Color(0xFF22C55E),
+          bold: true,
+        ),
+        _buildInfoRow('Total Paid', _formatCurrency(totalPaid),
+            valueColor: const Color(0xFF22C55E)),
+        _buildInfoRow(
+          'Outstanding Balance',
+          _formatCurrency(_loan.currentBalance),
+          valueColor: const Color(0xFFF59E0B),
+          bold: true,
+        ),
+        if (_loan.payments != null && _loan.payments!.isNotEmpty) ...[
+          _buildInfoRow('Payments Count', '${_loan.payments!.length}'),
           const SizedBox(height: 8),
           _buildSubTitle('Latest Payment'),
           const SizedBox(height: 4),
@@ -761,7 +1016,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: displayCount,
-          separatorBuilder: (_, __) => Divider(
+          separatorBuilder: (_, i) => Divider(
             height: 1,
             color: AppColors.borderColor,
           ),
@@ -775,7 +1030,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E).withOpacity(0.1),
+                      color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -881,7 +1136,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
       icon: Icons.tune_rounded,
       children: [
         _buildInfoRow('Storage Charge', '${_loan.storageChargePercent ?? 0}%'),
-        _buildInfoRow('Penalty Rate', '${_loan.penaltyPercent ?? 0}%'),
+        _buildInfoRow('Penalty Rate', '${_loan.penaltyPercent ?? 10}%'),
         _buildInfoRow('Created By', _loan.createdBy ?? 'N/A'),
         _buildInfoRow('Created Date', _formatDateTime(_loan.createdAt)),
         _buildInfoRow('Last Updated', _formatDateTime(_loan.updatedAt)),
@@ -973,7 +1228,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -989,12 +1244,12 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                   child: CachedNetworkImage(
                     imageUrl: url,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Shimmer.fromColors(
+                    placeholder: (_, url) => Shimmer.fromColors(
                       baseColor: Colors.grey[300]!,
                       highlightColor: Colors.grey[100]!,
                       child: Container(color: Colors.white),
                     ),
-                    errorWidget: (_, __, ___) => Container(
+                    errorWidget: (_, url, err) => Container(
                       color: AppColors.borderColor,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1021,7 +1276,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
+                      color: Colors.black.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Icon(Icons.zoom_in_rounded,
@@ -1042,7 +1297,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.7),
+                            Colors.black.withValues(alpha: 0.7),
                           ],
                         ),
                       ),
@@ -1106,7 +1361,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.close_rounded,
@@ -1125,7 +1380,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 7),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -1156,7 +1411,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
+                                color: Colors.black.withValues(alpha: 0.5),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -1184,7 +1439,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -1220,7 +1475,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1234,7 +1489,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Icon(icon, size: 16, color: AppColors.primaryColor),
@@ -1271,7 +1526,13 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {bool highlight = false}) {
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    bool highlight = false,
+    Color? valueColor,
+    bool bold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -1294,10 +1555,12 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
               value,
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                fontWeight: highlight ? FontWeight.w700 : FontWeight.w600,
-                color: highlight
-                    ? const Color(0xFFF59E0B)
-                    : AppColors.textColor,
+                fontWeight:
+                    (highlight || bold) ? FontWeight.w700 : FontWeight.w600,
+                color: valueColor ??
+                    (highlight
+                        ? const Color(0xFFF59E0B)
+                        : AppColors.textColor),
               ),
               textAlign: TextAlign.right,
             ),

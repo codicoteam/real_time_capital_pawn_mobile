@@ -135,8 +135,8 @@ class _AuctionsListScreenState extends State<AuctionsListScreen>
     if (!mounted) return;
     setState(() {
       _isLoadingMore = false;
-      _applyFilters();
     });
+    _applyFilters();
   }
 
   Future<void> _refreshAuctions() async {
@@ -299,7 +299,7 @@ class _AuctionsListScreenState extends State<AuctionsListScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       spreadRadius: 0,
                       blurRadius: 8,
                       offset: const Offset(0, 2),
@@ -365,7 +365,7 @@ class _AuctionsListScreenState extends State<AuctionsListScreen>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               spreadRadius: 0,
               blurRadius: 10,
               offset: const Offset(0, 3),
@@ -435,11 +435,11 @@ class _AuctionsListScreenState extends State<AuctionsListScreen>
                         _applyFilters();
                       },
                 backgroundColor: AppColors.surfaceColor,
-                selectedColor: AppColors.primaryColor.withOpacity(0.1),
-                disabledColor: AppColors.surfaceColor.withOpacity(0.5),
+                selectedColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                disabledColor: AppColors.surfaceColor.withValues(alpha: 0.5),
                 labelStyle: GoogleFonts.poppins(
                   color: isDisabled
-                      ? AppColors.subtextColor.withOpacity(0.5)
+                      ? AppColors.subtextColor.withValues(alpha: 0.5)
                       : isSelected
                       ? AppColors.primaryColor
                       : AppColors.subtextColor,
@@ -452,7 +452,7 @@ class _AuctionsListScreenState extends State<AuctionsListScreen>
                     color: isSelected
                         ? AppColors.primaryColor
                         : isDisabled
-                        ? AppColors.borderColor.withOpacity(0.3)
+                        ? AppColors.borderColor.withValues(alpha: 0.3)
                         : AppColors.borderColor,
                   ),
                 ),

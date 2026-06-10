@@ -189,7 +189,7 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  disabledBackgroundColor: AppColors.primaryColor.withOpacity(0.5),
+                  disabledBackgroundColor: AppColors.primaryColor.withValues(alpha: 0.5),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
@@ -807,7 +807,7 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -854,7 +854,7 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: enabled ? AppColors.borderColor : AppColors.borderColor.withOpacity(0.4)),
+        border: Border.all(color: enabled ? AppColors.borderColor : AppColors.borderColor.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(12),
         color: enabled ? null : AppColors.backgroundColor,
       ),
@@ -864,7 +864,7 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
         hint: Text(hint, style: GoogleFonts.poppins(color: AppColors.subtextColor, fontSize: 14)),
         decoration: InputDecoration(
           border: InputBorder.none,
-          prefixIcon: Icon(icon, color: enabled ? AppColors.subtextColor : AppColors.subtextColor.withOpacity(0.4)),
+          prefixIcon: Icon(icon, color: enabled ? AppColors.subtextColor : AppColors.subtextColor.withValues(alpha: 0.4)),
           contentPadding: const EdgeInsets.symmetric(vertical: 4),
         ),
         items: items.map((item) => DropdownMenuItem<T>(
@@ -888,7 +888,7 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primaryColor.withOpacity(0.08) : AppColors.backgroundColor,
+            color: selected ? AppColors.primaryColor.withValues(alpha: 0.08) : AppColors.backgroundColor,
             border: Border.all(
               color: selected ? AppColors.primaryColor : AppColors.borderColor,
               width: selected ? 2 : 1,
@@ -932,7 +932,7 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (hasFile ? AppColors.successColor : AppColors.primaryColor).withOpacity(0.1),
+                  color: (hasFile ? AppColors.successColor : AppColors.primaryColor).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -1072,7 +1072,7 @@ class _StepIndicator extends StatelessWidget {
                   width: isActive ? 2.5 : 1.5,
                 ),
                 boxShadow: isActive
-                    ? [BoxShadow(color: AppColors.primaryColor.withOpacity(0.3), blurRadius: 8, spreadRadius: 1)]
+                    ? [BoxShadow(color: AppColors.primaryColor.withValues(alpha: 0.3), blurRadius: 8, spreadRadius: 1)]
                     : null,
               ),
               child: Center(

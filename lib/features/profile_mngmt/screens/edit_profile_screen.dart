@@ -344,7 +344,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -380,11 +380,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
                         ),
                         child: CircleAvatar(
                           radius: 40,
-                          backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                          backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
                           backgroundImage: widget.userProfile.profilePicUrl != null
                               ? CachedNetworkImageProvider(widget.userProfile.profilePicUrl!)
                               : null,

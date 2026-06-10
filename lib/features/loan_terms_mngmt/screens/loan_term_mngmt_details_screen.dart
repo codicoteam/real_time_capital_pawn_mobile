@@ -227,7 +227,7 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(_term!.status).withOpacity(0.1),
+                        color: _getStatusColor(_term!.status).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -296,7 +296,7 @@ class _LoanTermDetailsScreenState extends State<LoanTermDetailsScreen> {
                               gradient: LinearGradient(
                                 colors: [
                                   AppColors.primaryColor,
-                                  AppColors.primaryColor.withOpacity(0.8),
+                                  AppColors.primaryColor.withValues(alpha: 0.8),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),

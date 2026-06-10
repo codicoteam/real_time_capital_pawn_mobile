@@ -213,7 +213,7 @@ class _AboutScreenState extends State<AboutScreen>
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -225,7 +225,7 @@ class _AboutScreenState extends State<AboutScreen>
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -237,7 +237,7 @@ class _AboutScreenState extends State<AboutScreen>
               height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.07),
+                color: Colors.white.withValues(alpha: 0.07),
               ),
             ),
           ),
@@ -252,15 +252,15 @@ class _AboutScreenState extends State<AboutScreen>
                       width: 90,
                       height: 90,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.35),
+                          color: Colors.white.withValues(alpha: 0.35),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -269,7 +269,7 @@ class _AboutScreenState extends State<AboutScreen>
                       child: Icon(
                         Icons.storefront_rounded,
                         size: 46,
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withValues(alpha: 0.95),
                       ),
                     )
                     .animate()
@@ -295,17 +295,17 @@ class _AboutScreenState extends State<AboutScreen>
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
                   child: Text(
                     'Your Trusted Financial Partner',
                     style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -330,7 +330,7 @@ class _AboutScreenState extends State<AboutScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: RealTimeColors.primaryGreen.withOpacity(0.1),
+            color: RealTimeColors.primaryGreen.withValues(alpha: 0.1),
             blurRadius: 20,
             spreadRadius: 0,
             offset: const Offset(0, 6),
@@ -396,7 +396,7 @@ class _AboutScreenState extends State<AboutScreen>
               'Version 1.0.0  ·  © 2025 Real Time Capital',
               style: GoogleFonts.poppins(
                 fontSize: 10,
-                color: AppColors.subtextColor.withOpacity(0.6),
+                color: AppColors.subtextColor.withValues(alpha: 0.6),
               ),
             ),
           ).animate().fadeIn(duration: 600.ms, delay: 900.ms),
@@ -414,7 +414,7 @@ class _AboutScreenState extends State<AboutScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -577,7 +577,7 @@ class _AboutScreenState extends State<AboutScreen>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -591,7 +591,7 @@ class _AboutScreenState extends State<AboutScreen>
                 width: 68,
                 padding: const EdgeInsets.symmetric(vertical: 22),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.09),
+                  color: color.withValues(alpha: 0.09),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     bottomLeft: Radius.circular(20),
@@ -602,7 +602,7 @@ class _AboutScreenState extends State<AboutScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.18),
+                        color: color.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(icon, color: color, size: 24),
@@ -658,7 +658,7 @@ class _AboutScreenState extends State<AboutScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -718,7 +718,7 @@ class _AboutScreenState extends State<AboutScreen>
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: isExpanded
-                                ? color.withOpacity(0.1)
+                                ? color.withValues(alpha: 0.1)
                                 : AppColors.backgroundColor,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
@@ -732,7 +732,7 @@ class _AboutScreenState extends State<AboutScreen>
                               Container(
                                 padding: const EdgeInsets.all(9),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.12),
+                                  color: color.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -760,7 +760,7 @@ class _AboutScreenState extends State<AboutScreen>
                                     fontSize: 10.5,
                                     color: isExpanded
                                         ? AppColors.subtextColor
-                                        : AppColors.subtextColor.withOpacity(
+                                        : AppColors.subtextColor.withValues(alpha: 
                                             0.6,
                                           ),
                                     height: 1.45,
@@ -798,7 +798,7 @@ class _AboutScreenState extends State<AboutScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: RealTimeColors.primaryGreen.withOpacity(0.35),
+            color: RealTimeColors.primaryGreen.withValues(alpha: 0.35),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -812,7 +812,7 @@ class _AboutScreenState extends State<AboutScreen>
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -837,7 +837,7 @@ class _AboutScreenState extends State<AboutScreen>
                     'We\'re here 24/7 for you',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -910,9 +910,9 @@ class _AboutScreenState extends State<AboutScreen>
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -926,7 +926,7 @@ class _AboutScreenState extends State<AboutScreen>
                   label,
                   style: GoogleFonts.poppins(
                     fontSize: 10,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
                 Text(

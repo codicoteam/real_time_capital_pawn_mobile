@@ -271,14 +271,14 @@ legal@realtimecapital.co.ke
                           width: 100,
                           height: 100,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(25),
                             border: Border.all(color: Colors.white30, width: 2),
                           ),
                           child: Icon(
                             Icons.verified_user_rounded,
                             size: 60,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         )
                         .animate()
@@ -288,7 +288,7 @@ legal@realtimecapital.co.ke
                     Text(
                           'Legal Agreement & User Terms',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
                           ),
@@ -305,7 +305,7 @@ legal@realtimecapital.co.ke
                     Text(
                       'Please read carefully before using our services',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
@@ -338,10 +338,10 @@ legal@realtimecapital.co.ke
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: section.color.withOpacity(0.1),
+                      color: section.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: section.color.withOpacity(0.3),
+                        color: section.color.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -351,7 +351,7 @@ legal@realtimecapital.co.ke
                           width: 50,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: section.color.withOpacity(0.2),
+                            color: section.color.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: section.color, width: 2),
                           ),
@@ -383,7 +383,7 @@ legal@realtimecapital.co.ke
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -417,7 +417,7 @@ legal@realtimecapital.co.ke
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: RealTimeColors.primaryGreen.withOpacity(0.1),
+              color: RealTimeColors.primaryGreen.withValues(alpha: 0.1),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),

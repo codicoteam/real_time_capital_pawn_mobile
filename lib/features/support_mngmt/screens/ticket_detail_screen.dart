@@ -232,12 +232,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                 end: Alignment.bottomRight,
                                 colors: [
                                   AppColors.primaryColor,
-                                  AppColors.primaryColor.withOpacity(0.7),
+                                  AppColors.primaryColor.withValues(alpha: 0.7),
                                 ],
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primaryColor.withOpacity(0.3),
+                                  color: AppColors.primaryColor.withValues(alpha: 0.3),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),
@@ -252,7 +252,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Icon(
@@ -269,7 +269,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                           Text(
                                             _ticket.ticketNo,
                                             style: GoogleFonts.poppins(
-                                              color: Colors.white.withOpacity(0.8),
+                                              color: Colors.white.withValues(alpha: 0.8),
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -319,7 +319,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                     width: 40,
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: statusColor.withOpacity(0.1),
+                                      color: statusColor.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -366,7 +366,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                     width: 40,
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: priorityColor.withOpacity(0.1),
+                                      color: priorityColor.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -500,7 +500,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                       Icon(
                                         Icons.attachment_outlined,
                                         size: 48,
-                                        color: AppColors.subtextColor.withOpacity(0.4),
+                                        color: AppColors.subtextColor.withValues(alpha: 0.4),
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
@@ -521,7 +521,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primaryColor.withOpacity(0.1),
+                                        color: AppColors.primaryColor.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Icon(
@@ -576,9 +576,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                     // Back button
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
@@ -590,9 +590,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                     if (!_isLoading)
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 24),
@@ -604,7 +604,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: const Center(
@@ -645,17 +645,17 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primaryColor.withOpacity(0.15),
+          color: AppColors.primaryColor.withValues(alpha: 0.15),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.08),
+            color: AppColors.primaryColor.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -692,7 +692,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                       height: 2.5,
                       decoration: BoxDecoration(
                         color: isPast
-                            ? statusColor.withOpacity(0.5)
+                            ? statusColor.withValues(alpha: 0.5)
                             : Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -705,7 +705,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
               final isCurrent = stageIndex == currentIndex;
               final nodeColor = isCurrent
                   ? statusColor
-                  : (isPast ? statusColor.withOpacity(0.55) : Colors.grey.shade300);
+                  : (isPast ? statusColor.withValues(alpha: 0.55) : Colors.grey.shade300);
               return Column(
                 children: [
                   AnimatedContainer(
@@ -715,7 +715,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                     decoration: BoxDecoration(
                       color: isCurrent
                           ? statusColor
-                          : (isPast ? statusColor.withOpacity(0.12) : Colors.white),
+                          : (isPast ? statusColor.withValues(alpha: 0.12) : Colors.white),
                       shape: BoxShape.circle,
                       border: Border.all(color: nodeColor, width: isCurrent ? 2.5 : 1.5),
                     ),
@@ -723,7 +723,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
                       child: isCurrent
                           ? Icon(_getStatusIcon(_ticket.status), size: 13, color: Colors.white)
                           : (isPast
-                              ? Icon(Icons.check_rounded, size: 12, color: statusColor.withOpacity(0.8))
+                              ? Icon(Icons.check_rounded, size: 12, color: statusColor.withValues(alpha: 0.8))
                               : null),
                     ),
                   ),
@@ -757,16 +757,16 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primaryColor.withOpacity(0.15), width: 1.5),
+        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.15), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.08),
+            color: AppColors.primaryColor.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 6),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -805,10 +805,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryColor.withOpacity(0.1), width: 1),
+        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.1), width: 1),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.05),
+            color: AppColors.primaryColor.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

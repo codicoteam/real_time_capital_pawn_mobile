@@ -75,8 +75,8 @@ class _GeneralButtonState extends State<GeneralButton>
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(widget.borderRadius ?? 24),
-              splashColor: widget.pressedColor?.withOpacity(0.5) ?? Colors.black12,
-              hoverColor: widget.hoverColor ?? Colors.black.withOpacity(0.05),
+              splashColor: widget.pressedColor?.withValues(alpha: 0.5) ?? Colors.black12,
+              hoverColor: widget.hoverColor ?? Colors.black.withValues(alpha: 0.05),
               onTap: () async {
                 _controller.reverse();
                 await Future.delayed(const Duration(milliseconds: 300));

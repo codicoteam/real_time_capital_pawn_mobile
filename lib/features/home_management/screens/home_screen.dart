@@ -28,6 +28,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   int _carouselIndex = 0;
   late AnimationController _notificationAnimationController;
   late Animation<double> _notificationScaleAnimation;
+  Worker? _notificationWorker;
 
   final List<CarouselItem> _carouselItems = [
     CarouselItem(
@@ -73,21 +74,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
     
     // Listen to unread count changes to trigger animation
-    ever(_notificationController.unreadCount, (count) {
-      if (count > 0) {
+    _notificationWorker = ever(_notificationController.unreadCount, (count) {
+      if (count > 0 && mounted) {
         _triggerNotificationAnimation();
       }
     });
   }
 
   void _triggerNotificationAnimation() {
+    if (!mounted) return;
     _notificationAnimationController.forward().then((_) {
-      _notificationAnimationController.reverse();
+      if (mounted) _notificationAnimationController.reverse();
     });
   }
 
   @override
   void dispose() {
+    _notificationWorker?.dispose();
     _notificationAnimationController.dispose();
     super.dispose();
   }
@@ -232,7 +235,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ),
         ],
       ),
-    );
+    ).then((_) => bidController.dispose());
   }
 
   @override
@@ -395,7 +398,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           'Welcome back,',
                           style: GoogleFonts.nunito(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -414,14 +417,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               Icon(
                                 Icons.phone_outlined,
                                 size: 14,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 _homeController.getUserPhone(),
                                 style: GoogleFonts.nunito(
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                 ),
                               ),
                             ],
@@ -527,7 +530,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       ],
 
                       // Latest Bid Section
-                      ...[
+                      if (_homeController.latestBid.value.isNotEmpty) ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Text(
@@ -674,7 +677,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.2),
+            color: Colors.green.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -701,10 +704,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: _homeController.kycStatusColor.withOpacity(0.2),
+            color: _homeController.kycStatusColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _homeController.kycStatusColor.withOpacity(0.5),
+              color: _homeController.kycStatusColor.withValues(alpha: 0.5),
               width: 1,
             ),
           ),
@@ -755,7 +758,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           ? [Colors.grey, Colors.grey.shade600]
                           : [
                               AppColors.primaryColor,
-                              AppColors.primaryColor.withOpacity(0.7),
+                              AppColors.primaryColor.withValues(alpha: 0.7),
                             ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -765,7 +768,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                         color: (isLoanApplication && !canApply
                                 ? Colors.grey
                                 : AppColors.primaryColor)
-                            .withOpacity(0.3),
+                            .withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -776,7 +779,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                         ),
                       ),
                       Padding(
@@ -809,7 +812,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     : item.subtitle,
                                 style: GoogleFonts.nunito(
                                   fontSize: 14,
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                 ),
                               ),
                             ),
@@ -842,7 +845,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 5,
                                         offset: const Offset(0, 2),
                                       ),
@@ -925,7 +928,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -937,7 +940,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -1007,7 +1010,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         border: Border.all(color: AppColors.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -1034,7 +1037,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -1084,7 +1087,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       vertical: 1,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -1129,7 +1132,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -1181,7 +1184,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: AppColors.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -1225,7 +1228,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     return GestureDetector(
       onTap: () {
-        Get.toNamed('/bid-details/${bid['_id']}');
+        final bidId = bid['_id'];
+        if (bidId != null) Get.toNamed('/bid-details/$bidId');
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -1235,7 +1239,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           border: Border.all(color: AppColors.borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -1246,7 +1250,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(Icons.gavel, color: AppColors.primaryColor, size: 28),
@@ -1274,8 +1278,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                         ),
                         decoration: BoxDecoration(
                           color: paymentStatus == 'paid'
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.orange.withOpacity(0.1),
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -1393,7 +1397,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           border: Border.all(color: AppColors.borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -1423,7 +1427,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -1561,7 +1565,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryColor.withOpacity(0.1),
+                          color: AppColors.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -1639,7 +1643,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           border: Border.all(color: AppColors.borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -1653,7 +1657,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: AppColors.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -1760,7 +1764,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

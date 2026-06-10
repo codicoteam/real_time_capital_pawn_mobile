@@ -164,7 +164,7 @@ class _AssetDetailsModalState extends State<AssetDetailsModal> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.primaryColor.withOpacity(0.3),
+                  color: AppColors.primaryColor.withValues(alpha: 0.3),
                   width: 2,
                 ),
                 image: DecorationImage(

@@ -92,9 +92,9 @@ class LoanApplicationModel {
       LoanApplicationModel(
         id: json["_id"],
         applicationNo: json["application_no"],
-        customerUser: json["customer_user"] == null
-            ? null
-            : CustomerUser.fromMap(json["customer_user"]),
+        customerUser: json["customer_user"] is Map
+            ? CustomerUser.fromMap(Map<String, dynamic>.from(json["customer_user"]))
+            : null,
         requestedLoanAmount: json["requested_loan_amount"]?.toDouble(),
         loanPeriodType: json["loan_period_type"],
         interestRate: json["interest_rate"]?.toDouble(),
@@ -106,9 +106,9 @@ class LoanApplicationModel {
         collateralDescription: json["collateral_description"],
         suretyDescription: json["surety_description"],
         declaredAssetValue: json["declared_asset_value"]?.toDouble(),
-        smallLoanDetails: json["small_loan_details"] == null
-            ? null
-            : SmallLoanDetails.fromMap(json["small_loan_details"]),
+        smallLoanDetails: json["small_loan_details"] is Map
+            ? SmallLoanDetails.fromMap(Map<String, dynamic>.from(json["small_loan_details"]))
+            : null,
         collateralImages: json["collateral_images"] == null
             ? []
             : List<String>.from(json["collateral_images"]!.map((x) => x)),
@@ -124,19 +124,19 @@ class LoanApplicationModel {
         loanId: json["loan_id"] is String
             ? json["loan_id"]
             : json["loan_id"]?["_id"],
-        debtorCheck: json["debtor_check"] == null
-            ? null
-            : DebtorCheck.fromMap(json["debtor_check"]),
+        debtorCheck: json["debtor_check"] is Map
+            ? DebtorCheck.fromMap(Map<String, dynamic>.from(json["debtor_check"]))
+            : null,
         customTermsAndConditions: json["custom_terms_and_conditions"],
         termsAcceptedAt: json["terms_accepted_at"] == null
             ? null
             : DateTime.parse(json["terms_accepted_at"]),
-        createdBy: json["created_by"] == null
-            ? null
-            : EdBy.fromMap(json["created_by"]),
-        submittedBy: json["submitted_by"] == null
-            ? null
-            : EdBy.fromMap(json["submitted_by"]),
+        createdBy: json["created_by"] is Map
+            ? EdBy.fromMap(Map<String, dynamic>.from(json["created_by"]))
+            : null,
+        submittedBy: json["submitted_by"] is Map
+            ? EdBy.fromMap(Map<String, dynamic>.from(json["submitted_by"]))
+            : null,
         applicationSource: json["application_source"],
         createdAt: json["created_at"] == null
             ? null
@@ -155,16 +155,16 @@ class LoanApplicationModel {
                 json["status_updates"]!.map((x) => StatusUpdate.fromMap(x)),
               ),
         v: json["__v"],
-        motorVehicleDetails: json["motor_vehicle_details"] == null
-            ? null
-            : MotorVehicleDetails.fromMap(json["motor_vehicle_details"]),
+        motorVehicleDetails: json["motor_vehicle_details"] is Map
+            ? MotorVehicleDetails.fromMap(Map<String, dynamic>.from(json["motor_vehicle_details"]))
+            : null,
         internalNotes: json["internal_notes"],
-        processedBy: json["processed_by"] == null
-            ? null
-            : EdBy.fromMap(json["processed_by"]),
-        jewelleryDetails: json["jewellery_details"] == null
-            ? null
-            : JewelleryDetails.fromMap(json["jewellery_details"]),
+        processedBy: json["processed_by"] is Map
+            ? EdBy.fromMap(Map<String, dynamic>.from(json["processed_by"]))
+            : null,
+        jewelleryDetails: json["jewellery_details"] is Map
+            ? JewelleryDetails.fromMap(Map<String, dynamic>.from(json["jewellery_details"]))
+            : null,
       );
 
   Map<String, dynamic> toMap() => {
@@ -323,9 +323,9 @@ class AdminNote {
 
   factory AdminNote.fromMap(Map<String, dynamic> json) => AdminNote(
     note: json["note"],
-    createdBy: json["created_by"] == null
-        ? null
-        : EdBy.fromMap(json["created_by"]),
+    createdBy: json["created_by"] is Map
+        ? EdBy.fromMap(Map<String, dynamic>.from(json["created_by"]))
+        : null,
     createdAt: json["created_at"] == null
         ? null
         : DateTime.parse(json["created_at"]),
@@ -372,9 +372,9 @@ class DebtorCheck {
         checkedAt: json["checked_at"] == null
             ? null
             : DateTime.parse(json["checked_at"]),
-        checkedBy: json["checked_by"] == null
-            ? null
-            : EdBy.fromMap(json["checked_by"]),
+        checkedBy: json["checked_by"] is Map
+            ? EdBy.fromMap(Map<String, dynamic>.from(json["checked_by"]))
+            : null,
       );
 
   Map<String, dynamic> toMap() => {
@@ -406,9 +406,9 @@ class StatusUpdate {
   factory StatusUpdate.fromMap(Map<String, dynamic> json) => StatusUpdate(
         status: json["status"],
         note: json["note"],
-        createdBy: json["created_by"] == null
-            ? null
-            : EdBy.fromMap(json["created_by"]),
+        createdBy: json["created_by"] is Map
+            ? EdBy.fromMap(Map<String, dynamic>.from(json["created_by"]))
+            : null,
         createdAt: json["created_at"] == null
             ? null
             : DateTime.parse(json["created_at"]),

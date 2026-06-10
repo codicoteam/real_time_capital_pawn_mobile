@@ -49,6 +49,17 @@ class AuthServices {
           );
         }
 
+        // Block unverified accounts — navigate to email verification
+        final bool emailVerified = user['email_verified'] == true;
+        if (!emailVerified) {
+          DevLogs.logWarning('Login blocked: email not verified for ${user['email']}');
+          return APIResponse(
+            success: false,
+            message: 'EMAIL_NOT_VERIFIED',
+            data: null,
+          );
+        }
+
         // Cache token
         await CacheUtils.storeToken(token: token);
 
@@ -87,8 +98,17 @@ class AuthServices {
         );
       } else {
         final errorMessage = responseData['message'] ?? 'Login failed';
+        final errorLower = errorMessage.toLowerCase();
 
         DevLogs.logError('Login failed: $errorMessage');
+
+        // Normalise "email not verified" errors to a sentinel the UI can act on
+        if (errorLower.contains('not verified') ||
+            errorLower.contains('email not') ||
+            errorLower.contains('unverified') ||
+            errorLower.contains('verify your email')) {
+          return APIResponse(success: false, message: 'EMAIL_NOT_VERIFIED', data: null);
+        }
 
         return APIResponse(success: false, message: errorMessage, data: null);
       }

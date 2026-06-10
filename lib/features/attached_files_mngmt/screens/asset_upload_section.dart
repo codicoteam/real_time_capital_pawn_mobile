@@ -423,7 +423,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surfaceColor.withOpacity(0.5),
+              color: AppColors.surfaceColor.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -476,7 +476,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 32, color: AppColors.primaryColor),
@@ -574,7 +574,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.primaryColor.withOpacity(0.3),
+                color: AppColors.primaryColor.withValues(alpha: 0.3),
                 width: 2,
               ),
               image: DecorationImage(
@@ -595,7 +595,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 4,
                   ),
                 ],
@@ -613,7 +613,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(12),
@@ -639,7 +639,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
 
   Widget _buildUploadingOverlay() {
     return Container(
-      color: Colors.black.withOpacity(0.75),
+      color: Colors.black.withValues(alpha: 0.75),
       child: Center(
         child:
             Container(
@@ -650,7 +650,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.4),
+                        color: AppColors.primaryColor.withValues(alpha: 0.4),
                         blurRadius: 30,
                         spreadRadius: 10,
                       ),
@@ -670,7 +670,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                               value: _uploadProgress,
                               strokeWidth: 10,
                               backgroundColor: AppColors.borderColor
-                                  .withOpacity(0.3),
+                                  .withValues(alpha: 0.3),
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 AppColors.primaryColor,
                               ),
@@ -680,7 +680,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                                 width: 90,
                                 height: 90,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
+                                  color: AppColors.primaryColor.withValues(alpha: 
                                     0.1,
                                   ),
                                   shape: BoxShape.circle,
@@ -696,7 +696,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                               )
                               .shimmer(
                                 duration: 2000.ms,
-                                color: AppColors.primaryColor.withOpacity(0.5),
+                                color: AppColors.primaryColor.withValues(alpha: 0.5),
                               )
                               .scale(
                                 begin: const Offset(1, 1),
@@ -726,7 +726,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                           .animate(onPlay: (controller) => controller.repeat())
                           .shimmer(
                             duration: 2000.ms,
-                            color: AppColors.primaryColor.withOpacity(0.5),
+                            color: AppColors.primaryColor.withValues(alpha: 0.5),
                           ),
                       const SizedBox(height: 12),
 
@@ -753,7 +753,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
                           height: 10,
                           child: LinearProgressIndicator(
                             value: _uploadProgress,
-                            backgroundColor: AppColors.borderColor.withOpacity(
+                            backgroundColor: AppColors.borderColor.withValues(alpha: 
                               0.3,
                             ),
                             valueColor: AlwaysStoppedAnimation<Color>(
@@ -811,13 +811,13 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: isActive
-            ? AppColors.primaryColor.withOpacity(0.2)
-            : AppColors.borderColor.withOpacity(0.1),
+            ? AppColors.primaryColor.withValues(alpha: 0.2)
+            : AppColors.borderColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isActive
               ? AppColors.primaryColor
-              : AppColors.borderColor.withOpacity(0.3),
+              : AppColors.borderColor.withValues(alpha: 0.3),
           width: 1.5,
         ),
       ),
@@ -870,7 +870,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
             // Upload Button
             CustomButton(
               btnColor: _isUploading
-                  ? AppColors.borderColor.withOpacity(0.3)
+                  ? AppColors.borderColor.withValues(alpha: 0.3)
                   : Colors.transparent,
               borderRadius: 12,
               width: double.infinity,
@@ -951,7 +951,7 @@ class _AssetUploadSectionState extends State<AssetUploadSection> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -1085,7 +1085,7 @@ class _AssetDetailsModalState extends State<AssetDetailsModal> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.primaryColor.withOpacity(0.3),
+                  color: AppColors.primaryColor.withValues(alpha: 0.3),
                   width: 2,
                 ),
                 image: DecorationImage(
@@ -1231,7 +1231,7 @@ class _AssetEditModalState extends State<AssetEditModal> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.primaryColor.withOpacity(0.3),
+                  color: AppColors.primaryColor.withValues(alpha: 0.3),
                   width: 2,
                 ),
                 image: DecorationImage(
@@ -1246,7 +1246,7 @@ class _AssetEditModalState extends State<AssetEditModal> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceColor.withOpacity(0.5),
+                color: AppColors.surfaceColor.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

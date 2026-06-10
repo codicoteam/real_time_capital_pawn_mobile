@@ -80,10 +80,10 @@ class ProfileAutofillBanner extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.warningColor.withOpacity(0.1),
+                    color: AppColors.warningColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.warningColor.withOpacity(0.3),
+                      color: AppColors.warningColor.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -143,21 +143,21 @@ class ProfileAutofillBanner extends StatelessWidget {
 
   Color _getBannerColor(bool hasBasicInfo, bool hasCompleteProfile) {
     if (hasCompleteProfile) {
-      return AppColors.successColor.withOpacity(0.1);
+      return AppColors.successColor.withValues(alpha: 0.1);
     } else if (hasBasicInfo) {
-      return AppColors.primaryColor.withOpacity(0.05);
+      return AppColors.primaryColor.withValues(alpha: 0.05);
     } else {
-      return AppColors.warningColor.withOpacity(0.1);
+      return AppColors.warningColor.withValues(alpha: 0.1);
     }
   }
 
   Color _getBorderColor(bool hasBasicInfo, bool hasCompleteProfile) {
     if (hasCompleteProfile) {
-      return AppColors.successColor.withOpacity(0.3);
+      return AppColors.successColor.withValues(alpha: 0.3);
     } else if (hasBasicInfo) {
-      return AppColors.primaryColor.withOpacity(0.2);
+      return AppColors.primaryColor.withValues(alpha: 0.2);
     } else {
-      return AppColors.warningColor.withOpacity(0.3);
+      return AppColors.warningColor.withValues(alpha: 0.3);
     }
   }
 

@@ -243,10 +243,10 @@ class _UserBiddingHistoryScreenState extends State<UserBiddingHistoryScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: RealTimeColors.success.withOpacity(0.1),
+                          color: RealTimeColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: RealTimeColors.success.withOpacity(0.3),
+                            color: RealTimeColors.success.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
@@ -478,9 +478,9 @@ class _UserBiddingHistoryScreenState extends State<UserBiddingHistoryScreen> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Center(
             child: Text(
@@ -565,7 +565,7 @@ class _UserBiddingHistoryScreenState extends State<UserBiddingHistoryScreen> {
                           );
                         },
                         backgroundColor: AppColors.surfaceColor,
-                        selectedColor: AppColors.primaryColor.withOpacity(0.1),
+                        selectedColor: AppColors.primaryColor.withValues(alpha: 0.1),
                         labelStyle: GoogleFonts.poppins(
                           color: isSelected
                               ? AppColors.primaryColor

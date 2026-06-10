@@ -232,7 +232,7 @@ class AttachmentHelper {
     Get.snackbar(
       'Success',
       message,
-      backgroundColor: AppColors.successColor.withOpacity(0.1),
+      backgroundColor: AppColors.successColor.withValues(alpha: 0.1),
       colorText: AppColors.successColor,
       snackPosition: SnackPosition.TOP,
       margin: const EdgeInsets.all(16),

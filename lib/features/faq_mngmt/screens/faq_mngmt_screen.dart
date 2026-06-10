@@ -146,10 +146,51 @@ class _FaqScreenState extends State<FaqScreen>
       icon: Icons.headset_mic_rounded,
       iconColor: RealTimeColors.warning,
     ),
+
+    // ── Status Guide ──────────────────────────────────────────────────────────
+    FaqItem(
+      category: 'Status Guide',
+      question: 'What do the loan application statuses mean?',
+      answer:
+          'Your loan application moves through these stages:\n\n'
+          '• Pending — Your application has been submitted and is waiting to be picked up by a loan officer.\n\n'
+          '• Under Review — A loan officer is actively reviewing your documents and collateral details.\n\n'
+          '• Approved — Congratulations! Your loan is approved and funds are being processed for disbursement.\n\n'
+          '• Rejected — Your application was not approved at this time. The reason is shown in the app. You may reapply after addressing the noted issues.\n\n'
+          '• Cancelled — The application was withdrawn (either by you or by our team before processing).',
+      icon: Icons.assignment_turned_in_rounded,
+      iconColor: RealTimeColors.success,
+    ),
+    FaqItem(
+      category: 'Status Guide',
+      question: 'What do the different loan statuses mean?',
+      answer:
+          'Once your loan is active, its status reflects your repayment journey:\n\n'
+          '• Active — Your loan is running smoothly and the due date has not yet passed. No action needed.\n\n'
+          '• Overdue — Your repayment due date has passed without a payment. Please pay immediately to avoid a penalty.\n\n'
+          '• In Grace Period — You are within the 7-day grace window after the due date. A 10% penalty has been added to your balance. Pay within this window to reclaim your collateral.\n\n'
+          '• Auction — Your 7-day grace period has expired. Your collateral item has been moved to our live auction to recover the outstanding loan amount.\n\n'
+          '• Redeemed — You have fully repaid your loan. Your collateral item has been released and returned to you.\n\n'
+          '• Closed — Your loan account is closed (fully settled or administratively written off).',
+      icon: Icons.account_balance_rounded,
+      iconColor: RealTimeColors.warning,
+    ),
+    FaqItem(
+      category: 'Status Guide',
+      question: 'What do the auction item statuses mean?',
+      answer:
+          'Items in our live auction can carry these statuses:\n\n'
+          '• Active — The auction is live and accepting bids. Place your bid before the timer runs out!\n\n'
+          '• Sold — The item was successfully sold to the highest bidder. Pickup arrangements are coordinated by our team.\n\n'
+          '• Expired — The auction ended without a winning bid. The item may be relisted at a revised price.\n\n'
+          '• Cancelled — The auction was cancelled by our team, usually because the borrower settled the loan before bidding closed.',
+      icon: Icons.gavel_rounded,
+      iconColor: RealTimeColors.error,
+    ),
   ];
 
   List<String> get _categories {
-    final cats = ['All', ..._faqItems.map((e) => e.category).toSet().toList()];
+    final cats = ['All', ..._faqItems.map((e) => e.category).toSet()];
     return cats;
   }
 
@@ -185,6 +226,8 @@ class _FaqScreenState extends State<FaqScreen>
         return RealTimeColors.primaryGreen;
       case 'Contact & Support':
         return RealTimeColors.warning;
+      case 'Status Guide':
+        return const Color(0xFF0891B2);
       default:
         return RealTimeColors.primaryGreen;
     }
@@ -249,7 +292,7 @@ class _FaqScreenState extends State<FaqScreen>
           icon: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -299,7 +342,7 @@ class _FaqScreenState extends State<FaqScreen>
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -311,7 +354,7 @@ class _FaqScreenState extends State<FaqScreen>
               height: 130,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -323,7 +366,7 @@ class _FaqScreenState extends State<FaqScreen>
               height: 70,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.07),
+                color: Colors.white.withValues(alpha: 0.07),
               ),
             ),
           ),
@@ -339,15 +382,15 @@ class _FaqScreenState extends State<FaqScreen>
                         width: 72,
                         height: 72,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -356,7 +399,7 @@ class _FaqScreenState extends State<FaqScreen>
                         child: Icon(
                           Icons.quiz_rounded,
                           size: 38,
-                          color: Colors.white.withOpacity(0.95),
+                          color: Colors.white.withValues(alpha: 0.95),
                         ),
                       )
                       .animate()
@@ -389,7 +432,7 @@ class _FaqScreenState extends State<FaqScreen>
                         Text(
                           '${_faqItems.length} answers to your questions',
                           style: GoogleFonts.poppins(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 13,
                             fontWeight: FontWeight.w400,
                           ),
@@ -401,32 +444,6 @@ class _FaqScreenState extends State<FaqScreen>
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _heroPill(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: Colors.white.withOpacity(0.9)),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -446,7 +463,7 @@ class _FaqScreenState extends State<FaqScreen>
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: _categories.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
           itemBuilder: (context, i) {
             final cat = _categories[i];
             final isSelected = selectedCategory == cat;
@@ -477,7 +494,7 @@ class _FaqScreenState extends State<FaqScreen>
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: color.withOpacity(0.25),
+                            color: color.withValues(alpha: 0.25),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -531,15 +548,15 @@ class _FaqScreenState extends State<FaqScreen>
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isExpanded
-              ? item.iconColor.withOpacity(0.5)
+              ? item.iconColor.withValues(alpha: 0.5)
               : AppColors.borderColor,
           width: isExpanded ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isExpanded
-                ? item.iconColor.withOpacity(0.08)
-                : Colors.black.withOpacity(0.04),
+                ? item.iconColor.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.04),
             blurRadius: isExpanded ? 20 : 12,
             offset: const Offset(0, 4),
           ),
@@ -568,10 +585,10 @@ class _FaqScreenState extends State<FaqScreen>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: item.iconColor.withOpacity(0.1),
+                        color: item.iconColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(13),
                         border: Border.all(
-                          color: item.iconColor.withOpacity(0.2),
+                          color: item.iconColor.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -590,7 +607,7 @@ class _FaqScreenState extends State<FaqScreen>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: item.iconColor.withOpacity(0.08),
+                              color: item.iconColor.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -623,7 +640,7 @@ class _FaqScreenState extends State<FaqScreen>
                       height: 32,
                       decoration: BoxDecoration(
                         color: isExpanded
-                            ? item.iconColor.withOpacity(0.12)
+                            ? item.iconColor.withValues(alpha: 0.12)
                             : AppColors.backgroundColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -667,9 +684,9 @@ class _FaqScreenState extends State<FaqScreen>
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: item.iconColor.withOpacity(0.04),
+        color: item.iconColor.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: item.iconColor.withOpacity(0.12), width: 1),
+        border: Border.all(color: item.iconColor.withValues(alpha: 0.12), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,7 +754,7 @@ class _FaqScreenState extends State<FaqScreen>
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 11),
               side: BorderSide(
-                color: RealTimeColors.primaryGreen.withOpacity(0.5),
+                color: RealTimeColors.primaryGreen.withValues(alpha: 0.5),
                 width: 1.2,
               ),
               shape: RoundedRectangleBorder(
@@ -788,17 +805,17 @@ class _FaqScreenState extends State<FaqScreen>
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: RealTimeColors.primaryGreen.withOpacity(0.08),
+                    color: RealTimeColors.primaryGreen.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: RealTimeColors.primaryGreen.withOpacity(0.2),
+                      color: RealTimeColors.primaryGreen.withValues(alpha: 0.2),
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.search_off_rounded,
                     size: 52,
-                    color: RealTimeColors.primaryGreen.withOpacity(0.5),
+                    color: RealTimeColors.primaryGreen.withValues(alpha: 0.5),
                   ),
                 )
                 .animate()

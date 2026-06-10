@@ -93,13 +93,15 @@ class LoanModel {
   factory LoanModel.fromMap(Map<String, dynamic> json) => LoanModel(
         id: json["_id"],
         loanNo: json["loan_no"],
-        customerUser: json["customer_user"] == null
-            ? null
-            : CustomerUser.fromMap(json["customer_user"]),
-        application: json["application"] == null
-            ? null
-            : Application.fromMap(json["application"]),
-        asset: json["asset"] == null ? null : Asset.fromMap(json["asset"]),
+        customerUser: json["customer_user"] is Map
+            ? CustomerUser.fromMap(Map<String, dynamic>.from(json["customer_user"]))
+            : null,
+        application: json["application"] is Map
+            ? Application.fromMap(Map<String, dynamic>.from(json["application"]))
+            : null,
+        asset: json["asset"] is Map
+            ? Asset.fromMap(Map<String, dynamic>.from(json["asset"]))
+            : null,
         collateralCategory: json["collateral_category"],
         principalAmount: json["principal_amount"]?.toDouble(),
         currentBalance: json["current_balance"]?.toDouble(),

@@ -188,12 +188,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
           end: Alignment.bottomRight,
           colors: [
             AppColors.primaryColor,
-            AppColors.primaryColor.withOpacity(0.8),
+            AppColors.primaryColor.withValues(alpha: 0.8),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.3),
+            color: AppColors.primaryColor.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -207,10 +207,10 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -239,7 +239,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                   _stepSubtitles[_currentStep],
                   style: GoogleFonts.poppins(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -250,10 +250,10 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
@@ -409,7 +409,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primaryColor.withOpacity(0.08)
+                      ? AppColors.primaryColor.withValues(alpha: 0.08)
                       : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
@@ -421,8 +421,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                   boxShadow: [
                     BoxShadow(
                       color: isSelected
-                          ? AppColors.primaryColor.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.04),
+                          ? AppColors.primaryColor.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.04),
                       blurRadius: isSelected ? 12 : 6,
                       offset: const Offset(0, 3),
                     ),
@@ -437,7 +437,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                       height: 36,
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.primaryColor.withOpacity(0.12)
+                            ? AppColors.primaryColor.withValues(alpha: 0.12)
                             : AppColors.backgroundColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -494,7 +494,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isSelected ? p.color.withOpacity(0.07) : Colors.white,
+                color: isSelected ? p.color.withValues(alpha: 0.07) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected ? p.color : AppColors.borderColor,
@@ -503,8 +503,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                 boxShadow: [
                   BoxShadow(
                     color: isSelected
-                        ? p.color.withOpacity(0.12)
-                        : Colors.black.withOpacity(0.04),
+                        ? p.color.withValues(alpha: 0.12)
+                        : Colors.black.withValues(alpha: 0.04),
                     blurRadius: isSelected ? 12 : 6,
                     offset: const Offset(0, 3),
                   ),
@@ -516,7 +516,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: p.color.withOpacity(0.1),
+                      color: p.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
@@ -528,7 +528,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                             )
                           : Icon(
                               Icons.radio_button_off_rounded,
-                              color: p.color.withOpacity(0.5),
+                              color: p.color.withValues(alpha: 0.5),
                               size: 22,
                             ),
                     ),
@@ -558,7 +558,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: p.color.withOpacity(0.12),
+                                  color: p.color.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
@@ -619,11 +619,11 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
-                color: AppColors.primaryColor.withOpacity(0.2),
+                color: AppColors.primaryColor.withValues(alpha: 0.2),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryColor.withOpacity(0.08),
+                  color: AppColors.primaryColor.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -734,17 +734,17 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primaryColor.withOpacity(0.15),
+                color: AppColors.primaryColor.withValues(alpha: 0.15),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryColor.withOpacity(0.07),
+                  color: AppColors.primaryColor.withValues(alpha: 0.07),
                   blurRadius: 14,
                   offset: const Offset(0, 5),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -756,7 +756,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: AppColors.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -814,7 +814,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
     return InputDecoration(
       hintText: hint,
       hintStyle: GoogleFonts.poppins(
-        color: AppColors.subtextColor.withOpacity(0.6),
+        color: AppColors.subtextColor.withValues(alpha: 0.6),
         fontSize: 13,
       ),
       filled: true,
@@ -858,7 +858,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
         border: Border(top: BorderSide(color: AppColors.borderColor)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -907,13 +907,13 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
             end: Alignment.bottomRight,
             colors: [
               AppColors.primaryColor,
-              AppColors.primaryColor.withOpacity(0.85),
+              AppColors.primaryColor.withValues(alpha: 0.85),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryColor.withOpacity(0.3),
+              color: AppColors.primaryColor.withValues(alpha: 0.3),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
@@ -957,16 +957,16 @@ class _CreateTicketScreenState extends State<CreateTicketScreen>
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.85),
+                    AppColors.primaryColor.withValues(alpha: 0.85),
                   ],
                 ),
-          color: isLoading ? AppColors.primaryColor.withOpacity(0.4) : null,
+          color: isLoading ? AppColors.primaryColor.withValues(alpha: 0.4) : null,
           borderRadius: BorderRadius.circular(12),
           boxShadow: isLoading
               ? []
               : [
                   BoxShadow(
-                    color: AppColors.primaryColor.withOpacity(0.3),
+                    color: AppColors.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 14,
                     offset: const Offset(0, 5),
                   ),

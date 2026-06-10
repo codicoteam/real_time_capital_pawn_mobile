@@ -27,9 +27,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   final TextEditingController otpController = TextEditingController();
   final FocusNode focusNode = FocusNode();
 
-  final bool _isLoading = false;
+  bool _isLoading = false;
   bool _isResending = false;
   int _resendCountdown = 60;
+  int _countdownToken = 0;
   late AnimationController _countdownController;
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -63,22 +64,19 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   }
 
   void _updateCountdown() {
+    final token = ++_countdownToken;
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        setState(() {
-          _resendCountdown--;
-        });
-        return _resendCountdown > 0;
-      }
-      return false;
+      if (!mounted || token != _countdownToken) return false;
+      setState(() => _resendCountdown--);
+      return _resendCountdown > 0;
     });
   }
 
   void _shakeOtpField() {
     HapticFeedback.mediumImpact();
     _shakeController.forward().then((_) {
-      _shakeController.reverse();
+      if (mounted) _shakeController.reverse();
     });
   }
 
@@ -93,7 +91,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.sizeOf(context).width;
     double screenHeight = MediaQuery.sizeOf(context).height;
 
     final defaultPinTheme = PinTheme(
@@ -110,7 +107,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
         border: Border.all(color: AppColors.borderColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -124,7 +121,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
         border: Border.all(color: AppColors.primaryColor, width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.1),
+            color: AppColors.primaryColor.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -135,7 +132,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
 
     final submittedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        color: AppColors.primaryColor.withOpacity(0.1),
+        color: AppColors.primaryColor.withValues(alpha: 0.1),
         border: Border.all(color: AppColors.primaryColor, width: 1.5),
       ),
     );
@@ -145,7 +142,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
         border: Border.all(color: Colors.red, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.1),
+            color: Colors.red.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -233,7 +230,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   spreadRadius: 0,
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
@@ -276,10 +273,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                       hapticFeedbackType:
                                           HapticFeedbackType.lightImpact,
                                       onCompleted: (pin) async {
+                                        if (mounted) setState(() => _isLoading = true);
                                         await AuthHelper.validateAndVerifyOtp(
                                           email: widget.email,
                                           otp: otpController.text,
                                         );
+                                        if (mounted) setState(() => _isLoading = false);
                                       },
                                       onChanged: (value) {
                                         setState(() {});
@@ -298,7 +297,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                         color: otpController.text.length == 6
                                             ? AppColors.primaryColor
                                             : AppColors.primaryColor
-                                                  .withOpacity(0.6),
+                                                  .withValues(alpha: 0.6),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: AppColors.borderColor,
@@ -306,7 +305,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(
+                                            color: Colors.black.withValues(alpha: 
                                               0.03,
                                             ),
                                             spreadRadius: 0,
@@ -325,10 +324,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                               otpController.text.length == 6 &&
                                                   !_isLoading
                                               ? () async {
+                                                  if (mounted) setState(() => _isLoading = true);
                                                   await AuthHelper.validateAndVerifyOtp(
                                                     email: widget.email,
                                                     otp: otpController.text,
                                                   );
+                                                  if (mounted) setState(() => _isLoading = false);
                                                 }
                                               : null,
                                           child: Padding(
@@ -424,10 +425,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.1),
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.2),
+                          color: AppColors.primaryColor.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -474,16 +475,16 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   }
 
   Future<void> _resendCode() async {
-    setState(() {
-      _isResending = true;
-    });
-    await AuthHelper.validateAndVerifyOtp(
-      email: widget.email,
-      otp: otpController.text,
-    );
+    if (!mounted) return;
+    setState(() => _isResending = true);
 
+    await AuthHelper.validateAndResendVerification(email: widget.email);
+
+    if (!mounted) return;
     setState(() {
       _isResending = false;
+      _resendCountdown = 60;
     });
+    _startCountdown();
   }
 }

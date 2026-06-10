@@ -212,7 +212,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   spreadRadius: 0,
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
@@ -364,15 +364,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                                         ),
                                         decoration: BoxDecoration(
                                           color: _passwordsMatch
-                                              ? Colors.green.withOpacity(0.1)
-                                              : Colors.red.withOpacity(0.1),
+                                              ? Colors.green.withValues(alpha: 0.1)
+                                              : Colors.red.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
                                           border: Border.all(
                                             color: _passwordsMatch
-                                                ? Colors.green.withOpacity(0.3)
-                                                : Colors.red.withOpacity(0.3),
+                                                ? Colors.green.withValues(alpha: 0.3)
+                                                : Colors.red.withValues(alpha: 0.3),
                                           ),
                                         ),
                                         child: Row(
@@ -415,7 +415,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                                         color: _isFormValid
                                             ? AppColors.primaryColor
                                             : AppColors.primaryColor
-                                                  .withOpacity(0.6),
+                                                  .withValues(alpha: 0.6),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: AppColors.borderColor,
@@ -423,7 +423,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(
+                                            color: Colors.black.withValues(alpha: 
                                               0.03,
                                             ),
                                             spreadRadius: 0,
@@ -498,7 +498,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withValues(alpha: 0.03),
                             spreadRadius: 0,
                             blurRadius: 8,
                             offset: const Offset(0, 2),
@@ -548,10 +548,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.1),
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.2),
+                          color: AppColors.primaryColor.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),

@@ -97,18 +97,18 @@ class _BidCardState extends State<BidCard> {
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppColors.primaryColor.withOpacity(0.4),
+                      color: AppColors.primaryColor.withValues(alpha: 0.4),
                       width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.12),
+                        color: AppColors.primaryColor.withValues(alpha: 0.12),
                         blurRadius: 20,
                         offset: const Offset(0, 6),
                         spreadRadius: -2,
                       ),
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -128,9 +128,9 @@ class _BidCardState extends State<BidCard> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  AppColors.primaryColor.withOpacity(0.0),
+                                  AppColors.primaryColor.withValues(alpha: 0.0),
                                   AppColors.primaryColor,
-                                  AppColors.primaryColor.withOpacity(0.0),
+                                  AppColors.primaryColor.withValues(alpha: 0.0),
                                 ],
                               ),
                             ),
@@ -153,9 +153,9 @@ class _BidCardState extends State<BidCard> {
                                           gradient: LinearGradient(
                                             colors: [
                                               AppColors.primaryColor
-                                                  .withOpacity(0.18),
+                                                  .withValues(alpha: 0.18),
                                               AppColors.primaryColor
-                                                  .withOpacity(0.06),
+                                                  .withValues(alpha: 0.06),
                                             ],
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
@@ -165,7 +165,7 @@ class _BidCardState extends State<BidCard> {
                                           ),
                                           border: Border.all(
                                             color: AppColors.primaryColor
-                                                .withOpacity(0.25),
+                                                .withValues(alpha: 0.25),
                                           ),
                                         ),
                                         child: Icon(
@@ -260,13 +260,13 @@ class _BidCardState extends State<BidCard> {
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          AppColors.primaryColor.withOpacity(
+                                          AppColors.primaryColor.withValues(alpha: 
                                             0.0,
                                           ),
-                                          AppColors.primaryColor.withOpacity(
+                                          AppColors.primaryColor.withValues(alpha: 
                                             0.3,
                                           ),
-                                          AppColors.primaryColor.withOpacity(
+                                          AppColors.primaryColor.withValues(alpha: 
                                             0.0,
                                           ),
                                         ],
@@ -350,7 +350,7 @@ class _BidCardState extends State<BidCard> {
                                                 Icons.calendar_month_rounded,
                                                 size: 12,
                                                 color: AppColors.primaryColor
-                                                    .withOpacity(0.7),
+                                                    .withValues(alpha: 0.7),
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
@@ -503,9 +503,9 @@ class _StatusChip extends StatelessWidget {
     return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withOpacity(0.35), width: 1),
+            border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -582,7 +582,7 @@ class _PayNowButton extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 AppColors.primaryColor,
-                AppColors.primaryColor.withOpacity(0.78),
+                AppColors.primaryColor.withValues(alpha: 0.78),
               ],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
@@ -590,7 +590,7 @@ class _PayNowButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryColor.withOpacity(0.38),
+                color: AppColors.primaryColor.withValues(alpha: 0.38),
                 blurRadius: 14,
                 offset: const Offset(0, 5),
               ),
@@ -601,7 +601,7 @@ class _PayNowButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              splashColor: Colors.white.withOpacity(0.15),
+              splashColor: Colors.white.withValues(alpha: 0.15),
               onTap: onTap,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 13),
@@ -635,7 +635,7 @@ class _PayNowButton extends StatelessWidget {
         .animate(onPlay: (c) => c.repeat(period: 3800.ms))
         .shimmer(
           duration: 1200.ms,
-          color: Colors.white.withOpacity(0.18),
+          color: Colors.white.withValues(alpha: 0.18),
           delay: 1200.ms,
         );
   }
@@ -665,14 +665,14 @@ class BidStatusTextBadge extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [statusColor, statusColor.withOpacity(0.78)],
+              colors: [statusColor, statusColor.withValues(alpha: 0.78)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: statusColor.withOpacity(0.32),
+                color: statusColor.withValues(alpha: 0.32),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),

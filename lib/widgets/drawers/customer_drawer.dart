@@ -60,7 +60,7 @@ class CustomDrawer extends StatelessWidget {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
@@ -98,7 +98,7 @@ class CustomDrawer extends StatelessWidget {
                         child: Text(
                           userEmail,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -249,7 +249,7 @@ class CustomDrawer extends StatelessWidget {
           height: 36,
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: RealTimeColors.primaryGreen.withOpacity(0.1),
+            color: RealTimeColors.primaryGreen.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Stack(
@@ -323,7 +323,7 @@ class CustomDrawer extends StatelessWidget {
         height: 36,
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, color: color, size: 20),
@@ -386,7 +386,7 @@ class CustomDrawer extends StatelessWidget {
         return Dialog(
           alignment: Alignment.bottomCenter,
           insetPadding: EdgeInsets.zero,
-          shadowColor: Colors.grey.withOpacity(0.2),
+          shadowColor: Colors.grey.withValues(alpha: 0.2),
           backgroundColor: Colors.transparent,
           child: Container(
             width: double.infinity,

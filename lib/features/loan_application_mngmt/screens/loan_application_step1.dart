@@ -362,7 +362,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
           color: AppColors.backgroundColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -426,19 +426,19 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primaryColor.withOpacity(0.1), AppColors.primaryColor.withOpacity(0.05)],
+          colors: [AppColors.primaryColor.withValues(alpha: 0.1), AppColors.primaryColor.withValues(alpha: 0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryColor.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.15),
+              color: AppColors.primaryColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.person_outline, color: AppColors.primaryColor, size: 24),
@@ -497,7 +497,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -511,7 +511,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, size: 18, color: AppColors.primaryColor),
@@ -547,7 +547,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
         duration: 200.ms,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : AppColors.surfaceColor,
+          color: isSelected ? color.withValues(alpha: 0.1) : AppColors.surfaceColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : AppColors.borderColor,
@@ -556,7 +556,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -804,7 +804,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.close, size: 16, color: Colors.white),
@@ -866,7 +866,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
                         style: GoogleFonts.poppins(
                           fontSize: 10,
                           color: isSelected
-                              ? Colors.white.withOpacity(0.85)
+                              ? Colors.white.withValues(alpha: 0.85)
                               : AppColors.subtextColor,
                         ),
                       ),
@@ -881,7 +881,7 @@ class LoanApplicationScreen extends GetView<LoanApplicationControllerTwo> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.primaryColor.withOpacity(0.05),
+            color: AppColors.primaryColor.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(

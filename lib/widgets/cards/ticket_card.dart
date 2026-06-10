@@ -135,18 +135,18 @@ class _TicketCardState extends State<TicketCard>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: statusColor.withOpacity(0.35),
+                  color: statusColor.withValues(alpha: 0.35),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: statusColor.withOpacity(0.07),
+                    color: statusColor.withValues(alpha: 0.07),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                     spreadRadius: 0,
                   ),
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -169,7 +169,7 @@ class _TicketCardState extends State<TicketCard>
                             end: Alignment.bottomCenter,
                             colors: [
                               statusColor,
-                              statusColor.withOpacity(0.5),
+                              statusColor.withValues(alpha: 0.5),
                             ],
                           ),
                         ),
@@ -191,10 +191,10 @@ class _TicketCardState extends State<TicketCard>
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(0.1),
+                                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(13),
                                   border: Border.all(
-                                    color: AppColors.primaryColor.withOpacity(0.2),
+                                    color: AppColors.primaryColor.withValues(alpha: 0.2),
                                     width: 1,
                                   ),
                                 ),
@@ -219,7 +219,7 @@ class _TicketCardState extends State<TicketCard>
                                       ),
                                       decoration: BoxDecoration(
                                         color: AppColors.primaryColor
-                                            .withOpacity(0.08),
+                                            .withValues(alpha: 0.08),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -265,7 +265,7 @@ class _TicketCardState extends State<TicketCard>
                           // Divider
                           Container(
                             height: 1,
-                            color: statusColor.withOpacity(0.1),
+                            color: statusColor.withValues(alpha: 0.1),
                           ),
 
                           const SizedBox(height: 12),
@@ -291,7 +291,7 @@ class _TicketCardState extends State<TicketCard>
                               Icon(
                                 Icons.schedule_rounded,
                                 size: 13,
-                                color: AppColors.subtextColor.withOpacity(0.7),
+                                color: AppColors.subtextColor.withValues(alpha: 0.7),
                               ),
                               const SizedBox(width: 5),
                               Text(
@@ -307,7 +307,7 @@ class _TicketCardState extends State<TicketCard>
                                 width: 3,
                                 height: 3,
                                 decoration: BoxDecoration(
-                                  color: AppColors.subtextColor.withOpacity(
+                                  color: AppColors.subtextColor.withValues(alpha: 
                                     0.4,
                                   ),
                                   shape: BoxShape.circle,
@@ -327,7 +327,7 @@ class _TicketCardState extends State<TicketCard>
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.1),
+                                  color: statusColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -358,7 +358,7 @@ class _TicketCardState extends State<TicketCard>
         .then(delay: 100.ms)
         .shimmer(
           duration: 900.ms,
-          color: statusColor.withOpacity(0.06),
+          color: statusColor.withValues(alpha: 0.06),
         );
   }
 }
@@ -380,9 +380,9 @@ class _StatusBadge extends StatelessWidget {
     return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color.withOpacity(0.25), width: 1),
+            border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

@@ -288,7 +288,7 @@ class _LoanTermsDisplayScreenState extends State<LoanTermsDisplayScreen> {
                               gradient: LinearGradient(
                                 colors: [
                                   AppColors.primaryColor,
-                                  AppColors.primaryColor.withOpacity(0.8),
+                                  AppColors.primaryColor.withValues(alpha: 0.8),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),

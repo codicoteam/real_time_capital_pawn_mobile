@@ -580,7 +580,7 @@ class LoanApplicationControllerTwo extends GetxController {
   String _getCustomTerms() {
     final periodLabel =
         selectedLoanPeriodType.value == 'two_weeks' ? '2 weeks' : '1 month';
-    return 'Standard loan terms apply. Late payment penalty of 10% of outstanding amount. Full repayment due within $periodLabel.';
+    return 'Standard loan terms apply. A 7-day grace period is granted after the due date. Late payment penalty of 10% of outstanding amount applies after the grace period. Full repayment due within $periodLabel.';
   }
 
   @override

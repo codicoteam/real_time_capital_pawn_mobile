@@ -191,7 +191,7 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: _getStatusColor(
                       payment.paymentStatus,
-                    ).withOpacity(0.1),
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -269,7 +269,7 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -342,7 +342,7 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
               _buildComponentCard(
                 'Storage',
                 payment.storageComponent,
-                AppColors.primaryColor.withOpacity(0.7),
+                AppColors.primaryColor.withValues(alpha: 0.7),
               ),
               _buildComponentCard(
                 'Penalty',
@@ -360,9 +360,9 @@ class LoanPaymentDetailsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

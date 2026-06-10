@@ -70,17 +70,21 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   void _startResendTimer() {
-    _canResend = false;
-    _resendTimer = 30;
-    
+    if (!mounted) return;
+    setState(() {
+      _canResend = false;
+      _resendTimer = 30;
+    });
+    _tickResendTimer();
+  }
+
+  void _tickResendTimer() {
     Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() => _resendTimer--);
-      }
-    }).then((_) {
+      if (!mounted) return;
+      setState(() => _resendTimer--);
       if (_resendTimer > 0) {
-        _startResendTimer();
-      } else if (mounted) {
+        _tickResendTimer();
+      } else {
         setState(() => _canResend = true);
       }
     });
@@ -152,10 +156,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.08),
+                      color: AppColors.primaryColor.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.primaryColor.withOpacity(0.15),
+                        color: AppColors.primaryColor.withValues(alpha: 0.15),
                         width: 1,
                       ),
                     ),
@@ -387,10 +391,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.08),
+                      color: AppColors.primaryColor.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.primaryColor.withOpacity(0.15),
+                        color: AppColors.primaryColor.withValues(alpha: 0.15),
                         width: 1,
                       ),
                     ),

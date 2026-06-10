@@ -132,17 +132,16 @@ class NotificationController extends GetxController {
 
       if (response.success) {
         // Update local notification
-        final notification = notifications.firstWhere(
+        final notification = notifications.firstWhereOrNull(
           (n) => n.id == notificationId,
-          orElse: () => selectedNotification.value!,
-        );
+        ) ?? selectedNotification.value;
 
-        if (notification.id != null) {
+        if (notification != null && notification.id != null) {
           notification.isRead = true;
           notification.readAt = DateTime.now();
 
           notifications.refresh();
-          unreadCount.value--;
+          if (unreadCount.value > 0) unreadCount.value--;
 
           if (selectedNotification.value?.id == notificationId) {
             selectedNotification.value = notification;
@@ -196,12 +195,11 @@ class NotificationController extends GetxController {
 
       if (response.success) {
         // Update local notification
-        final notification = notifications.firstWhere(
+        final notification = notifications.firstWhereOrNull(
           (n) => n.id == notificationId,
-          orElse: () => selectedNotification.value!,
-        );
+        ) ?? selectedNotification.value;
 
-        if (notification.id != null) {
+        if (notification != null && notification.id != null) {
           notification.isActed = true;
           notification.actedAt = DateTime.now();
           notification.actionTaken = action;

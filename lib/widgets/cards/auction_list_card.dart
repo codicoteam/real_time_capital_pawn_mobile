@@ -121,7 +121,7 @@ class AuctionListCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   spreadRadius: 0,
                   blurRadius: 20,
                   offset: const Offset(0, 8),
@@ -189,7 +189,7 @@ class AuctionListCard extends StatelessWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(
+                                  color: AppColors.primaryColor.withValues(alpha: 
                                     0.1,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -233,7 +233,7 @@ class AuctionListCard extends StatelessWidget {
                                         delay: 800.ms,
                                         duration: 1800.ms,
                                         color: AppColors.primaryColor
-                                            .withOpacity(0.3),
+                                            .withValues(alpha: 0.3),
                                       ),
                                 ],
                               ),
@@ -315,13 +315,13 @@ class AuctionListCard extends StatelessWidget {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    RealTimeColors.success.withOpacity(0.1),
-                                    RealTimeColors.success.withOpacity(0.05),
+                                    RealTimeColors.success.withValues(alpha: 0.1),
+                                    RealTimeColors.success.withValues(alpha: 0.05),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: RealTimeColors.success.withOpacity(
+                                  color: RealTimeColors.success.withValues(alpha: 
                                     0.2,
                                   ),
                                 ),
@@ -363,7 +363,7 @@ class AuctionListCard extends StatelessWidget {
                                         ),
                                         decoration: BoxDecoration(
                                           color: RealTimeColors.success
-                                              .withOpacity(0.15),
+                                              .withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -445,7 +445,7 @@ class AuctionListCard extends StatelessWidget {
                             .shimmer(
                               duration: 2000.ms,
                               delay: 600.ms,
-                              color: RealTimeColors.success.withOpacity(0.15),
+                              color: RealTimeColors.success.withValues(alpha: 0.15),
                             ),
                       ],
 
@@ -455,7 +455,7 @@ class AuctionListCard extends StatelessWidget {
                         Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: RealTimeColors.warning.withOpacity(0.1),
+                                color: RealTimeColors.warning.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
@@ -490,7 +490,7 @@ class AuctionListCard extends StatelessWidget {
                         Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: RealTimeColors.error.withOpacity(0.1),
+                                color: RealTimeColors.error.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
@@ -538,9 +538,9 @@ class AuctionListCard extends StatelessWidget {
     final badge = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         _getStatusText(auction.status),
@@ -565,7 +565,7 @@ class AuctionListCard extends StatelessWidget {
           .then()
           .shimmer(
             duration: 1500.ms,
-            color: RealTimeColors.success.withOpacity(0.4),
+            color: RealTimeColors.success.withValues(alpha: 0.4),
           );
     }
 
@@ -658,7 +658,7 @@ class AuctionListCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.3)],
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.3)],
               ),
             ),
           ),

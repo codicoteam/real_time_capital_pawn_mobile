@@ -141,7 +141,7 @@ class LoanApplicationCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
@@ -161,7 +161,7 @@ class LoanApplicationCard extends StatelessWidget {
                           colors: [
                             _getCategoryColor(
                               application.collateralCategory,
-                            ).withOpacity(0.05),
+                            ).withValues(alpha: 0.05),
                             Colors.transparent,
                           ],
                         ),
@@ -184,8 +184,8 @@ class LoanApplicationCard extends StatelessWidget {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    AppColors.primaryColor.withOpacity(0.15),
-                                    AppColors.primaryColor.withOpacity(0.05),
+                                    AppColors.primaryColor.withValues(alpha: 0.15),
+                                    AppColors.primaryColor.withValues(alpha: 0.05),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
@@ -238,7 +238,7 @@ class LoanApplicationCard extends StatelessWidget {
                                 border: Border.all(
                                   color: _getStatusColor(
                                     application.status,
-                                  ).withOpacity(0.3),
+                                  ).withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -378,7 +378,7 @@ class LoanApplicationCard extends StatelessWidget {
         .shimmer(
           delay: (index * 150 + 500).ms,
           duration: 1500.ms,
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
         );
   }
 
@@ -394,7 +394,7 @@ class LoanApplicationCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: (iconColor ?? AppColors.primaryColor).withOpacity(0.1),
+            color: (iconColor ?? AppColors.primaryColor).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
@@ -443,10 +443,10 @@ class LoanApplicationCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: _getCategoryColor(category).withOpacity(0.08),
+          color: _getCategoryColor(category).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _getCategoryColor(category).withOpacity(0.2),
+            color: _getCategoryColor(category).withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -479,10 +479,10 @@ class LoanApplicationCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: _getCategoryColor(category).withOpacity(0.08),
+          color: _getCategoryColor(category).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _getCategoryColor(category).withOpacity(0.2),
+            color: _getCategoryColor(category).withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -514,10 +514,10 @@ class LoanApplicationCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: _getCategoryColor(category).withOpacity(0.08),
+          color: _getCategoryColor(category).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _getCategoryColor(category).withOpacity(0.2),
+            color: _getCategoryColor(category).withValues(alpha: 0.2),
             width: 1,
           ),
         ),

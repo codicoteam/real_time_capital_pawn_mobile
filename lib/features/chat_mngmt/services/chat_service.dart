@@ -201,13 +201,10 @@ class ChatSocketService {
 
     DevLogs.logInfo('[Socket] Creating new socket → ${ApiKeys.socketUrl}');
 
-    // Use polling FIRST so plain HTTP reverse proxies work without
-    // WebSocket upgrade headers. socket.io will upgrade to WebSocket
-    // once the connection is established.
     _socket = IO.io(
       ApiKeys.socketUrl,
       IO.OptionBuilder()
-          .setTransports(['polling', 'websocket'])
+          .setTransports(['websocket'])
           .setAuth({'token': token})
           .enableAutoConnect()
           .enableReconnection()

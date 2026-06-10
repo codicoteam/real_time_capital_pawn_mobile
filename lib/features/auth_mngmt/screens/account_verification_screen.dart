@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../config/routers/router.dart';
 import '../../../core/utils/pallete.dart' show AppColors;
 
 class AccountVerificationSuccessful extends StatelessWidget {
@@ -41,14 +43,14 @@ class AccountVerificationSuccessful extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             AppColors.primaryColor,
-                            AppColors.primaryColor.withOpacity(0.7),
+                            AppColors.primaryColor.withValues(alpha: 0.7),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryColor.withOpacity(0.3),
+                            color: AppColors.primaryColor.withValues(alpha: 0.3),
                             spreadRadius: 0,
                             blurRadius: 30,
                             offset: const Offset(0, 10),
@@ -67,7 +69,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                     .shimmer(
                       duration: 1500.ms,
                       colors: [
-                        Colors.white.withOpacity(0.5),
+                        Colors.white.withValues(alpha: 0.5),
                         Colors.transparent,
                       ],
                     ),
@@ -119,7 +121,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             spreadRadius: 0,
                             blurRadius: 20,
                             offset: const Offset(0, 10),
@@ -134,7 +136,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryColor.withOpacity(
+                                      color: AppColors.primaryColor.withValues(alpha: 
                                         0.1,
                                       ),
                                       borderRadius: BorderRadius.circular(8),
@@ -169,7 +171,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryColor.withOpacity(
+                                      color: AppColors.primaryColor.withValues(alpha: 
                                         0.1,
                                       ),
                                       borderRadius: BorderRadius.circular(8),
@@ -204,7 +206,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryColor.withOpacity(
+                                      color: AppColors.primaryColor.withValues(alpha: 
                                         0.1,
                                       ),
                                       borderRadius: BorderRadius.circular(8),
@@ -259,7 +261,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
+                                      color: Colors.black.withValues(alpha: 0.03),
                                       spreadRadius: 0,
                                       blurRadius: 10,
                                       offset: const Offset(0, 5),
@@ -271,7 +273,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(12),
                                     onTap: () {
-                                      // Add your continue logic here
+                                      Get.offAllNamed(RoutesHelper.main_home_page);
                                     },
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -317,7 +319,7 @@ class AccountVerificationSuccessful extends StatelessWidget {
                                     height: 8,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: AppColors.primaryColor.withOpacity(
+                                      color: AppColors.primaryColor.withValues(alpha: 
                                         0.6,
                                       ),
                                     ),

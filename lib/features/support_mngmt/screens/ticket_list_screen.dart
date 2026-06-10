@@ -296,12 +296,12 @@ class _TicketListScreenState extends State<TicketListScreen>
               end: Alignment.bottomRight,
               colors: [
                 AppColors.primaryColor,
-                AppColors.primaryColor.withOpacity(0.85),
+                AppColors.primaryColor.withValues(alpha: 0.85),
               ],
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryColor.withOpacity(0.3),
+                color: AppColors.primaryColor.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -401,9 +401,9 @@ class _TicketListScreenState extends State<TicketListScreen>
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.18),
+          color: Colors.white.withValues(alpha: 0.18),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withOpacity(0.28), width: 1.2),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.28), width: 1.2),
         ),
         child: Icon(icon, color: Colors.white, size: size),
       ),
@@ -419,11 +419,11 @@ class _TicketListScreenState extends State<TicketListScreen>
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: highlight
-            ? Colors.white.withOpacity(0.28)
-            : Colors.white.withOpacity(0.15),
+            ? Colors.white.withValues(alpha: 0.28)
+            : Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withOpacity(highlight ? 0.5 : 0.2),
+          color: Colors.white.withValues(alpha: highlight ? 0.5 : 0.2),
           width: 1,
         ),
       ),
@@ -492,7 +492,7 @@ class _TicketListScreenState extends State<TicketListScreen>
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppColors.primaryColor.withOpacity(0.28),
+                              color: AppColors.primaryColor.withValues(alpha: 0.28),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -543,12 +543,12 @@ class _TicketListScreenState extends State<TicketListScreen>
                 height: 36,
                 decoration: BoxDecoration(
                   color: _isAscending
-                      ? AppColors.primaryColor.withOpacity(0.1)
+                      ? AppColors.primaryColor.withValues(alpha: 0.1)
                       : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: _isAscending
-                        ? AppColors.primaryColor.withOpacity(0.4)
+                        ? AppColors.primaryColor.withValues(alpha: 0.4)
                         : Colors.grey.shade200,
                     width: 1.3,
                   ),
@@ -607,12 +607,12 @@ class _TicketListScreenState extends State<TicketListScreen>
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? accent.withOpacity(0.1)
+                        ? accent.withValues(alpha: 0.1)
                         : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? accent.withOpacity(0.45)
+                          ? accent.withValues(alpha: 0.45)
                           : Colors.transparent,
                       width: 1.3,
                     ),
@@ -678,7 +678,7 @@ class _TicketListScreenState extends State<TicketListScreen>
           Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.errorColor.withOpacity(0.1),
+                  color: AppColors.errorColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -745,7 +745,7 @@ class _TicketListScreenState extends State<TicketListScreen>
           Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.07),
+                  color: AppColors.primaryColor.withValues(alpha: 0.07),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -815,7 +815,7 @@ class _TicketListScreenState extends State<TicketListScreen>
                     .shimmer(
                       delay: 3000.ms,
                       duration: 1200.ms,
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                     ),
           );
         },

@@ -193,7 +193,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: RealTimeColors.warning.withOpacity(0.1),
+                color: RealTimeColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -502,7 +502,7 @@ class _PaymentListScreenState extends State<PaymentListScreen> {
                         decoration: BoxDecoration(
                           color: _getStatusColor(
                             payment.paymentStatus,
-                          ).withOpacity(0.1),
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
